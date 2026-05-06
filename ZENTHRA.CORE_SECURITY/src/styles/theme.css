@@ -1,0 +1,68 @@
+/* =========================================================
+   🌌 ZENTHRA.CORE_SECURITY — Tema principal
+   ========================================================= */
+
+:root {
+  /* 🎨 Paleta de colores base */
+  --color-bg-dark: #0f172a;      /* Fondo principal */
+  --color-bg-card: #1e293b;      /* Paneles y tarjetas */
+  --color-primary: #2563eb;      /* Azul corporativo */
+  --color-secondary: #38bdf8;    /* Azul claro / Hover */
+  --color-accent: #0ea5e9;       /* Cian brillante */
+  --color-text: #f8fafc;         /* Texto claro */
+
+  /* 🧠 Tonos adicionales */
+  --color-border: rgba(14, 165, 233, 0.3);  /* Líneas sutiles */
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+
+  /* 🖋️ Tipografía */
+  --font-main: "Inter", "Segoe UI", "Roboto", sans-serif;
+
+  /* 💫 Sombra neón */
+  --shadow-neon: 0 0 10px var(--color-secondary), 0 0 20px var(--color-primary);
+}
+
+/* =========================================================
+   🌙 Estilos globales
+   ========================================================= */
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text);
+  font-family: var(--font-main);
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =========================================================
+   💎 Elementos generales
+   ========================================================= */
+header {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-neon);
+}
+
+h1, h2, h3, h4 {
+  color: var(--color-primary);
+  letter-spacing: 0.5px;
+}
+
+a {
+  color: var(--color-secondary);
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+/* =========================================================
+   ✨ Imágenes (para mejorar nitidez del logo)
+   ========================================================= */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}

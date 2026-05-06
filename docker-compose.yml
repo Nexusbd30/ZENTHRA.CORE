@@ -1,0 +1,186 @@
+# ==========================================================
+# ZENTHRA - Observabilidad Stack + PostgreSQL (v3.9.1)
+# ==========================================================
+# Stack completo: backend, PostgreSQL y observabilidad.
+# Expone PostgreSQL en 55432 para acceso local desde herramientas externas.
+#
+# Nota:
+# - El backend dockerizado conecta a postgres por hostname "postgres:5432".
+# ==========================================================
+
+services:
+  # =========================================================
+  # BACKEND - FastAPI API
+  # =========================================================
+  backend:
+    build: .
+    container_name: zenthra_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=${ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - ZENTHRA_MONITOR_TOKEN=${ZENTHRA_MONITOR_TOKEN:?ZENTHRA_MONITOR_TOKEN is required}
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://zenthra:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zenthra}
+      - PROMETHEUS_BASE=http://prometheus:9090
+      - ALERTMANAGER_BASE=http://alertmanager:9093
+      - PROM_CACHE_TTL_SECONDS=${PROM_CACHE_TTL_SECONDS:-5}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - zenthra_net
+
+  # =========================================================
+  # POSTGRES - Base de datos (staging/prod)
+  # =========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: zenthra_postgres
+    restart: unless-stopped
+
+    # Como tu backend corre en Windows HOST, exponemos el puerto al host
+    ports:
+      - "55432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-zenthra}
+      - POSTGRES_USER=${POSTGRES_USER:-zenthra}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+
+    volumes:
+      # Persistencia real
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zenthra -d zenthra"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - zenthra_net
+
+  # =========================================================
+  # PROMETHEUS - Observabilidad central
+  # =========================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+
+    extra_hosts:
+      # Permite a Prometheus alcanzar exporters del host (Windows)
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      # Config principal y reglas de alerta
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+
+      # Token interno (bearer) para /metrics del backend
+      - C:\ZENTHRA\secrets\zenthra_monitor_token:/etc/prometheus/secrets/zenthra_monitor_token:ro
+
+      # Datos persistentes TSDB
+      - prometheus_data:/prometheus
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+
+    networks:
+      - zenthra_net
+
+  # =========================================================
+  # GRAFANA - Visualizacion
+  # =========================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+
+    depends_on:
+      - prometheus
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+
+    networks:
+      - zenthra_net
+
+  # =========================================================
+  # ALERTMANAGER - Gestion y ruteo de alertas
+  # =========================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+
+    depends_on:
+      - prometheus
+
+    ports:
+      - "9093:9093"
+
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+
+    networks:
+      - zenthra_net
+
+  # =========================================================
+  # BLACKBOX EXPORTER - Sondeo de endpoints externos
+  # =========================================================
+  blackbox_exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox_exporter
+    restart: unless-stopped
+
+    ports:
+      - "9115:9115"
+
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+
+    networks:
+      - zenthra_net
+
+# ==========================================================
+# VOLUMES PERSISTENTES
+# ==========================================================
+volumes:
+  prometheus_data:
+  grafana_data:
+  postgres_data:
+
+# ==========================================================
+# NETWORK (interno)
+# ==========================================================
+networks:
+  zenthra_net:
+    driver: bridge

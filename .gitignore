@@ -1,0 +1,36 @@
+﻿# Python
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+/logs/
+
+# Node
+node_modules/
+ZENTHRA.CORE_SECURITY/node_modules/
+ZENTHRA.CORE_SECURITY/dist/
+ZENTHRA.CORE_SECURITY/.vite/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini

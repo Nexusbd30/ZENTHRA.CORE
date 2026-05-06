@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+
+jobs:
+  backend:
+    name: Backend Quality
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    - name: Install backend deps
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r requirements-dev.txt
+    - name: Ruff
+      run: ruff check app tests
+    - name: Text encoding guard
+      run: python scripts/check_text_encoding.py
+    - name: Mypy
+      run: mypy app
+    - name: Pytest
+      run: pytest --cov=app --cov-report=xml --cov-fail-under=65
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-coverage
+        path: coverage.xml
+
+  frontend:
+    name: Frontend Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ZENTHRA.CORE_SECURITY
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "npm"
+        cache-dependency-path: ZENTHRA.CORE_SECURITY/package-lock.json
+    - name: Install frontend deps
+      run: npm ci
+    - name: ESLint
+      run: npm run lint
+    - name: Build
+      run: npm run build

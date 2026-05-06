@@ -1,0 +1,12 @@
+﻿venv
+__pycache__
+.pytest_cache
+*.pyc
+*.pyo
+*.pyd
+*.db
+logs
+.git
+.idea
+node_modules
+ZENTHRA.CORE_SECURITY/node_modules

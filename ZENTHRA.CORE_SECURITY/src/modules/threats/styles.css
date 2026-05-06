@@ -1,0 +1,145 @@
+/* =============================================================
+💠 ZENTHRA.CORE_SECURITY — Threats Module Styles (v2.0 Final)
+============================================================= */
+/* Este archivo define los estilos visuales específicos para el
+   módulo de amenazas, manteniendo coherencia con el dashboard.
+   Incluye:
+   - Paleta temática
+   - Sombras dinámicas
+   - Animaciones suaves
+   - Utilidades visuales para tablas y modales
+============================================================= */
+
+/* 🎨 PALETA BASE */
+:root {
+  --zen-bg: #0f172a;
+  --zen-panel: #1e293b;
+  --zen-accent: #ef4444;
+  --zen-accent-soft: rgba(239, 68, 68, 0.2);
+  --zen-text: #f8fafc;
+  --zen-muted: #94a3b8;
+  --zen-border: rgba(239, 68, 68, 0.3);
+}
+
+/* 🌌 BACKGROUND DEL MÓDULO */
+.threats-container {
+  background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 60%);
+  color: var(--zen-text);
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* 🧱 PANEL BASE */
+.threat-panel {
+  background: var(--zen-panel);
+  border: 1px solid var(--zen-border);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.threat-panel:hover {
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+}
+
+/* ⚠️ NIVELES DE AMENAZA */
+.level-critical {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.level-high {
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.15);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+}
+
+.level-medium {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+.level-low {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+}
+
+/* 🪄 ANIMACIONES */
+@keyframes pulse-alert {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.alert-pulse {
+  animation: pulse-alert 2.5s infinite;
+}
+
+/* 🧩 TABLA DE AMENAZAS */
+.threat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.threat-table thead {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--zen-muted);
+  text-transform: uppercase;
+}
+
+.threat-table th,
+.threat-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.threat-table tbody tr:hover {
+  background: rgba(239, 68, 68, 0.05);
+  transition: background 0.2s ease;
+}
+
+/* 🪶 MODALES */
+.threat-modal {
+  background: var(--zen-panel);
+  border: 1px solid var(--zen-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+}
+
+.threat-modal h2 {
+  color: var(--zen-accent);
+}
+
+.threat-modal button {
+  transition: all 0.25s ease;
+}
+
+.threat-modal button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+  .threats-container {
+    padding: 1rem;
+  }
+
+  .threat-table th,
+  .threat-table td {
+    padding: 0.5rem;
+  }
+}
