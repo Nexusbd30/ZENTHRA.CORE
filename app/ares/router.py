@@ -29,6 +29,11 @@ class LifecycleRequest(BaseModel):
     human_approved: bool = False
 
 
+class ThreatLifecycleRequest(BaseModel):
+    execution_controls: dict = Field(default_factory=dict)
+    human_approved: bool = False
+
+
 @router.get("/status")
 def ares_status():
     return {
@@ -76,6 +81,34 @@ def run_lifecycle(payload: LifecycleRequest, db: Session = Depends(get_db)):
 
     return {
         "verdict": verdict,
+        "execution": execution_response,
+    }
+
+
+@router.post("/lifecycle/from-threat/{threat_id}")
+def run_lifecycle_from_threat(
+    threat_id: str,
+    payload: ThreatLifecycleRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    payload = payload or ThreatLifecycleRequest()
+    verdict_response = AutonomyService.issue_verdict_from_threat(
+        db,
+        threat_id=threat_id,
+        execution_controls=payload.execution_controls,
+    )
+    if verdict_response.get("status") == "not_found":
+        return verdict_response
+
+    verdict = verdict_response["verdict"]
+    execution_response = AutonomyService.execute_verdict(
+        db,
+        verdict=verdict,
+        human_approved=payload.human_approved,
+    )
+
+    return {
+        **verdict_response,
         "execution": execution_response,
     }
 

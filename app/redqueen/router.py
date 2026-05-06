@@ -23,6 +23,10 @@ class VerdictRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
 
 
+class ThreatVerdictRequest(BaseModel):
+    execution_controls: dict = Field(default_factory=dict)
+
+
 @router.get("/status")
 def redqueen_status():
     return {
@@ -45,6 +49,20 @@ def issue_verdict(payload: VerdictRequest, db: Session = Depends(get_db)):
         target=payload.target,
         risk_score=payload.risk_score,
         factors=payload.factors,
+        execution_controls=payload.execution_controls,
+    )
+
+
+@router.post("/verdict/from-threat/{threat_id}")
+def issue_verdict_from_threat(
+    threat_id: str,
+    payload: ThreatVerdictRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    payload = payload or ThreatVerdictRequest()
+    return AutonomyService.issue_verdict_from_threat(
+        db,
+        threat_id=threat_id,
         execution_controls=payload.execution_controls,
     )
 

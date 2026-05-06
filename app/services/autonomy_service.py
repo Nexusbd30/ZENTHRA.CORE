@@ -10,9 +10,14 @@ from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
 from app.models.execution_result import ExecutionResult
+from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
 from app.redqueen.decision_engine import generate_verdict
+from app.redqueen.memory import recall_threat_context
+from app.redqueen.perception import build_threat_perception
+from app.redqueen.risk_scorer import score_perception
 from app.repositories.execution_result_repository import ExecutionResultRepository
+from app.repositories.threat_repository import ThreatRepository
 from app.repositories.verdict_repository import VerdictRepository
 
 
@@ -80,6 +85,56 @@ class AutonomyService:
         )
         AutonomyService.persist_verdict(db, verdict)
         return verdict
+
+    @staticmethod
+    def issue_verdict_from_threat(
+        db: Session,
+        *,
+        threat_id: str,
+        execution_controls: dict | None = None,
+    ) -> dict:
+        threat = ThreatRepository(db).get_by_id(threat_id)
+        if not isinstance(threat, ThreatModel):
+            return {"status": "not_found", "threat_id": threat_id}
+
+        perception = build_threat_perception(threat)
+        score = score_perception(perception)
+        memory = recall_threat_context(
+            db,
+            target=str(perception.get("target") or ""),
+            fingerprint=str(getattr(threat, "fingerprint", "") or "") or None,
+        )
+
+        factors = [
+            *perception.get("factors", []),
+            f"scoring_model:{score['scoring_model']}",
+        ]
+        if memory:
+            factors.append(f"memory_matches:{len(memory)}")
+
+        controls = {
+            **(execution_controls or {}),
+            "threat_id": threat_id,
+            "perception": perception,
+            "risk_score_inputs": score["score_inputs"],
+            "memory": memory,
+        }
+
+        verdict = generate_verdict(
+            target=str(perception["target"]),
+            risk_score=float(score["risk_score"]),
+            factors=factors,
+            execution_controls=controls,
+        )
+        AutonomyService.persist_verdict(db, verdict)
+        return {
+            "status": "ok",
+            "threat_id": threat_id,
+            "perception": perception,
+            "risk": score,
+            "memory": memory,
+            "verdict": verdict,
+        }
 
     @staticmethod
     def execute_verdict(
