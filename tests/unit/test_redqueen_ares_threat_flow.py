@@ -66,3 +66,25 @@ async def test_ares_lifecycle_from_existing_threat_executes(test_client, auth_to
     assert body["verdict"]["execution_controls"]["threat_id"] == threat["id"]
     assert body["execution"]["status"] in {"executed", "failed"}
     assert body["execution"]["result"]["verdict_id"] == body["verdict"]["verdict_id"]
+
+
+@pytest.mark.asyncio
+async def test_ares_lifecycle_from_threat_supports_dry_run(test_client, auth_token, monkeypatch):
+    threat = await create_admin_threat(test_client, auth_token, score=84)
+
+    resp = await test_client.post(
+        f"/api/v1/ares/lifecycle/from-threat/{threat['id']}",
+        headers=autonomy_headers(monkeypatch),
+        json={
+            "human_approved": True,
+            "execution_controls": {"dry_run": True},
+        },
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    execution = body["execution"]["execution"]
+    assert body["execution"]["status"] == "executed"
+    assert execution["mode"] == "dry_run"
+    assert execution["rollback_available"] is False
+    assert all(step["status"] == "planned" for step in execution["executed_steps"])

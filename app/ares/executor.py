@@ -41,6 +41,7 @@ class ActionTransaction:
 def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
     controls = controls or {}
     action_type = plan.get("action_type", "observe")
+    dry_run = bool(controls.get("dry_run", False))
 
     if action_type not in ACTION_EXECUTORS:
         return {
@@ -53,6 +54,28 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
                     "timestamp": datetime.now(UTC).isoformat(),
                     "detail": f"action {action_type} handled as non-disruptive",
                 }
+            ],
+            "rollback_available": False,
+            "rollback_events": [],
+        }
+
+    if dry_run:
+        return {
+            "status": "success",
+            "mode": "dry_run",
+            "duration_ms": 0,
+            "executed_steps": [
+                {
+                    "step": step.get("step"),
+                    "status": "planned",
+                    "detail": "dry-run: step validated but not executed",
+                    "evidence": {
+                        "action_type": action_type,
+                        "payload": step.get("payload", {}),
+                    },
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+                for step in plan.get("steps", [])
             ],
             "rollback_available": False,
             "rollback_events": [],

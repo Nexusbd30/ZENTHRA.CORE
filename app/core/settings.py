@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     # ARES execution adapters
     # ---------------------------------------------------------
-    ACTION_EXECUTION_MODE: str = "mock"  # mock | webhook
+    ACTION_EXECUTION_MODE: str = "mock"  # mock | dry_run | webhook
     ACTION_TIMEOUT_SEC: float = 5.0
     ACTION_SHARED_TOKEN: str | None = None
 

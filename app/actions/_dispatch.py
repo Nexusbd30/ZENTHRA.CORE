@@ -9,9 +9,9 @@ from app.core.settings import settings
 
 def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
     mode = settings.ACTION_EXECUTION_MODE.strip().lower()
-    if mode == "mock":
+    if mode in {"mock", "dry_run"}:
         return {
-            "mode": "mock",
+            "mode": mode,
             "command": command,
             "payload": payload,
             "status": "ok",
