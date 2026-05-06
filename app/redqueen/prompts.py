@@ -20,5 +20,6 @@ Reglas:
 def tactical_user_prompt(*, target: str, risk_score: float, factors: list[str]) -> str:
     return (
         f"target={target}; risk_score={risk_score}; factors={factors}; "
-        "objetivo=mitigar con minimo impacto y alta trazabilidad"
+        "objetivo=mitigar con minimo impacto y alta trazabilidad; "
+        "usa contexto SIEM/MCP si aparece en factors o execution_controls"
     )

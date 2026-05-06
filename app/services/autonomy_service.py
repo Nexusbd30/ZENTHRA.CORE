@@ -104,6 +104,12 @@ class AutonomyService:
             target=str(perception.get("target") or ""),
             fingerprint=str(getattr(threat, "fingerprint", "") or "") or None,
         )
+        mcp_context = (
+            execution_controls.get("mcp_context")
+            if isinstance(execution_controls, dict)
+            and isinstance(execution_controls.get("mcp_context"), dict)
+            else {}
+        )
 
         factors = [
             *perception.get("factors", []),
@@ -111,6 +117,8 @@ class AutonomyService:
         ]
         if memory:
             factors.append(f"memory_matches:{len(memory)}")
+        if mcp_context:
+            factors.append("mcp_context_present")
 
         controls = {
             **(execution_controls or {}),
@@ -118,6 +126,7 @@ class AutonomyService:
             "perception": perception,
             "risk_score_inputs": score["score_inputs"],
             "memory": memory,
+            "mcp_context": mcp_context,
         }
 
         verdict = generate_verdict(

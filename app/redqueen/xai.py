@@ -16,10 +16,12 @@ def generate_xai_explanation(
     confidence: float,
     factors: list[str],
     requires_human: bool,
+    causal_chain: dict | None = None,
 ) -> str:
     factors_text = ", ".join(factors) if factors else "sin factores explicitos"
     user_prompt = (
         f"target={target}; risk_score={risk_score}; action={action_type}; "
-        f"confidence={confidence}; requires_human={requires_human}; factors={factors_text}"
+        f"confidence={confidence}; requires_human={requires_human}; factors={factors_text}; "
+        f"causal_chain={causal_chain or {}}"
     )
     return ai_provider.complete(SYSTEM_PROMPT, user_prompt)

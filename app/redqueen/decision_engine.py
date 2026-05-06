@@ -7,6 +7,7 @@ from uuid import uuid4
 from app.core.ai_provider import ai_provider
 from app.core.settings import settings
 from app.core.signing import sign_payload
+from app.redqueen.causal import build_causal_chain
 from app.redqueen.policy_matrix import evaluate_policy
 from app.redqueen.prompts import TACTICAL_SYSTEM_PROMPT, tactical_user_prompt
 from app.redqueen.xai import generate_xai_explanation
@@ -40,6 +41,7 @@ class VerdictDraft:
     policy_check: bool
     requires_human: bool
     justification_xai: str
+    causal_chain: dict = field(default_factory=dict)
     execution_controls: dict = field(default_factory=dict)
 
 
@@ -69,7 +71,8 @@ def _llm_decide(target: str, risk_score: float, factors: list[str]) -> dict:
     )
     parsed = ai_provider.parse_json(raw)
 
-    action = str(parsed.get("action_type", "")).strip().lower()
+    requested_action = str(parsed.get("action_type", "")).strip().lower()
+    action = requested_action
     if action not in ALLOWED_ACTIONS:
         action = _fallback_action(risk_score)
     action = _enforce_min_action_by_score(action, risk_score)
@@ -91,9 +94,12 @@ def _llm_decide(target: str, risk_score: float, factors: list[str]) -> dict:
 
     return {
         "action_type": action,
+        "requested_action_type": requested_action or "unavailable",
         "confidence": confidence,
         "factors": merged_factors,
         "reasoning": str(parsed.get("reasoning", "llm_reasoning_unavailable")),
+        "minimum_action_type": _fallback_action(risk_score),
+        "minimum_action_enforced": action != requested_action,
     }
 
 
@@ -110,10 +116,20 @@ def generate_verdict(
     action_type = ai_decision["action_type"]
     confidence = ai_decision["confidence"]
     merged_factors = ai_decision["factors"]
+    controls = execution_controls or {}
+    perception = controls.get("perception") if isinstance(controls.get("perception"), dict) else {}
 
     policy = evaluate_policy(score=normalized_score, action_type=action_type)
     requires_human = bool(policy.get("requires_human")) or (
         normalized_score >= settings.REDQUEEN_HUMAN_APPROVAL_SCORE
+    )
+    causal_chain = build_causal_chain(
+        target=target,
+        risk_score=normalized_score,
+        action_type=action_type,
+        perception=perception,
+        factors=merged_factors,
+        llm_reasoning=ai_decision["reasoning"],
     )
 
     verdict = VerdictDraft(
@@ -133,8 +149,16 @@ def generate_verdict(
             confidence=confidence,
             factors=merged_factors,
             requires_human=requires_human,
+            causal_chain=causal_chain,
         ),
-        execution_controls=execution_controls or {},
+        causal_chain=causal_chain,
+        execution_controls={
+            **controls,
+            "llm_reasoning": ai_decision["reasoning"],
+            "llm_requested_action_type": ai_decision["requested_action_type"],
+            "minimum_action_type": ai_decision["minimum_action_type"],
+            "minimum_action_enforced": ai_decision["minimum_action_enforced"],
+        },
     )
 
     payload = asdict(verdict)
