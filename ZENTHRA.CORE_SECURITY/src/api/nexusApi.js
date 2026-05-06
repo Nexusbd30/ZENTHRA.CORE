@@ -36,7 +36,6 @@ const MONITOR_TOKEN = (import.meta.env.VITE_ZENTHRA_MONITOR_TOKEN || "").trim();
 // Clave donde guardamos el JWT real de usuario
 const USER_TOKEN_KEY = "access_token";
 
-console.log("[ZENTHRA] API_BASE_URL =", API_BASE_URL);
 if (!MONITOR_TOKEN) {
   console.warn(
     "[ZENTHRA] VITE_ZENTHRA_MONITOR_TOKEN vacio; /monitoring/* usara JWT admin si existe"
@@ -335,7 +334,6 @@ export const getFullInfraHealth = async () => {
 export const getHealth = async () => {
   try {
     const { data } = await nexusApi.get("/health");
-    console.log("[ZENTHRA] Backend Health:", data);
     return data;
   } catch (e) {
     console.error("[ZENTHRA] Error en /health:", e);
@@ -345,7 +343,6 @@ export const getHealth = async () => {
 
 export const listThreatsRaw = async (skip = 0, limit = 20) => {
   const { data } = await nexusApi.get(`/threats/?skip=${skip}&limit=${limit}`);
-  console.log("[ZENTHRA] Threats Raw:", data);
   return data;
 };
 

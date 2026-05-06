@@ -7,7 +7,7 @@ import os
 import time
 from logging.handlers import RotatingFileHandler
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import RedirectResponse, Response
@@ -19,9 +19,9 @@ from app.ares.router import router as ares_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
-from app.core.security import get_current_user, get_password_hash
+from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal, get_db
 from app.health.router import router as system_health_router
 from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
@@ -223,20 +223,23 @@ def health():
 
 
 @app.get("/ready")
-def ready():
+def ready(db: Session = Depends(get_db)):
     try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
         return {"status": "ready"}
     except Exception as exc:
         return JSONResponse(status_code=503, content={"error": str(exc)})
 
 
 @app.get("/debug/config")
-def debug_config(current_user=Depends(get_current_user)):
+def debug_config(current_admin=Depends(get_current_admin)):
+    if str(settings.ENV).lower() not in {"development", "testing", "test"}:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    _ = current_admin
     return {
         "ENV": settings.ENV,
-        "DB": settings.SQLALCHEMY_DATABASE_URI,
+        "DB_DRIVER": settings.SQLALCHEMY_DATABASE_URI.split(":", 1)[0],
         "CORRELATION_ENABLED": settings.ZENTHRA_CORRELATION_ENABLED,
         "CORRELATION_INTERVAL_SEC": settings.ZENTHRA_CORRELATION_INTERVAL_SEC,
     }

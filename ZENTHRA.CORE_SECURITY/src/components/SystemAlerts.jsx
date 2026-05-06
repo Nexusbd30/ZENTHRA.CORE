@@ -87,14 +87,7 @@ export default function SystemAlerts({
     try {
       setError(null);
       const res = await getAlerts();
-
-      console.log("[SystemAlerts][DEBUG] raw alerts from backend:", res);
       if (Array.isArray(res)) {
-        // Log rápido de los alertname para ver si está HighLatencyP95
-        console.log(
-          "[SystemAlerts][DEBUG] alertnames:",
-          res.map((a) => a?.labels?.alertname)
-        );
         setAlerts(res);
       } else {
         setAlerts([]);
