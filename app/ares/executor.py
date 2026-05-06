@@ -53,6 +53,8 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
                     "status": "ok",
                     "timestamp": datetime.now(UTC).isoformat(),
                     "detail": f"action {action_type} handled as non-disruptive",
+                    "impact": "no operational change",
+                    "rollback": None,
                 }
             ],
             "rollback_available": False,
@@ -69,6 +71,9 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
                     "step": step.get("step"),
                     "status": "planned",
                     "detail": "dry-run: step validated but not executed",
+                    "impact": step.get("impact"),
+                    "rollback": step.get("rollback"),
+                    "criticality": step.get("criticality", 0),
                     "evidence": {
                         "action_type": action_type,
                         "payload": step.get("payload", {}),
@@ -97,6 +102,9 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
                     "step": step.get("step"),
                     "status": result.status,
                     "detail": result.detail,
+                    "impact": step.get("impact"),
+                    "rollback": step.get("rollback"),
+                    "criticality": step.get("criticality", 0),
                     "evidence": result.evidence,
                     "timestamp": datetime.now(UTC).isoformat(),
                 }

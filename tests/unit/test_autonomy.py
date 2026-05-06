@@ -60,6 +60,7 @@ async def test_ares_execute_with_human_approval(test_client, monkeypatch):
             "target": "srv-auth",
             "risk_score": 88,
             "factors": ["credential_stuffing"],
+            "execution_controls": {"change_ticket": "TEST-ARES-001"},
         },
     )
     verdict = verdict_resp.json()
@@ -98,3 +99,25 @@ async def test_ares_rejects_when_kill_switch_enabled(test_client, monkeypatch):
     assert data["code"] == "kill_switch"
 
     _ = await test_client.post("/api/v1/ares/kill-switch/off", headers=headers)
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_disruptive_action_without_traceability(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={"target": "srv-auth", "risk_score": 88, "factors": ["credential_stuffing"]},
+    )
+    verdict = verdict_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "execution_control_missing"

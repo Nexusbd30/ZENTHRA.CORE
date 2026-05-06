@@ -22,6 +22,7 @@ async def test_lifecycle_persists_verdict_and_execution(test_client, db_session,
             "target": "asset-persist-01",
             "risk_score": 78,
             "factors": ["suspicious_auth", "lateral_movement"],
+            "execution_controls": {"change_ticket": "TEST-ARES-PERSIST-001"},
             "human_approved": True,
         },
     )
@@ -45,7 +46,10 @@ async def test_transactional_rollback_on_simulated_failure(test_client, monkeypa
             "target": "asset-rollback-01",
             "risk_score": 82,
             "factors": ["endpoint_compromise"],
-            "execution_controls": {"simulate_failure_after_steps": 1},
+            "execution_controls": {
+                "simulate_failure_after_steps": 1,
+                "change_ticket": "TEST-ARES-ROLLBACK-001",
+            },
             "human_approved": True,
         },
     )

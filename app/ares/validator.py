@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from app.ares.kill_switch import kill_switch_state
+from app.ares.planner import DISRUPTIVE_ACTIONS
 from app.core.signing import verify_payload_signature
 from app.redqueen.policy_matrix import evaluate_policy
 
@@ -33,5 +34,16 @@ def validate_verdict(verdict: dict) -> ValidationResult:
 
     if not policy.get("allowed", False):
         return ValidationResult(False, "policy_denied", "Policy matrix denied action")
+
+    controls = verdict.get("execution_controls")
+    controls = controls if isinstance(controls, dict) else {}
+    dry_run = bool(controls.get("dry_run", False))
+    if action_type in DISRUPTIVE_ACTIONS and not dry_run:
+        if not controls.get("threat_id") and not controls.get("change_ticket"):
+            return ValidationResult(
+                False,
+                "execution_control_missing",
+                "Disruptive action requires threat_id or change_ticket control",
+            )
 
     return ValidationResult(True, "ok", "validated")

@@ -154,6 +154,12 @@ class AutonomyService:
     ) -> dict:
         AutonomyService.persist_verdict(db, verdict)
 
+        if verdict.get("requires_human") and not human_approved:
+            return {
+                "status": "pending_human_approval",
+                "verdict_id": verdict.get("verdict_id"),
+            }
+
         validation = validate_verdict(verdict)
         if not validation.valid:
             rejection: dict[str, object] = {
@@ -168,12 +174,6 @@ class AutonomyService:
             AutonomyService.persist_execution_result(db, result)
             rejection["result"] = result
             return rejection
-
-        if verdict.get("requires_human") and not human_approved:
-            return {
-                "status": "pending_human_approval",
-                "verdict_id": verdict.get("verdict_id"),
-            }
 
         plan = build_plan(verdict)
         controls = verdict.get("execution_controls") or {}
