@@ -9,6 +9,7 @@ from app.ares.executor import execute_plan
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
+from app.core.audit import audit_autonomy_event
 from app.models.execution_result import ExecutionResult
 from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
@@ -84,6 +85,18 @@ class AutonomyService:
             execution_controls=execution_controls or {},
         )
         AutonomyService.persist_verdict(db, verdict)
+        audit_autonomy_event(
+            db,
+            verdict_id=str(verdict.get("verdict_id", "")),
+            actor="redqueen",
+            action="verdict_issued",
+            result={
+                "target": target,
+                "risk_score": verdict.get("risk_score"),
+                "action_type": verdict.get("action_type"),
+                "requires_human": verdict.get("requires_human"),
+            },
+        )
         return verdict
 
     @staticmethod
@@ -155,6 +168,13 @@ class AutonomyService:
         AutonomyService.persist_verdict(db, verdict)
 
         if verdict.get("requires_human") and not human_approved:
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="ares",
+                action="execution_pending_human_approval",
+                result={"reason": "requires_human", "action_type": verdict.get("action_type")},
+            )
             return {
                 "status": "pending_human_approval",
                 "verdict_id": verdict.get("verdict_id"),
@@ -172,6 +192,13 @@ class AutonomyService:
                 execution={"status": "failed", "duration_ms": 0, "executed_steps": []},
             )
             AutonomyService.persist_execution_result(db, result)
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="ares",
+                action="execution_rejected",
+                result={"code": validation.code, "detail": validation.detail},
+            )
             rejection["result"] = result
             return rejection
 
@@ -180,6 +207,17 @@ class AutonomyService:
         execution = execute_plan(plan, controls=controls)
         result = build_execution_result(verdict=verdict, execution=execution)
         AutonomyService.persist_execution_result(db, result)
+        audit_autonomy_event(
+            db,
+            verdict_id=str(verdict.get("verdict_id", "")),
+            actor="ares",
+            action="execution_completed",
+            result={
+                "status": execution.get("status"),
+                "duration_ms": execution.get("duration_ms", 0),
+                "result_hash": result.get("result_hash"),
+            },
+        )
 
         return {
             "status": "executed" if execution.get("status") == "success" else "failed",

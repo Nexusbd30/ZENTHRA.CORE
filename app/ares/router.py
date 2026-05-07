@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.ares.kill_switch import kill_switch_state
 from app.core.security import require_admin_or_monitor_token
+from app.db.audit_store import list_audit_records, verify_audit_chain
 from app.db.session import get_db
 from app.services.autonomy_service import AutonomyService
 
@@ -131,3 +132,28 @@ def list_results(verdict_id: str, db: Session = Depends(get_db)):
             for r in rows
         ],
     }
+
+
+@router.get("/audit")
+def list_audit(verdict_id: str | None = None, limit: int = 50, db: Session = Depends(get_db)):
+    rows = list_audit_records(db, verdict_id=verdict_id, limit=max(1, min(limit, 200)))
+    return {
+        "count": len(rows),
+        "items": [
+            {
+                "record_id": row.record_id,
+                "verdict_id": row.verdict_id,
+                "actor": row.actor,
+                "action": row.action,
+                "hash_prev": row.hash_prev,
+                "hash_self": row.hash_self,
+                "timestamp": row.timestamp.isoformat(),
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/audit/verify")
+def verify_audit(db: Session = Depends(get_db)):
+    return verify_audit_chain(db)
