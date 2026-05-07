@@ -28,6 +28,27 @@ def test_llm_cannot_downgrade_critical_action(monkeypatch):
     assert verdict["causal_chain"]["action"] == "network_isolate"
 
 
+def test_verdict_records_mcp_action_policy_when_action_is_blocked(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"network_isolate","confidence":0.92,'
+            '"reasoning":"contain critical host","factors":["llm_containment"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="critical-db",
+        risk_score=97,
+        factors=["data_exfiltration"],
+        execution_controls={"mcp_context": {"blocked_actions": ["network_isolate"]}},
+    )
+
+    assert verdict["action_type"] == "network_isolate"
+    assert verdict["execution_controls"]["mcp_action_policy"]["allowed"] is False
+    assert verdict["execution_controls"]["mcp_action_policy"]["code"] == "mcp_action_blocked"
+
+
 def test_perception_and_risk_scorer_use_enriched_siem_signals():
     now = datetime.now(UTC)
     threat = ThreatModel(

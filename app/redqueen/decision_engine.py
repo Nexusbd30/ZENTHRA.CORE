@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.core.ai_provider import ai_provider
+from app.core.mcp_context import evaluate_mcp_action_policy, normalize_mcp_context
 from app.core.settings import settings
 from app.core.signing import sign_payload
 from app.redqueen.causal import build_causal_chain
@@ -117,6 +118,9 @@ def generate_verdict(
     confidence = ai_decision["confidence"]
     merged_factors = ai_decision["factors"]
     controls = execution_controls or {}
+    raw_mcp_context = controls.get("mcp_context") if isinstance(controls.get("mcp_context"), dict) else {}
+    mcp_context = normalize_mcp_context(raw_mcp_context, target=target)
+    mcp_action_policy = evaluate_mcp_action_policy(action_type, mcp_context)
     perception = controls.get("perception") if isinstance(controls.get("perception"), dict) else {}
 
     policy = evaluate_policy(score=normalized_score, action_type=action_type)
@@ -154,6 +158,8 @@ def generate_verdict(
         causal_chain=causal_chain,
         execution_controls={
             **controls,
+            "mcp_context": mcp_context,
+            "mcp_action_policy": mcp_action_policy,
             "llm_reasoning": ai_decision["reasoning"],
             "llm_requested_action_type": ai_decision["requested_action_type"],
             "minimum_action_type": ai_decision["minimum_action_type"],

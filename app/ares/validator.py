@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from app.ares.kill_switch import kill_switch_state
 from app.ares.planner import DISRUPTIVE_ACTIONS
+from app.core.mcp_context import evaluate_mcp_action_policy, normalize_mcp_context
 from app.core.signing import verify_payload_signature
 from app.redqueen.policy_matrix import evaluate_policy
 
@@ -37,6 +38,16 @@ def validate_verdict(verdict: dict) -> ValidationResult:
 
     controls = verdict.get("execution_controls")
     controls = controls if isinstance(controls, dict) else {}
+    raw_mcp_context = controls.get("mcp_context") if isinstance(controls.get("mcp_context"), dict) else {}
+    mcp_context = normalize_mcp_context(raw_mcp_context, target=str(verdict.get("target") or ""))
+    mcp_policy = evaluate_mcp_action_policy(action_type, mcp_context)
+    if not mcp_policy.get("allowed", False):
+        return ValidationResult(
+            False,
+            str(mcp_policy.get("code") or "mcp_action_denied"),
+            str(mcp_policy.get("detail") or "MCP action policy denied action"),
+        )
+
     dry_run = bool(controls.get("dry_run", False))
     if action_type in DISRUPTIVE_ACTIONS and not dry_run:
         if not controls.get("threat_id") and not controls.get("change_ticket"):

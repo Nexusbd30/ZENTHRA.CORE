@@ -7,7 +7,7 @@ CRITICAL_ASSET_VALUES = {"crown_jewel", "tier0", "tier_0", "prod", "production"}
 def _list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [str(item) for item in value if item is not None][:20]
+    return [str(item).strip().lower() for item in value if item is not None and str(item).strip()][:20]
 
 
 def _bool(value: Any) -> bool:
@@ -73,3 +73,30 @@ def mcp_risk_factors(context: dict[str, Any] | None) -> list[str]:
     if context.get("blocked_actions"):
         factors.append("mcp:blocked_actions_present")
     return factors
+
+
+def evaluate_mcp_action_policy(action_type: str, context: dict[str, Any] | None) -> dict[str, Any]:
+    context = normalize_mcp_context(context)
+    action = str(action_type or "observe").strip().lower()
+    blocked_actions = set(_list(context.get("blocked_actions")))
+    allowed_actions = set(_list(context.get("allowed_actions")))
+
+    if action in blocked_actions:
+        return {
+            "allowed": False,
+            "code": "mcp_action_blocked",
+            "detail": f"MCP context blocks action '{action}' for this target",
+        }
+
+    if allowed_actions and action not in allowed_actions:
+        return {
+            "allowed": False,
+            "code": "mcp_action_not_allowed",
+            "detail": f"MCP context does not allow action '{action}' for this target",
+        }
+
+    return {
+        "allowed": True,
+        "code": "ok",
+        "detail": "MCP action policy allows action",
+    }

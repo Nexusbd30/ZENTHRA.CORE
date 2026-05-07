@@ -39,3 +39,33 @@ def test_ares_advisor_uses_llm_and_mcp_context(monkeypatch):
     assert "operator_confirmation" in review["required_safeguards"]
     assert "mcp_context_reviewed" in review["required_safeguards"]
     assert "dependency_owner_review" in review["required_safeguards"]
+
+
+def test_ares_advisor_cannot_mark_mcp_blocked_action_safe(monkeypatch):
+    monkeypatch.setattr(
+        "app.ares.advisor.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"risk":"medium","safe_to_execute":true,'
+            '"required_safeguards":[],"operator_notes":"looks safe","mcp_used":true}'
+        ),
+    )
+
+    verdict = {
+        "verdict_id": "v-2",
+        "target": "critical-db",
+        "action_type": "network_isolate",
+        "risk_score": 97,
+        "requires_human": True,
+        "causal_chain": {"impact": "data exfiltration"},
+    }
+    plan = build_plan(verdict)
+
+    review = review_plan(
+        verdict=verdict,
+        plan=plan,
+        controls={"mcp_context": {"blocked_actions": ["network_isolate"]}},
+    )
+
+    assert review["safe_to_execute"] is False
+    assert review["mcp_action_policy"]["code"] == "mcp_action_blocked"
+    assert "mcp_action_blocked" in review["required_safeguards"]

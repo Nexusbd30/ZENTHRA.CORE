@@ -121,3 +121,79 @@ async def test_ares_rejects_disruptive_action_without_traceability(test_client, 
     data = execute_resp.json()
     assert data["status"] == "rejected"
     assert data["code"] == "execution_control_missing"
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_mcp_blocked_action(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"network_isolate","confidence":0.95,'
+            '"reasoning":"containment requested","factors":["llm_containment"]}'
+        ),
+    )
+
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "critical-db",
+            "risk_score": 97,
+            "factors": ["data_exfiltration"],
+            "execution_controls": {
+                "change_ticket": "TEST-MCP-BLOCK-001",
+                "mcp_context": {"blocked_actions": ["network_isolate"]},
+            },
+        },
+    )
+    verdict = verdict_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "mcp_action_blocked"
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_action_outside_mcp_allowlist(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"identity_lockdown","confidence":0.90,'
+            '"reasoning":"identity containment requested","factors":["credential_stuffing"]}'
+        ),
+    )
+
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "srv-auth",
+            "risk_score": 88,
+            "factors": ["credential_stuffing"],
+            "execution_controls": {
+                "change_ticket": "TEST-MCP-ALLOW-001",
+                "mcp_context": {"allowed_actions": ["observe", "soar_delegate"]},
+            },
+        },
+    )
+    verdict = verdict_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "mcp_action_not_allowed"

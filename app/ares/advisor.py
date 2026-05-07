@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from app.core.ai_provider import ai_provider
-from app.core.mcp_context import normalize_mcp_context
+from app.core.mcp_context import evaluate_mcp_action_policy, normalize_mcp_context
 
 ARES_ADVISOR_SYSTEM_PROMPT = """
 Eres ARES Advisor, revisor tactico de ejecucion defensiva.
@@ -74,6 +74,7 @@ def review_plan(
     )
     parsed = ai_provider.parse_json(raw)
     fallback_risk = _risk_from_plan(plan)
+    mcp_action_policy = evaluate_mcp_action_policy(str(plan.get("action_type") or ""), mcp_context)
 
     required_safeguards = parsed.get("required_safeguards")
     if not isinstance(required_safeguards, list):
@@ -91,12 +92,18 @@ def review_plan(
         required_safeguards.append("dependency_owner_review")
     if mcp_context.get("blocked_actions"):
         required_safeguards.append("blocked_action_policy_review")
+    if not mcp_action_policy.get("allowed", False):
+        required_safeguards.append(str(mcp_action_policy.get("code") or "mcp_action_denied"))
 
     return {
         "provider": "llm",
         "risk": str(parsed.get("risk") or fallback_risk),
-        "safe_to_execute": bool(parsed.get("safe_to_execute", fallback_risk not in {"critical"})),
+        "safe_to_execute": bool(
+            mcp_action_policy.get("allowed", False)
+            and parsed.get("safe_to_execute", fallback_risk not in {"critical"})
+        ),
         "required_safeguards": list(dict.fromkeys(str(item) for item in required_safeguards if item)),
         "operator_notes": str(parsed.get("operator_notes") or "ARES advisor fallback review applied"),
         "mcp_used": bool(parsed.get("mcp_used") or bool(mcp_context)),
+        "mcp_action_policy": mcp_action_policy,
     }
