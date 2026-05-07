@@ -86,5 +86,6 @@ async def test_ares_lifecycle_from_threat_supports_dry_run(test_client, auth_tok
     execution = body["execution"]["execution"]
     assert body["execution"]["status"] == "executed"
     assert execution["mode"] == "dry_run"
+    assert execution["advisor_review"]["provider"] == "llm"
     assert execution["rollback_available"] is False
     assert all(step["status"] == "planned" for step in execution["executed_steps"])

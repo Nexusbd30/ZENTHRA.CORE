@@ -92,6 +92,10 @@ class Settings(BaseSettings):
     AI_TIMEOUT_SEC: float = 8.0
     AI_TEMPERATURE: float = 0.1
 
+    # MCP / operational context bridge
+    MCP_CONTEXT_ENABLED: bool = True
+    MCP_CONTEXT_MODE: str = "manual_context"  # manual_context | external_mcp
+
     # Governance thresholds
     REDQUEEN_AUTONOMY_MAX: float = 95.0
     REDQUEEN_HUMAN_APPROVAL_SCORE: float = 90.0

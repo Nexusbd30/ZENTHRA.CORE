@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.mcp_context import mcp_risk_factors
+
 LEVEL_BASE = {
     "critical": 92,
     "high": 80,
@@ -51,6 +53,7 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
     labels = _dict(perception.get("labels"))
     annotations = _dict(perception.get("annotations"))
     siem = _dict(perception.get("siem"))
+    mcp_context = _dict(perception.get("mcp_context"))
 
     try:
         occurrences = int(metadata.get("occurrences", 0) or 0)
@@ -77,6 +80,33 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
         score += 2
     if perception.get("database_name") or perception.get("database_host"):
         score += 5
+    if mcp_context.get("critical_dependency"):
+        score += 8
+    if str(mcp_context.get("business_criticality", "")).lower() in {
+        "critical",
+        "mission_critical",
+        "tier0",
+        "tier_0",
+    }:
+        score += 6
+    if str(mcp_context.get("asset_tier", "")).lower() in {
+        "crown_jewel",
+        "tier0",
+        "tier_0",
+        "prod",
+        "production",
+    }:
+        score += 5
+    if str(mcp_context.get("blast_radius", "")).lower() in {"large", "high", "enterprise"}:
+        score += 5
+    if mcp_context.get("exposed_to_internet"):
+        score += 4
+    try:
+        active_incident_count = int(mcp_context.get("active_incident_count", 0) or 0)
+    except (TypeError, ValueError):
+        active_incident_count = 0
+    if active_incident_count:
+        score += min(8, active_incident_count * 2)
 
     text = " ".join(
         str(value).lower()
@@ -90,6 +120,7 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
         if value
     )
     matched_signals = [name for name in SIGNAL_WEIGHTS if name in text]
+    mcp_factors = mcp_risk_factors(mcp_context)
     score += sum(SIGNAL_WEIGHTS[name] for name in matched_signals)
 
     score = max(0.0, min(100.0, score))
@@ -104,6 +135,7 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
             "occurrences": occurrences,
             "active_minutes": active_minutes,
             "matched_signals": matched_signals,
+            "mcp_factors": mcp_factors,
             "source_ip_present": bool(perception.get("source_ip")),
             "database_asset": bool(perception.get("database_name") or perception.get("database_host")),
         },

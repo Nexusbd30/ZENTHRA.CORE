@@ -65,6 +65,13 @@ def test_perception_and_risk_scorer_use_enriched_siem_signals():
     threat.id = "threat-001"
 
     perception = build_threat_perception(threat)
+    perception["mcp_context"] = {
+        "critical_dependency": True,
+        "asset_tier": "crown_jewel",
+        "business_criticality": "critical",
+        "blast_radius": "enterprise",
+        "active_incident_count": 2,
+    }
     risk = score_perception(perception)
 
     assert perception["target"] == "db-api"
@@ -72,4 +79,6 @@ def test_perception_and_risk_scorer_use_enriched_siem_signals():
     assert perception["siem"]["active_minutes"] >= 79
     assert "siem_severity:critical" in perception["factors"]
     assert "data_exfiltration" in risk["score_inputs"]["matched_signals"]
+    assert "mcp:critical_dependency" in risk["score_inputs"]["mcp_factors"]
+    assert "mcp:asset_tier:crown_jewel" in risk["score_inputs"]["mcp_factors"]
     assert risk["risk_score"] >= 90

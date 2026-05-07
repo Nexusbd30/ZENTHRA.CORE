@@ -5,11 +5,13 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from app.ares.advisor import review_plan
 from app.ares.executor import execute_plan
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
+from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
 from app.models.execution_result import ExecutionResult
 from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
@@ -78,11 +80,19 @@ class AutonomyService:
         factors: list[str],
         execution_controls: dict | None = None,
     ) -> dict:
+        controls = execution_controls or {}
+        mcp_context = normalize_mcp_context(
+            controls.get("mcp_context") if isinstance(controls.get("mcp_context"), dict) else {},
+            target=target,
+        )
+        factors = [*factors]
+        if mcp_context:
+            factors.extend(mcp_risk_factors(mcp_context))
         verdict = generate_verdict(
             target=target,
             risk_score=risk_score,
             factors=factors,
-            execution_controls=execution_controls or {},
+            execution_controls={**controls, "mcp_context": mcp_context},
         )
         AutonomyService.persist_verdict(db, verdict)
         audit_autonomy_event(
@@ -111,22 +121,26 @@ class AutonomyService:
             return {"status": "not_found", "threat_id": threat_id}
 
         perception = build_threat_perception(threat)
-        score = score_perception(perception)
         memory = recall_threat_context(
             db,
             target=str(perception.get("target") or ""),
             fingerprint=str(getattr(threat, "fingerprint", "") or "") or None,
         )
-        mcp_context = (
-            execution_controls.get("mcp_context")
-            if isinstance(execution_controls, dict)
-            and isinstance(execution_controls.get("mcp_context"), dict)
-            else {}
+        raw_mcp_context = (
+            execution_controls.get("mcp_context") if isinstance(execution_controls, dict) else {}
         )
+        mcp_context = normalize_mcp_context(
+            raw_mcp_context if isinstance(raw_mcp_context, dict) else {},
+            target=str(perception.get("target") or ""),
+        )
+        if mcp_context:
+            perception["mcp_context"] = mcp_context
+        score = score_perception(perception)
 
         factors = [
             *perception.get("factors", []),
             f"scoring_model:{score['scoring_model']}",
+            *mcp_risk_factors(mcp_context),
         ]
         if memory:
             factors.append(f"memory_matches:{len(memory)}")
@@ -202,8 +216,10 @@ class AutonomyService:
             rejection["result"] = result
             return rejection
 
-        plan = build_plan(verdict)
         controls = verdict.get("execution_controls") or {}
+        plan = build_plan(verdict)
+        advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
+        plan["advisor_review"] = advisor_review
         execution = execute_plan(plan, controls=controls)
         result = build_execution_result(verdict=verdict, execution=execution)
         AutonomyService.persist_execution_result(db, result)
@@ -216,6 +232,7 @@ class AutonomyService:
                 "status": execution.get("status"),
                 "duration_ms": execution.get("duration_ms", 0),
                 "result_hash": result.get("result_hash"),
+                "advisor_review": advisor_review,
             },
         )
 

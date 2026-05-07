@@ -59,6 +59,7 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             ],
             "rollback_available": False,
             "rollback_events": [],
+            "advisor_review": plan.get("advisor_review", {}),
         }
 
     if dry_run:
@@ -84,6 +85,7 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             ],
             "rollback_available": False,
             "rollback_events": [],
+            "advisor_review": plan.get("advisor_review", {}),
         }
 
     executor = ACTION_EXECUTORS[action_type]
@@ -120,6 +122,7 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             "executed_steps": executed,
             "rollback_available": True,
             "rollback_events": [],
+            "advisor_review": plan.get("advisor_review", {}),
         }
     except Exception as exc:  # noqa: BLE001
         rollback_events = tx.rollback()
@@ -131,4 +134,5 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             "rollback_available": True,
             "rollback_events": rollback_events,
             "error": str(exc),
+            "advisor_review": plan.get("advisor_review", {}),
         }
