@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.ares.approval import build_approval_payload
 from app.ares.kill_switch import kill_switch_state
 from app.core.security import require_admin_or_monitor_token
 from app.db.audit_store import list_audit_records, verify_audit_chain
@@ -20,6 +21,7 @@ router = APIRouter(
 class ExecuteRequest(BaseModel):
     verdict: dict
     human_approved: bool = False
+    approval_evidence: dict | None = None
 
 
 class LifecycleRequest(BaseModel):
@@ -28,11 +30,19 @@ class LifecycleRequest(BaseModel):
     factors: list[str] = Field(default_factory=list)
     execution_controls: dict = Field(default_factory=dict)
     human_approved: bool = False
+    approval_evidence: dict | None = None
 
 
 class ThreatLifecycleRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
     human_approved: bool = False
+    approval_evidence: dict | None = None
+
+
+class ApprovalRequest(BaseModel):
+    verdict: dict
+    approver: str = Field(..., min_length=1)
+    reason: str = ""
 
 
 @router.get("/status")
@@ -62,6 +72,16 @@ def execute_verdict(payload: ExecuteRequest, db: Session = Depends(get_db)):
         db,
         verdict=payload.verdict,
         human_approved=payload.human_approved,
+        approval_evidence=payload.approval_evidence,
+    )
+
+
+@router.post("/approval-token")
+def create_approval_token(payload: ApprovalRequest):
+    return build_approval_payload(
+        verdict=payload.verdict,
+        approver=payload.approver,
+        reason=payload.reason,
     )
 
 
@@ -78,6 +98,7 @@ def run_lifecycle(payload: LifecycleRequest, db: Session = Depends(get_db)):
         db,
         verdict=verdict,
         human_approved=payload.human_approved,
+        approval_evidence=payload.approval_evidence,
     )
 
     return {
@@ -106,6 +127,7 @@ def run_lifecycle_from_threat(
         db,
         verdict=verdict,
         human_approved=payload.human_approved,
+        approval_evidence=payload.approval_evidence,
     )
 
     return {
@@ -130,6 +152,30 @@ def list_results(verdict_id: str, db: Session = Depends(get_db)):
                 "timestamp": r.timestamp.isoformat(),
             }
             for r in rows
+        ],
+    }
+
+
+@router.get("/approvals/{verdict_id}")
+def list_approvals(verdict_id: str, db: Session = Depends(get_db)):
+    rows = AutonomyService.list_approvals(db, verdict_id)
+    return {
+        "verdict_id": verdict_id,
+        "count": len(rows),
+        "items": [
+            {
+                "approval_id": row.approval_id,
+                "verdict_id": row.verdict_id,
+                "target": row.target,
+                "action_type": row.action_type,
+                "risk_score": row.risk_score,
+                "approver": row.approver,
+                "reason": row.reason,
+                "signature": row.signature,
+                "approved_at": row.approved_at.isoformat(),
+                "recorded_at": row.recorded_at.isoformat(),
+            }
+            for row in rows
         ],
     }
 

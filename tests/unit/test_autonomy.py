@@ -41,6 +41,7 @@ async def test_ares_lifecycle_requires_human_for_high_risk(test_client, monkeypa
             "target": "critical-db",
             "risk_score": 97,
             "factors": ["data_exfiltration_pattern"],
+            "execution_controls": {"change_ticket": "TEST-HUMAN-PENDING-001"},
             "human_approved": False,
         },
     )
@@ -48,6 +49,132 @@ async def test_ares_lifecycle_requires_human_for_high_risk(test_client, monkeypa
     data = resp.json()
     assert data["verdict"]["requires_human"] is True
     assert data["execution"]["status"] == "pending_human_approval"
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_human_boolean_without_signed_approval(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "critical-db",
+            "risk_score": 97,
+            "factors": ["data_exfiltration"],
+            "execution_controls": {"change_ticket": "TEST-APPROVAL-001"},
+        },
+    )
+    verdict = verdict_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "approval_missing"
+
+
+@pytest.mark.asyncio
+async def test_ares_accepts_signed_human_approval_for_high_risk(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "critical-db",
+            "risk_score": 97,
+            "factors": ["data_exfiltration"],
+            "execution_controls": {"change_ticket": "TEST-APPROVAL-002"},
+        },
+    )
+    verdict = verdict_resp.json()
+
+    approval_resp = await test_client.post(
+        "/api/v1/ares/approval-token",
+        headers=headers,
+        json={
+            "verdict": verdict,
+            "approver": "soc-lead",
+            "reason": "approved containment in maintenance window",
+        },
+    )
+    approval = approval_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={
+            "verdict": verdict,
+            "human_approved": True,
+            "approval_evidence": approval,
+        },
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "executed"
+    assert data["execution"]["status"] == "success"
+
+    approvals_resp = await test_client.get(
+        f"/api/v1/ares/approvals/{verdict['verdict_id']}",
+        headers=headers,
+    )
+    approvals = approvals_resp.json()
+    assert approvals["count"] == 1
+    assert approvals["items"][0]["approver"] == "soc-lead"
+    assert approvals["items"][0]["signature"] == approval["signature"]
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_approval_for_different_verdict(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    first_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "critical-db",
+            "risk_score": 97,
+            "factors": ["data_exfiltration"],
+            "execution_controls": {"change_ticket": "TEST-APPROVAL-003"},
+        },
+    )
+    first_verdict = first_resp.json()
+    approval_resp = await test_client.post(
+        "/api/v1/ares/approval-token",
+        headers=headers,
+        json={"verdict": first_verdict, "approver": "soc-lead", "reason": "approve first"},
+    )
+
+    second_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "critical-db",
+            "risk_score": 97,
+            "factors": ["data_exfiltration"],
+            "execution_controls": {"change_ticket": "TEST-APPROVAL-004"},
+        },
+    )
+    second_verdict = second_resp.json()
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={
+            "verdict": second_verdict,
+            "human_approved": True,
+            "approval_evidence": approval_resp.json(),
+        },
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "approval_verdict_mismatch"
 
 
 @pytest.mark.asyncio

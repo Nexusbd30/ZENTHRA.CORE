@@ -6,12 +6,14 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.ares.advisor import review_plan
+from app.ares.approval import verify_approval_payload
 from app.ares.executor import execute_plan
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
 from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
+from app.models.approval_record import ApprovalRecord
 from app.models.execution_result import ExecutionResult
 from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
@@ -19,12 +21,34 @@ from app.redqueen.decision_engine import generate_verdict
 from app.redqueen.memory import recall_threat_context
 from app.redqueen.perception import build_threat_perception
 from app.redqueen.risk_scorer import score_perception
+from app.repositories.approval_repository import ApprovalRepository
 from app.repositories.execution_result_repository import ExecutionResultRepository
 from app.repositories.threat_repository import ThreatRepository
 from app.repositories.verdict_repository import VerdictRepository
 
 
 class AutonomyService:
+    @staticmethod
+    def persist_approval(db: Session, approval_data: dict) -> ApprovalRecord:
+        approved_at = datetime.fromisoformat(
+            str(approval_data.get("approved_at")).replace("Z", "+00:00")
+        )
+        approval = ApprovalRecord(
+            verdict_id=str(approval_data.get("verdict_id", "")),
+            target=str(approval_data.get("target", "")),
+            action_type=str(approval_data.get("action_type", "")),
+            risk_score=float(approval_data.get("risk_score", 0.0)),
+            approver=str(approval_data.get("approver", "")),
+            reason=str(approval_data.get("reason", "")),
+            signature=str(approval_data.get("signature", "")),
+            approved_at=approved_at,
+        )
+        return ApprovalRepository.create(db, approval)
+
+    @staticmethod
+    def list_approvals(db: Session, verdict_id: str) -> list[ApprovalRecord]:
+        return ApprovalRepository.list_by_verdict(db, verdict_id)
+
     @staticmethod
     def persist_verdict(db: Session, verdict_data: dict) -> Verdict:
         existing = VerdictRepository.get_by_id(db, str(verdict_data.get("verdict_id", "")))
@@ -178,21 +202,9 @@ class AutonomyService:
         *,
         verdict: dict,
         human_approved: bool,
+        approval_evidence: dict | None = None,
     ) -> dict:
         AutonomyService.persist_verdict(db, verdict)
-
-        if verdict.get("requires_human") and not human_approved:
-            audit_autonomy_event(
-                db,
-                verdict_id=str(verdict.get("verdict_id", "")),
-                actor="ares",
-                action="execution_pending_human_approval",
-                result={"reason": "requires_human", "action_type": verdict.get("action_type")},
-            )
-            return {
-                "status": "pending_human_approval",
-                "verdict_id": verdict.get("verdict_id"),
-            }
 
         validation = validate_verdict(verdict)
         if not validation.valid:
@@ -215,6 +227,50 @@ class AutonomyService:
             )
             rejection["result"] = result
             return rejection
+
+        if verdict.get("requires_human") and not human_approved:
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="ares",
+                action="execution_pending_human_approval",
+                result={"reason": "requires_human", "action_type": verdict.get("action_type")},
+            )
+            return {
+                "status": "pending_human_approval",
+                "verdict_id": verdict.get("verdict_id"),
+            }
+
+        if verdict.get("requires_human"):
+            approval_check = verify_approval_payload(verdict=verdict, approval=approval_evidence)
+            if not approval_check.get("valid", False):
+                code = str(approval_check.get("code") or "approval_invalid")
+                detail = str(approval_check.get("detail") or "Human approval evidence is invalid")
+                audit_autonomy_event(
+                    db,
+                    verdict_id=str(verdict.get("verdict_id", "")),
+                    actor="ares",
+                    action="execution_rejected",
+                    result={"code": code, "detail": detail},
+                )
+                return {
+                    "status": "rejected",
+                    "code": code,
+                    "detail": detail,
+                    "verdict_id": verdict.get("verdict_id"),
+                }
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="human",
+                action="execution_approved",
+                result={
+                    "approver": approval_evidence.get("approver") if approval_evidence else "",
+                    "approval_signature": approval_evidence.get("signature") if approval_evidence else "",
+                },
+            )
+            if approval_evidence:
+                AutonomyService.persist_approval(db, approval_evidence)
 
         controls = verdict.get("execution_controls") or {}
         plan = build_plan(verdict)
