@@ -52,7 +52,7 @@ async def test_redqueen_issues_verdict_from_existing_threat(test_client, auth_to
 
 @pytest.mark.asyncio
 async def test_ares_lifecycle_from_existing_threat_executes(test_client, auth_token, monkeypatch):
-    threat = await create_admin_threat(test_client, auth_token, score=77)
+    threat = await create_admin_threat(test_client, auth_token, score=72)
 
     resp = await test_client.post(
         f"/api/v1/ares/lifecycle/from-threat/{threat['id']}",

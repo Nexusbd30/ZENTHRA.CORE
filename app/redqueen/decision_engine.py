@@ -158,6 +158,7 @@ def generate_verdict(
         causal_chain=causal_chain,
         execution_controls={
             **controls,
+            "policy_result": policy,
             "mcp_context": mcp_context,
             "mcp_action_policy": mcp_action_policy,
             "llm_reasoning": ai_decision["reasoning"],

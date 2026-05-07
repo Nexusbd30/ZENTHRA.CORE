@@ -241,7 +241,9 @@ class AutonomyService:
                 "verdict_id": verdict.get("verdict_id"),
             }
 
-        if verdict.get("requires_human"):
+        controls = verdict.get("execution_controls") or {}
+        dry_run = bool(controls.get("dry_run", False))
+        if verdict.get("requires_human") and not dry_run:
             approval_check = verify_approval_payload(verdict=verdict, approval=approval_evidence)
             if not approval_check.get("valid", False):
                 code = str(approval_check.get("code") or "approval_invalid")
@@ -272,7 +274,6 @@ class AutonomyService:
             if approval_evidence:
                 AutonomyService.persist_approval(db, approval_evidence)
 
-        controls = verdict.get("execution_controls") or {}
         plan = build_plan(verdict)
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review

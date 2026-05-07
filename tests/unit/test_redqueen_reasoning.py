@@ -25,6 +25,7 @@ def test_llm_cannot_downgrade_critical_action(monkeypatch):
     assert verdict["action_type"] == "network_isolate"
     assert ACTION_SEVERITY[verdict["action_type"]] >= ACTION_SEVERITY["network_isolate"]
     assert verdict["execution_controls"]["minimum_action_enforced"] is True
+    assert verdict["execution_controls"]["policy_result"]["code"] == "human_required"
     assert verdict["causal_chain"]["action"] == "network_isolate"
 
 

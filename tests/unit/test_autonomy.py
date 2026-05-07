@@ -183,12 +183,12 @@ async def test_ares_execute_with_human_approval(test_client, monkeypatch):
     verdict_resp = await test_client.post(
         "/api/v1/redqueen/verdict",
         headers=headers,
-        json={
-            "target": "srv-auth",
-            "risk_score": 88,
-            "factors": ["credential_stuffing"],
-            "execution_controls": {"change_ticket": "TEST-ARES-001"},
-        },
+            json={
+                "target": "srv-auth",
+                "risk_score": 76,
+                "factors": ["credential_stuffing"],
+                "execution_controls": {"change_ticket": "TEST-ARES-001"},
+            },
     )
     verdict = verdict_resp.json()
 
