@@ -20,6 +20,7 @@ from app.models.verdict import Verdict
 from app.redqueen.decision_engine import generate_verdict
 from app.redqueen.memory import recall_threat_context
 from app.redqueen.perception import build_threat_perception
+from app.redqueen.risk_memory import read_entity_risk_memory, record_risk_memory
 from app.redqueen.risk_scorer import score_perception
 from app.repositories.approval_repository import ApprovalRepository
 from app.repositories.execution_result_repository import ExecutionResultRepository
@@ -96,6 +97,10 @@ class AutonomyService:
         return ExecutionResultRepository.list_by_verdict(db, verdict_id)
 
     @staticmethod
+    def get_risk_memory(db: Session, target: str, limit: int = 10) -> dict:
+        return read_entity_risk_memory(db, target=target, limit=limit)
+
+    @staticmethod
     def issue_verdict(
         db: Session,
         *,
@@ -119,6 +124,7 @@ class AutonomyService:
             execution_controls={**controls, "mcp_context": mcp_context},
         )
         AutonomyService.persist_verdict(db, verdict)
+        risk_memory = record_risk_memory(db, verdict=verdict)
         audit_autonomy_event(
             db,
             verdict_id=str(verdict.get("verdict_id", "")),
@@ -129,6 +135,7 @@ class AutonomyService:
                 "risk_score": verdict.get("risk_score"),
                 "action_type": verdict.get("action_type"),
                 "requires_human": verdict.get("requires_human"),
+                "risk_memory": risk_memory,
             },
         )
         return verdict
@@ -187,11 +194,13 @@ class AutonomyService:
             execution_controls=controls,
         )
         AutonomyService.persist_verdict(db, verdict)
+        risk_memory = record_risk_memory(db, verdict=verdict)
         return {
             "status": "ok",
             "threat_id": threat_id,
             "perception": perception,
             "risk": score,
+            "risk_memory": risk_memory,
             "memory": memory,
             "verdict": verdict,
         }

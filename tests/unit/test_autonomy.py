@@ -31,6 +31,14 @@ async def test_redqueen_issues_signed_verdict(test_client, monkeypatch):
     }
     assert isinstance(data.get("signature"), str) and len(data["signature"]) > 20
 
+    memory_resp = await test_client.get(
+        "/api/v1/redqueen/memory/host-01",
+        headers=autonomy_headers(monkeypatch),
+    )
+    memory = memory_resp.json()
+    assert memory["profile"]["entity_id"] == "host-01"
+    assert memory["scores"][0]["score_0_100"] == data["risk_score"]
+
 
 @pytest.mark.asyncio
 async def test_ares_lifecycle_requires_human_for_high_risk(test_client, monkeypatch):

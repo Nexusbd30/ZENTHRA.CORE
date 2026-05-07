@@ -83,3 +83,8 @@ def read_verdict(verdict_id: str, db: Session = Depends(get_db)):
         "policy_check": verdict.policy_check,
         "requires_human": verdict.requires_human,
     }
+
+
+@router.get("/memory/{target}")
+def read_risk_memory(target: str, limit: int = 10, db: Session = Depends(get_db)):
+    return AutonomyService.get_risk_memory(db, target=target, limit=limit)
