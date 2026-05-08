@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import require_admin_or_monitor_token
 from app.db.session import get_db
+from app.db.vector import vector_store
 from app.redqueen.policy_matrix import evaluate_policy
 from app.services.autonomy_service import AutonomyService
 
@@ -25,6 +26,13 @@ class VerdictRequest(BaseModel):
 
 class ThreatVerdictRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
+
+
+class VectorMemoryRequest(BaseModel):
+    collection: str = Field(default="redqueen-memory", min_length=1)
+    record_id: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1)
+    metadata: dict = Field(default_factory=dict)
 
 
 @router.get("/status")
@@ -108,3 +116,33 @@ def read_risk_drift(
 @router.get("/training/report")
 def read_training_report(limit: int = 100, db: Session = Depends(get_db)):
     return AutonomyService.get_training_report(db, limit=max(1, min(limit, 500)))
+
+
+@router.get("/vector/status")
+def read_vector_status():
+    return vector_store.status()
+
+
+@router.post("/vector/upsert")
+def upsert_vector_memory(payload: VectorMemoryRequest):
+    record = vector_store.upsert(
+        collection=payload.collection,
+        record_id=payload.record_id,
+        text=payload.text,
+        metadata=payload.metadata,
+    )
+    return {
+        "status": "ok",
+        "collection": payload.collection,
+        "record_id": record.id,
+        "dimensions": len(record.vector),
+    }
+
+
+@router.get("/vector/search")
+def search_vector_memory(collection: str = "redqueen-memory", q: str = "", limit: int = 5):
+    return {
+        "collection": collection,
+        "query": q,
+        "items": vector_store.search(collection=collection, query=q, limit=limit),
+    }

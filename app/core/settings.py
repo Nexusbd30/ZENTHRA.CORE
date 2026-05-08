@@ -96,6 +96,12 @@ class Settings(BaseSettings):
     MCP_CONTEXT_ENABLED: bool = True
     MCP_CONTEXT_MODE: str = "manual_context"  # manual_context | external_mcp
 
+    # Vector memory / semantic context
+    VECTOR_STORE_ENABLED: bool = True
+    VECTOR_STORE_PROVIDER: str = "local"  # local | qdrant | milvus
+    VECTOR_DIMENSIONS: int = 64
+    VECTOR_COLLECTION_PREFIX: str = "zenthra"
+
     # Streaming ingestion
     KAFKA_INGESTION_ENABLED: bool = False
     KAFKA_BOOTSTRAP_SERVERS: str = "127.0.0.1:9092"
