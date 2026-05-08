@@ -10,10 +10,12 @@
 
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # ----------------------------------------------------------
 # Alembic Config (lee alembic.ini)
@@ -27,19 +29,17 @@ if config.config_file_name is not None:
 # ----------------------------------------------------------
 # ✅ Fuente de verdad: settings del proyecto
 # ----------------------------------------------------------
+# ----------------------------------------------------------
+# ✅ Importar modelos para que Alembic los detecte en autogenerate
+# (NO borrar aunque parezca unused)
+# ----------------------------------------------------------
+import app.models  # noqa: F401, E402
 from app.core.config import settings  # noqa: E402
 
 # ----------------------------------------------------------
 # ✅ Metadata real
 # ----------------------------------------------------------
 from app.models.base import Base  # noqa: E402
-
-# ----------------------------------------------------------
-# ✅ Importar modelos para que Alembic los detecte en autogenerate
-# (NO borrar aunque parezcan unused)
-# ----------------------------------------------------------
-from app.models import user  # noqa: F401, E402
-from app.models import threat_model  # noqa: F401, E402
 
 target_metadata = Base.metadata
 
@@ -48,6 +48,8 @@ def get_url() -> str:
     """
     Devuelve la URL efectiva desde settings (.env).
     """
+    if os.environ.get("ALEMBIC_DATABASE_URI"):
+        return str(os.environ["ALEMBIC_DATABASE_URI"])
     return str(settings.SQLALCHEMY_DATABASE_URI)
 
 
