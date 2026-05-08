@@ -70,6 +70,19 @@ const isMonitoringPath = (config) => {
   }
 };
 
+const isAutonomyPath = (config) => {
+  try {
+    const url = new URL(config.url, API_BASE_URL);
+    return (
+      url.pathname.startsWith("/api/v1/redqueen/") ||
+      url.pathname.startsWith("/api/v1/ares/")
+    );
+  } catch {
+    const url = String(config?.url || "");
+    return url.startsWith("/api/v1/redqueen/") || url.startsWith("/api/v1/ares/");
+  }
+};
+
 /**
  * Determina si una petición es al endpoint de login.
  */
@@ -110,7 +123,7 @@ nexusApi.interceptors.request.use(
     }
 
     // 2) /monitoring/* → SIEMPRE via monitor token (no JWT de usuario)
-    if (isMonitoringPath(config)) {
+    if (isMonitoringPath(config) || isAutonomyPath(config)) {
       if (MONITOR_TOKEN) {
         config.headers.Authorization = `Bearer ${MONITOR_TOKEN}`;
       } else {
@@ -366,10 +379,105 @@ export const getRuntimeLogs = async ({ limit = 200, severity, search } = {}) => 
   if (severity && severity !== "all") params.severity = severity;
   if (search) params.search = search;
 
-  const { data } = await nexusApi.get("/users/runtime-logs", {
+  const { data } = await nexusApi.get("/monitoring/logs", {
     params,
     headers: { Accept: "application/json" },
   });
+  return data;
+};
+
+export const getProductionReadiness = async () => {
+  const { data } = await nexusApi.get("/monitoring/production-readiness");
+  return data;
+};
+
+export const getResponseLogs = async ({ limit = 100, source, status } = {}) => {
+  const params = { limit };
+  if (source) params.source = source;
+  if (status) params.status = status;
+
+  const { data } = await nexusApi.get("/monitoring/response-logs", { params });
+  return Array.isArray(data) ? data : [];
+};
+
+export const getRedQueenStatus = async () => {
+  const { data } = await nexusApi.get("/api/v1/redqueen/status");
+  return data;
+};
+
+export const evaluateRedQueenPolicy = async ({ score, actionType }) => {
+  const { data } = await nexusApi.post("/api/v1/redqueen/policy/evaluate", null, {
+    params: { score, action_type: actionType },
+  });
+  return data;
+};
+
+export const issueRedQueenVerdict = async (payload) => {
+  const { data } = await nexusApi.post("/api/v1/redqueen/verdict", payload);
+  return data;
+};
+
+export const issueRedQueenVerdictFromThreat = async (threatId, payload = {}) => {
+  const { data } = await nexusApi.post(
+    `/api/v1/redqueen/verdict/from-threat/${threatId}`,
+    payload
+  );
+  return data;
+};
+
+export const getRedQueenVerdict = async (verdictId) => {
+  const { data } = await nexusApi.get(`/api/v1/redqueen/verdict/${verdictId}`);
+  return data;
+};
+
+export const getAresStatus = async () => {
+  const { data } = await nexusApi.get("/api/v1/ares/status");
+  return data;
+};
+
+export const getAresOperationFlow = async () => {
+  const { data } = await nexusApi.get("/api/v1/ares/operation-flow");
+  return data;
+};
+
+export const setAresKillSwitch = async (mode) => {
+  const { data } = await nexusApi.post(`/api/v1/ares/kill-switch/${mode}`);
+  return data;
+};
+
+export const runAresLifecycle = async (payload) => {
+  const { data } = await nexusApi.post("/api/v1/ares/lifecycle", payload);
+  return data;
+};
+
+export const runAresLifecycleFromThreat = async (threatId, payload = {}) => {
+  const { data } = await nexusApi.post(
+    `/api/v1/ares/lifecycle/from-threat/${threatId}`,
+    payload
+  );
+  return data;
+};
+
+export const getAresResults = async (verdictId) => {
+  const { data } = await nexusApi.get(`/api/v1/ares/results/${verdictId}`);
+  return data;
+};
+
+export const getAresApprovals = async (verdictId) => {
+  const { data } = await nexusApi.get(`/api/v1/ares/approvals/${verdictId}`);
+  return data;
+};
+
+export const getAresAudit = async ({ verdictId, limit = 50 } = {}) => {
+  const params = { limit };
+  if (verdictId) params.verdict_id = verdictId;
+
+  const { data } = await nexusApi.get("/api/v1/ares/audit", { params });
+  return data;
+};
+
+export const verifyAresAudit = async () => {
+  const { data } = await nexusApi.get("/api/v1/ares/audit/verify");
   return data;
 };
 
