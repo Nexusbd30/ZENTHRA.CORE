@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.security import require_admin_or_monitor_token
 from app.db.session import get_db
 from app.ingestion.adapters import ADAPTERS, adapt_event
+from app.ingestion.kafka_consumer import kafka_status
 from app.ingestion.normalizer import normalize_event
 from app.models.threat_model import ThreatModel
 
@@ -88,6 +89,7 @@ def ingestion_status():
         "inputs": ["siem", "edr", "iam", "netflow", "prometheus"],
         "adapters": sorted(ADAPTERS),
         "dedupe": "fingerprint",
+        "kafka": kafka_status(),
     }
 
 

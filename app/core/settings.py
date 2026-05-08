@@ -96,6 +96,14 @@ class Settings(BaseSettings):
     MCP_CONTEXT_ENABLED: bool = True
     MCP_CONTEXT_MODE: str = "manual_context"  # manual_context | external_mcp
 
+    # Streaming ingestion
+    KAFKA_INGESTION_ENABLED: bool = False
+    KAFKA_BOOTSTRAP_SERVERS: str = "127.0.0.1:9092"
+    KAFKA_INGESTION_TOPICS: str = "zenthra.siem,zenthra.edr,zenthra.iam,zenthra.netflow"
+    KAFKA_CONSUMER_GROUP_ID: str = "zenthra-core-ingestion"
+    KAFKA_AUTO_OFFSET_RESET: str = "latest"
+    KAFKA_POLL_TIMEOUT_SEC: float = 1.0
+
     # Governance thresholds
     REDQUEEN_AUTONOMY_MAX: float = 95.0
     REDQUEEN_HUMAN_APPROVAL_SCORE: float = 90.0
