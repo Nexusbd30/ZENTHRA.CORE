@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 from app.core.security import require_admin_or_monitor_token
 from app.core.settings import settings  # ✅ Config dinámica desde .env
 from app.db.session import get_db  # 🔁 Ajusta este import si tu get_db está en otro módulo
+from app.models.response_log import ResponseLog
 from app.services.runtime_log_service import list_runtime_logs
 
 _require_internal_bearer = require_admin_or_monitor_token
@@ -107,6 +108,86 @@ _PROM_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 # Logger de auditoría (configurado en main.py)
 AUDIT_LOG = logging.getLogger("alerts_audit")
 
+UI_ROLE_CAPABILITIES = {
+    "admin": [
+        "users.manage",
+        "threats.write",
+        "monitoring.read",
+        "redqueen.control",
+        "ares.execute",
+        "audit.read",
+    ],
+    "analyst": [
+        "threats.read",
+        "monitoring.read",
+        "redqueen.read",
+        "ares.plan",
+        "audit.read",
+    ],
+    "operator": [
+        "threats.read",
+        "monitoring.read",
+        "ares.plan",
+        "ares.execute_dry_run",
+    ],
+    "viewer": [
+        "threats.read",
+        "monitoring.read",
+        "audit.read",
+    ],
+}
+
+
+def _production_readiness_report() -> dict[str, Any]:
+    ai_provider = str(getattr(settings, "AI_PROVIDER", "local_stub") or "local_stub").lower()
+    action_mode = str(getattr(settings, "ACTION_EXECUTION_MODE", "mock") or "mock").lower()
+    warnings = []
+
+    if ai_provider in {"local_stub", "stub", "mock"}:
+        warnings.append("AI_PROVIDER usa modo laboratorio; configurar ollama/openai/azure_openai.")
+    if action_mode in {"mock", "dry_run"}:
+        warnings.append("ACTION_EXECUTION_MODE no ejecuta acciones reales; configurar webhook.")
+    if action_mode == "webhook" and not getattr(settings, "ACTION_SHARED_TOKEN", None):
+        warnings.append("ACTION_SHARED_TOKEN requerido para ejecucion webhook real.")
+    if not _alertmanager_allowed_cidrs():
+        warnings.append("ALERTMANAGER_ALLOWED_CIDRS esta vacio.")
+
+    return {
+        "environment": settings.ENV,
+        "status": "ready" if not warnings else "needs_attention",
+        "ai": {
+            "enabled": bool(settings.AI_ENABLED),
+            "provider": ai_provider,
+            "model": settings.AI_MODEL,
+            "real_mode": ai_provider not in {"local_stub", "stub", "mock"},
+        },
+        "ares": {
+            "execution_mode": action_mode,
+            "real_mode": action_mode == "webhook",
+            "shared_token_configured": bool(getattr(settings, "ACTION_SHARED_TOKEN", None)),
+            "control_urls_configured": {
+                "network": bool(settings.NETWORK_CONTROL_URL),
+                "identity": bool(settings.IDENTITY_CONTROL_URL),
+                "endpoint": bool(settings.ENDPOINT_CONTROL_URL),
+                "soar": bool(settings.SOAR_CONTROL_URL),
+                "crypto": bool(settings.CRYPTO_CONTROL_URL),
+            },
+        },
+        "monitoring": {
+            "response_logs_persistent": True,
+            "alertmanager_allowed_cidrs": _alertmanager_allowed_cidrs(),
+        },
+        "frontend_contracts": {
+            "response_logs": "/monitoring/response-logs",
+            "runtime_logs": "/monitoring/logs",
+            "redqueen_verdict": "/api/v1/redqueen/verdict",
+            "ares_lifecycle": "/api/v1/ares/lifecycle",
+            "ares_execution_results": "/api/v1/ares/results/{verdict_id}",
+        },
+        "ui_rbac": UI_ROLE_CAPABILITIES,
+        "warnings": warnings,
+    }
+
 # =============================================================
 # 🔗 Routers
 # =============================================================
@@ -137,6 +218,14 @@ def debug_alerts_base():
         "HTTP_TIMEOUT": HTTP_TIMEOUT,
         "ALERTMANAGER_ALLOWED_CIDRS": _alertmanager_allowed_cidrs(),
     }
+
+
+@router.get("/production-readiness")
+def get_production_readiness():
+    """
+    Contrato operativo para UI/CI: modos reales, RBAC visual y gaps activos.
+    """
+    return _production_readiness_report()
 
 
 # =============================================================
@@ -618,6 +707,39 @@ def get_runtime_logs(
     return list_runtime_logs(limit=limit, severity=severity, search=search)
 
 
+@router.get("/response-logs")
+def get_response_logs(
+    limit: int = Query(100, ge=1, le=500),
+    source: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Devuelve evidencias persistidas de webhooks/acciones para la UI SOC.
+    """
+    query = db.query(ResponseLog)
+    if source:
+        query = query.filter(ResponseLog.source == source)
+    if status:
+        query = query.filter(ResponseLog.status == status)
+
+    rows = query.order_by(ResponseLog.timestamp.desc()).limit(limit).all()
+    return [
+        {
+            "id": row.id,
+            "timestamp": row.timestamp.isoformat(),
+            "source": row.source,
+            "source_ip": row.source_ip,
+            "payload_hash": row.payload_hash,
+            "payload_size": row.payload_size,
+            "alert_count": row.alert_count,
+            "status": row.status,
+            "sample": row.sample,
+        }
+        for row in rows
+    ]
+
+
 # =============================================================
 # 📬 Alertmanager — Webhook receiver (IP Whitelist + Auditoría)
 # =============================================================
@@ -627,20 +749,15 @@ def get_runtime_logs(
     "/hooks/alertmanager",
     dependencies=[Depends(_require_docker_network_source)],
 )
-async def alertmanager_hook(request: Request):
+async def alertmanager_hook(request: Request, db: Session = Depends(get_db)):
     """
     Webhook receptor de Alertmanager (sin prefijo /monitoring).
-    Protegido por IP Whitelist (red Docker).
-    Auditado: timestamp + hash SHA256 del payload.
-
-    Futuro:
-      - Persistencia en DB (tabla response_logs / incident_logs)
-      - Disparo de playbooks automáticos (Fase V del roadmap)
+    Protegido por IP Whitelist y persistido como evidencia forense.
     """
     try:
-      payload = await request.json()
+        payload = await request.json()
     except Exception as e:  # noqa: BLE001
-      raise HTTPException(status_code=400, detail=f"JSON inválido: {e}") from e
+        raise HTTPException(status_code=400, detail=f"JSON inválido: {e}") from e
 
     # Serializa estable y calcula SHA256 (evidencia forense)
     try:
@@ -657,19 +774,39 @@ async def alertmanager_hook(request: Request):
             detail=f"Error calculando hash: {e}",
         ) from e
 
+    source_ip = request.client.host if request.client else "unknown"
+    received = len(payload) if isinstance(payload, list) else 1
+
     # Escribe entrada de auditoría (no guarda el payload completo,
     # solo un sample para evitar logs enormes).
     AUDIT_LOG.info(
         "ALERT_HOOK ip=%s len=%d sha256=%s sample=%s",
-        request.client.host if request.client else "unknown",
+        source_ip,
         len(payload_str),
         payload_hash,
         payload_str[:256],
     )
 
-    # TODO: persistencia DB (response_logs) y/o playbooks
+    response_log = ResponseLog(
+        source="alertmanager",
+        source_ip=source_ip,
+        payload_hash=payload_hash,
+        payload_size=len(payload_str),
+        alert_count=received,
+        status="received",
+        sample=payload_str[:512],
+    )
+    try:
+        db.add(response_log)
+        db.commit()
+        db.refresh(response_log)
+    except Exception as e:  # noqa: BLE001
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error persistiendo webhook: {e}") from e
+
     return {
         "ok": True,
+        "id": response_log.id,
         "hash": payload_hash,
-        "received": len(payload) if isinstance(payload, list) else 1,
+        "received": received,
     }

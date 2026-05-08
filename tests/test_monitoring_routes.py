@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from app.core.settings import settings
+from app.models.response_log import ResponseLog
 from app.routers import monitoring
 
 
@@ -157,7 +158,7 @@ async def test_monitoring_gpu_summary_returns_unavailable_when_no_exporter(test_
 
 
 @pytest.mark.asyncio
-async def test_alertmanager_hook_hashes_payload_from_localhost(test_client):
+async def test_alertmanager_hook_hashes_payload_from_localhost(test_client, db_session):
     payload = [{"status": "firing", "labels": {"alertname": "BackendDown"}}]
 
     resp = await test_client.post("/hooks/alertmanager", json=payload)
@@ -168,8 +169,61 @@ async def test_alertmanager_hook_hashes_payload_from_localhost(test_client):
         json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
     ).hexdigest()
     assert data["ok"] is True
+    assert data["id"]
     assert data["received"] == 1
     assert data["hash"] == expected_hash
+
+    row = db_session.query(ResponseLog).filter(ResponseLog.id == data["id"]).one()
+    assert row.source == "alertmanager"
+    assert row.payload_hash == expected_hash
+    assert row.alert_count == 1
+    assert row.status == "received"
+
+
+@pytest.mark.asyncio
+async def test_monitoring_response_logs_returns_persisted_webhook(test_client, db_session, monkeypatch):
+    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    row = ResponseLog(
+        source="alertmanager",
+        source_ip="127.0.0.1",
+        payload_hash="abc123",
+        payload_size=42,
+        alert_count=2,
+        status="received",
+        sample='[{"status":"firing"}]',
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    resp = await test_client.get(
+        "/monitoring/response-logs",
+        headers={"Authorization": "Bearer monitor-test-token"},
+    )
+
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert any(item["id"] == row.id and item["payload_hash"] == "abc123" for item in data)
+
+
+@pytest.mark.asyncio
+async def test_monitoring_production_readiness_reports_lab_modes(test_client, monkeypatch):
+    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "AI_PROVIDER", "local_stub")
+    monkeypatch.setattr(settings, "ACTION_EXECUTION_MODE", "mock")
+
+    resp = await test_client.get(
+        "/monitoring/production-readiness",
+        headers={"Authorization": "Bearer monitor-test-token"},
+    )
+
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["status"] == "needs_attention"
+    assert data["ai"]["real_mode"] is False
+    assert data["ares"]["real_mode"] is False
+    assert data["monitoring"]["response_logs_persistent"] is True
+    assert "admin" in data["ui_rbac"]
+    assert data["frontend_contracts"]["response_logs"] == "/monitoring/response-logs"
 
 
 @pytest.mark.asyncio
