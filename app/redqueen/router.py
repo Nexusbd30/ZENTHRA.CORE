@@ -8,6 +8,12 @@ from app.core.security import require_admin_or_monitor_token
 from app.db.session import get_db
 from app.db.vector import vector_store
 from app.redqueen.policy_matrix import evaluate_policy
+from app.schemas.autonomy_schema import (
+    NotFoundResponse,
+    PolicyEvaluationResponse,
+    RedQueenStatusResponse,
+    VerdictReadResponse,
+)
 from app.services.autonomy_service import AutonomyService
 
 router = APIRouter(
@@ -35,7 +41,7 @@ class VectorMemoryRequest(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
-@router.get("/status")
+@router.get("/status", response_model=RedQueenStatusResponse)
 def redqueen_status():
     return {
         "module": "redqueen",
@@ -45,7 +51,7 @@ def redqueen_status():
     }
 
 
-@router.post("/policy/evaluate")
+@router.post("/policy/evaluate", response_model=PolicyEvaluationResponse)
 def policy_evaluate(score: float, action_type: str):
     return evaluate_policy(score=score, action_type=action_type)
 
@@ -75,7 +81,7 @@ def issue_verdict_from_threat(
     )
 
 
-@router.get("/verdict/{verdict_id}")
+@router.get("/verdict/{verdict_id}", response_model=VerdictReadResponse | NotFoundResponse)
 def read_verdict(verdict_id: str, db: Session = Depends(get_db)):
     verdict = AutonomyService.get_verdict(db, verdict_id)
     if not verdict:

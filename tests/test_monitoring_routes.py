@@ -226,6 +226,27 @@ async def test_monitoring_production_readiness_reports_lab_modes(test_client, mo
     assert data["frontend_contracts"]["response_logs"] == "/monitoring/response-logs"
 
 
+def test_monitoring_openapi_exposes_frontend_contracts():
+    from app.main import app
+
+    schema = app.openapi()
+    paths = schema["paths"]
+
+    readiness_response = paths["/monitoring/production-readiness"]["get"]["responses"]["200"]
+    response_logs_response = paths["/monitoring/response-logs"]["get"]["responses"]["200"]
+    runtime_logs_response = paths["/monitoring/logs"]["get"]["responses"]["200"]
+
+    assert readiness_response["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/ProductionReadinessResponse"
+    )
+    assert response_logs_response["content"]["application/json"]["schema"]["items"]["$ref"].endswith(
+        "/ResponseLogRead"
+    )
+    assert runtime_logs_response["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/RuntimeLogsResponse"
+    )
+
+
 @pytest.mark.asyncio
 async def test_alertmanager_hook_rejects_ip_outside_configured_cidrs(test_client, monkeypatch):
     monkeypatch.setattr(settings, "ALERTMANAGER_ALLOWED_CIDRS", "10.0.0.0/8")

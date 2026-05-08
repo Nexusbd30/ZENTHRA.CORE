@@ -9,6 +9,15 @@ from app.ares.kill_switch import kill_switch_state
 from app.core.security import require_admin_or_monitor_token
 from app.db.audit_store import list_audit_records, verify_audit_chain
 from app.db.session import get_db
+from app.schemas.autonomy_schema import (
+    ApprovalListResponse,
+    AresStatusResponse,
+    AuditListResponse,
+    AuditVerifyResponse,
+    ExecutionResultsResponse,
+    KillSwitchResponse,
+    OperationFlowResponse,
+)
 from app.services.autonomy_service import AutonomyService
 
 router = APIRouter(
@@ -45,7 +54,7 @@ class ApprovalRequest(BaseModel):
     reason: str = ""
 
 
-@router.get("/status")
+@router.get("/status", response_model=AresStatusResponse)
 def ares_status():
     return {
         "module": "ares",
@@ -55,7 +64,7 @@ def ares_status():
     }
 
 
-@router.post("/kill-switch/{mode}")
+@router.post("/kill-switch/{mode}", response_model=KillSwitchResponse)
 def set_kill_switch(mode: str):
     mode = mode.lower().strip()
     if mode not in {"on", "off"}:
@@ -64,6 +73,72 @@ def set_kill_switch(mode: str):
 
     set_kill_switch(mode == "on")
     return {"status": "ok", "kill_switch": kill_switch_state()}
+
+
+@router.get("/operation-flow", response_model=OperationFlowResponse)
+def get_operation_flow():
+    return {
+        "name": "alert_to_evidence",
+        "stages": [
+            {
+                "key": "alert_received",
+                "label": "Alertmanager webhook received",
+                "endpoint": "/hooks/alertmanager",
+                "owner": "monitoring",
+                "ui_surface": "Evidence timeline",
+                "produces": ["response_log.id", "payload_hash", "alert_count"],
+            },
+            {
+                "key": "threat_created",
+                "label": "SIEM event correlated into threat",
+                "endpoint": "/threats/",
+                "owner": "correlation_engine",
+                "ui_surface": "Threat detail",
+                "produces": ["threat.id", "fingerprint", "siem_metadata"],
+            },
+            {
+                "key": "redqueen_verdict",
+                "label": "RedQueen causal verdict",
+                "endpoint": "/api/v1/redqueen/verdict/from-threat/{threat_id}",
+                "owner": "redqueen",
+                "ui_surface": "RedQueen Brain",
+                "produces": ["verdict_id", "risk_score", "action_type", "justification_xai"],
+            },
+            {
+                "key": "ares_plan",
+                "label": "ARES validation and execution plan",
+                "endpoint": "/api/v1/ares/lifecycle/from-threat/{threat_id}",
+                "owner": "ares",
+                "ui_surface": "ARES Shield",
+                "produces": ["plan", "advisor_review", "execution_controls"],
+                "requires_human": True,
+            },
+            {
+                "key": "evidence",
+                "label": "Execution results and audit chain",
+                "endpoint": "/api/v1/ares/results/{verdict_id}",
+                "owner": "ares",
+                "ui_surface": "Evidence timeline",
+                "produces": ["result_hash", "duration_ms", "audit_records"],
+            },
+        ],
+        "evidence_sources": [
+            "/monitoring/response-logs",
+            "/api/v1/ares/results/{verdict_id}",
+            "/api/v1/ares/audit",
+            "/api/v1/ares/audit/verify",
+        ],
+        "frontend_entrypoints": {
+            "command_center": "/monitoring/production-readiness",
+            "redqueen": "/api/v1/redqueen/verdict/from-threat/{threat_id}",
+            "ares": "/api/v1/ares/lifecycle/from-threat/{threat_id}",
+            "evidence": "/api/v1/ares/results/{verdict_id}",
+        },
+        "notes": [
+            "Use dry_run for operator previews.",
+            "Disruptive actions require traceability and may require signed human approval.",
+        ],
+    }
 
 
 @router.post("/execute")
@@ -136,7 +211,7 @@ def run_lifecycle_from_threat(
     }
 
 
-@router.get("/results/{verdict_id}")
+@router.get("/results/{verdict_id}", response_model=ExecutionResultsResponse)
 def list_results(verdict_id: str, db: Session = Depends(get_db)):
     rows = AutonomyService.get_execution_results(db, verdict_id)
     return {
@@ -166,7 +241,7 @@ def get_ares_monitor(target: str, limit: int = 20, db: Session = Depends(get_db)
     return AutonomyService.get_ares_health(db, target, limit=max(1, min(limit, 100)))
 
 
-@router.get("/approvals/{verdict_id}")
+@router.get("/approvals/{verdict_id}", response_model=ApprovalListResponse)
 def list_approvals(verdict_id: str, db: Session = Depends(get_db)):
     rows = AutonomyService.list_approvals(db, verdict_id)
     return {
@@ -190,7 +265,7 @@ def list_approvals(verdict_id: str, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/audit")
+@router.get("/audit", response_model=AuditListResponse)
 def list_audit(verdict_id: str | None = None, limit: int = 50, db: Session = Depends(get_db)):
     rows = list_audit_records(db, verdict_id=verdict_id, limit=max(1, min(limit, 200)))
     return {
@@ -210,6 +285,6 @@ def list_audit(verdict_id: str | None = None, limit: int = 50, db: Session = Dep
     }
 
 
-@router.get("/audit/verify")
+@router.get("/audit/verify", response_model=AuditVerifyResponse)
 def verify_audit(db: Session = Depends(get_db)):
     return verify_audit_chain(db)

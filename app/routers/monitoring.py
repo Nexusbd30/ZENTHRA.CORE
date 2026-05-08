@@ -35,6 +35,12 @@ from app.core.security import require_admin_or_monitor_token
 from app.core.settings import settings  # ✅ Config dinámica desde .env
 from app.db.session import get_db  # 🔁 Ajusta este import si tu get_db está en otro módulo
 from app.models.response_log import ResponseLog
+from app.schemas.monitoring_schema import (
+    AlertmanagerHookResponse,
+    ProductionReadinessResponse,
+    ResponseLogRead,
+    RuntimeLogsResponse,
+)
 from app.services.runtime_log_service import list_runtime_logs
 
 _require_internal_bearer = require_admin_or_monitor_token
@@ -220,7 +226,7 @@ def debug_alerts_base():
     }
 
 
-@router.get("/production-readiness")
+@router.get("/production-readiness", response_model=ProductionReadinessResponse)
 def get_production_readiness():
     """
     Contrato operativo para UI/CI: modos reales, RBAC visual y gaps activos.
@@ -690,7 +696,7 @@ async def get_alerts_realtime():
         return []
 
 
-@router.get("/logs")
+@router.get("/logs", response_model=RuntimeLogsResponse)
 def get_runtime_logs(
     limit: int = Query(200, ge=1, le=1000),
     severity: Optional[str] = Query(None),
@@ -707,7 +713,7 @@ def get_runtime_logs(
     return list_runtime_logs(limit=limit, severity=severity, search=search)
 
 
-@router.get("/response-logs")
+@router.get("/response-logs", response_model=list[ResponseLogRead])
 def get_response_logs(
     limit: int = Query(100, ge=1, le=500),
     source: Optional[str] = Query(None),
@@ -748,6 +754,7 @@ def get_response_logs(
 @hooks_router.post(
     "/hooks/alertmanager",
     dependencies=[Depends(_require_docker_network_source)],
+    response_model=AlertmanagerHookResponse,
 )
 async def alertmanager_hook(request: Request, db: Session = Depends(get_db)):
     """

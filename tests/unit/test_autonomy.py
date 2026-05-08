@@ -332,3 +332,26 @@ async def test_ares_rejects_action_outside_mcp_allowlist(test_client, monkeypatc
     data = execute_resp.json()
     assert data["status"] == "rejected"
     assert data["code"] == "mcp_action_not_allowed"
+
+
+def test_autonomy_openapi_exposes_frontend_contracts():
+    from app.main import app
+
+    schema = app.openapi()
+    paths = schema["paths"]
+
+    assert paths["/api/v1/redqueen/status"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]["$ref"].endswith("/RedQueenStatusResponse")
+    assert paths["/api/v1/redqueen/policy/evaluate"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]["$ref"].endswith("/PolicyEvaluationResponse")
+    assert paths["/api/v1/ares/status"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]["$ref"].endswith("/AresStatusResponse")
+    assert paths["/api/v1/ares/operation-flow"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]["$ref"].endswith("/OperationFlowResponse")
+    assert paths["/api/v1/ares/results/{verdict_id}"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]["$ref"].endswith("/ExecutionResultsResponse")
