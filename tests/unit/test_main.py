@@ -29,8 +29,11 @@ async def test_system_health_router(test_client):
 
 
 @pytest.mark.asyncio
-async def test_ingestion_stub_status(test_client):
-    resp = await test_client.get("/api/v1/ingestion/status")
+async def test_ingestion_stub_status(test_client, monkeypatch):
+    resp = await test_client.get(
+        "/api/v1/ingestion/status",
+        headers=monitor_headers(monkeypatch),
+    )
     assert resp.status_code == 200
     assert resp.json()["module"] == "ingestion"
 
