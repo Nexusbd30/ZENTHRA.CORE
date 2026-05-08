@@ -4,6 +4,7 @@ import time
 from datetime import UTC, datetime
 
 from app.actions.base import BaseAction
+from app.actions.crypto import CryptoAction
 from app.actions.endpoint import EndpointAction
 from app.actions.identity import IdentityAction
 from app.actions.network import NetworkAction
@@ -14,6 +15,7 @@ ACTION_EXECUTORS: dict[str, BaseAction] = {
     "identity_lockdown": IdentityAction(),
     "endpoint_isolate": EndpointAction(),
     "soar_delegate": SoarAction(),
+    "crypto_rotate": CryptoAction(),
 }
 
 

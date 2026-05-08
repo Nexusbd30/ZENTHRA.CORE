@@ -119,6 +119,7 @@ class Settings(BaseSettings):
     IDENTITY_CONTROL_URL: str | None = None
     ENDPOINT_CONTROL_URL: str | None = None
     SOAR_CONTROL_URL: str | None = None
+    CRYPTO_CONTROL_URL: str | None = None
 
     # ---------------------------------------------------------
     # Pydantic settings config

@@ -16,6 +16,7 @@ class ActionPolicy:
 ACTION_POLICIES: dict[str, ActionPolicy] = {
     "observe": ActionPolicy(0, 100, 100, severity=0),
     "soar_delegate": ActionPolicy(0, 100, 90, severity=1),
+    "crypto_rotate": ActionPolicy(55, 100, 75, severity=2, disruptive=True),
     "endpoint_isolate": ActionPolicy(50, 100, 82, severity=2, disruptive=True),
     "identity_lockdown": ActionPolicy(65, 100, 78, severity=3, disruptive=True),
     "network_isolate": ActionPolicy(

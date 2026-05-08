@@ -16,6 +16,7 @@ from app.redqueen.xai import generate_xai_explanation
 ALLOWED_ACTIONS = {
     "observe",
     "soar_delegate",
+    "crypto_rotate",
     "endpoint_isolate",
     "identity_lockdown",
     "network_isolate",
@@ -24,6 +25,7 @@ ALLOWED_ACTIONS = {
 ACTION_SEVERITY = {
     "observe": 0,
     "soar_delegate": 1,
+    "crypto_rotate": 2,
     "endpoint_isolate": 2,
     "identity_lockdown": 3,
     "network_isolate": 4,

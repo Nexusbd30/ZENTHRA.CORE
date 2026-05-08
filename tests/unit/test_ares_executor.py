@@ -48,3 +48,34 @@ def test_execute_plan_delegates_soar_steps(monkeypatch):
     assert [step["step"] for step in result["executed_steps"]] == ["open_ticket", "notify_soc"]
     assert [call["command"] for call in calls] == ["open_ticket", "notify_soc"]
     assert calls[0]["payload"]["threat_id"] == "threat-1"
+
+
+def test_execute_plan_delegates_crypto_rotation(monkeypatch):
+    calls = []
+
+    def fake_dispatch(*, url, command, payload):
+        calls.append({"url": url, "command": command, "payload": payload})
+        return {"status": "ok", "command": command}
+
+    monkeypatch.setattr("app.actions.crypto.dispatch_command", fake_dispatch)
+    plan = build_plan({"action_type": "crypto_rotate", "target": "vault/prod/api-key"})
+
+    result = execute_plan(
+        plan,
+        controls={
+            "threat_id": "threat-crypto-1",
+            "key_id": "kms-key-01",
+            "change_ticket": "CHG-CRYPTO-1",
+        },
+    )
+
+    assert result["status"] == "success"
+    assert result["rollback_available"] is True
+    assert [step["step"] for step in result["executed_steps"]] == [
+        "resolve_crypto_material",
+        "rotate_crypto_material",
+        "verify_rotation",
+    ]
+    assert calls[1]["command"] == "rotate_crypto_material"
+    assert calls[1]["payload"]["key_id"] == "kms-key-01"
+    assert calls[1]["payload"]["threat_id"] == "threat-crypto-1"

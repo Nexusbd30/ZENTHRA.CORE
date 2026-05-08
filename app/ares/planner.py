@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-DISRUPTIVE_ACTIONS = {"network_isolate", "identity_lockdown", "endpoint_isolate"}
+DISRUPTIVE_ACTIONS = {
+    "network_isolate",
+    "identity_lockdown",
+    "endpoint_isolate",
+    "crypto_rotate",
+}
 
 
 def _step(
@@ -122,6 +127,31 @@ def build_plan(verdict: dict) -> dict:
                 impact="notifies operators",
                 rollback=None,
                 criticality=1,
+            ),
+        ]
+    elif action_type == "crypto_rotate":
+        steps = [
+            _step(
+                "resolve_crypto_material",
+                target=target,
+                impact="KMS or vault lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "rotate_crypto_material",
+                target=target,
+                impact="rotates affected key or secret material",
+                rollback="crypto_rotation_rollback",
+                criticality=4,
+                requires_confirmation=True,
+            ),
+            _step(
+                "verify_rotation",
+                target=target,
+                impact="verifies consumers can use the new material",
+                rollback=None,
+                criticality=2,
             ),
         ]
     else:
