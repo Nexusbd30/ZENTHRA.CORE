@@ -88,3 +88,18 @@ def read_verdict(verdict_id: str, db: Session = Depends(get_db)):
 @router.get("/memory/{target}")
 def read_risk_memory(target: str, limit: int = 10, db: Session = Depends(get_db)):
     return AutonomyService.get_risk_memory(db, target=target, limit=limit)
+
+
+@router.get("/drift/{target}")
+def read_risk_drift(
+    target: str,
+    current_score: float | None = None,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+):
+    return AutonomyService.get_risk_drift(
+        db,
+        target=target,
+        current_score=current_score,
+        limit=limit,
+    )

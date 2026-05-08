@@ -20,6 +20,7 @@ from app.models.execution_result import ExecutionResult
 from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
 from app.redqueen.decision_engine import generate_verdict
+from app.redqueen.drift import analyze_risk_drift
 from app.redqueen.memory import recall_threat_context
 from app.redqueen.perception import build_threat_perception
 from app.redqueen.risk_memory import read_entity_risk_memory, record_risk_memory
@@ -103,6 +104,20 @@ class AutonomyService:
         return read_entity_risk_memory(db, target=target, limit=limit)
 
     @staticmethod
+    def get_risk_drift(
+        db: Session,
+        target: str,
+        current_score: float | None = None,
+        limit: int = 10,
+    ) -> dict:
+        return analyze_risk_drift(
+            db,
+            target=target,
+            current_score=current_score,
+            limit=limit,
+        )
+
+    @staticmethod
     def get_ares_memory(db: Session, target: str, limit: int = 20) -> dict:
         return read_ares_memory(db, target=target, limit=limit)
 
@@ -132,11 +147,15 @@ class AutonomyService:
         factors = [*factors]
         if mcp_context:
             factors.extend(mcp_risk_factors(mcp_context))
+        drift = analyze_risk_drift(db, target=target, current_score=risk_score)
+        factors.extend(str(item) for item in drift.get("signals", []) if item)
+        if drift.get("severity") in {"high", "critical"}:
+            factors.append(f"drift_severity:{drift['severity']}")
         verdict = generate_verdict(
             target=target,
             risk_score=risk_score,
-            factors=factors,
-            execution_controls={**controls, "mcp_context": mcp_context},
+            factors=list(dict.fromkeys(factors)),
+            execution_controls={**controls, "mcp_context": mcp_context, "risk_drift": drift},
         )
         AutonomyService.persist_verdict(db, verdict)
         risk_memory = record_risk_memory(db, verdict=verdict)
@@ -182,12 +201,20 @@ class AutonomyService:
         if mcp_context:
             perception["mcp_context"] = mcp_context
         score = score_perception(perception)
+        drift = analyze_risk_drift(
+            db,
+            target=str(perception.get("target") or ""),
+            current_score=float(score["risk_score"]),
+        )
 
         factors = [
             *perception.get("factors", []),
             f"scoring_model:{score['scoring_model']}",
             *mcp_risk_factors(mcp_context),
+            *[str(item) for item in drift.get("signals", []) if item],
         ]
+        if drift.get("severity") in {"high", "critical"}:
+            factors.append(f"drift_severity:{drift['severity']}")
         if memory:
             factors.append(f"memory_matches:{len(memory)}")
         if mcp_context:
@@ -198,6 +225,7 @@ class AutonomyService:
             "threat_id": threat_id,
             "perception": perception,
             "risk_score_inputs": score["score_inputs"],
+            "risk_drift": drift,
             "memory": memory,
             "mcp_context": mcp_context,
         }
