@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from app.redqueen.ueba import analyze_ueba_signals
+
 
 def _enum_value(value: Any) -> str | None:
     if value is None:
@@ -83,7 +85,8 @@ def build_threat_perception(threat: Any) -> dict[str, Any]:
     if getattr(threat, "database_name", None) or getattr(threat, "database_host", None):
         factors.append("database_asset")
 
-    return {
+    perception_factors = list(dict.fromkeys(str(f) for f in factors if f))
+    perception = {
         "threat_id": str(threat.id),
         "target": str(target),
         "title": getattr(threat, "title", None),
@@ -117,5 +120,10 @@ def build_threat_perception(threat: Any) -> dict[str, Any]:
         },
         "created_at": _iso(getattr(threat, "created_at", None)),
         "updated_at": _iso(getattr(threat, "updated_at", None)),
-        "factors": list(dict.fromkeys(str(f) for f in factors if f)),
+        "factors": perception_factors,
     }
+    ueba = analyze_ueba_signals(perception)
+    perception["ueba"] = ueba
+    ueba_signals = [str(item) for item in ueba.get("signals", []) if item]
+    perception["factors"] = list(dict.fromkeys([*perception_factors, *ueba_signals]))
+    return perception

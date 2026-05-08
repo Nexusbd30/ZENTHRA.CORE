@@ -104,3 +104,49 @@ def test_perception_and_risk_scorer_use_enriched_siem_signals():
     assert "mcp:critical_dependency" in risk["score_inputs"]["mcp_factors"]
     assert "mcp:asset_tier:crown_jewel" in risk["score_inputs"]["mcp_factors"]
     assert risk["risk_score"] >= 90
+
+
+def test_perception_and_risk_scorer_use_ueba_behavior_signals():
+    threat = ThreatModel(
+        title="Impossible travel and password spray against privileged account",
+        source="wazuh",
+        description="Multiple failed logins from many countries during off-hours.",
+        level=ThreatLevel.medium,
+        category=ThreatCategory.auth,
+        score=None,
+        target_service="admin-portal",
+        source_ip="203.0.113.10",
+        siem_metadata={
+            "status": "open",
+            "occurrences": 4,
+            "behavior": {
+                "failed_logins": 24,
+                "distinct_source_ips": 9,
+                "geo_velocity_kmh": 1400,
+                "new_country": True,
+                "off_hours": True,
+                "privileged_account": True,
+            },
+            "evidence": {
+                "labels": {
+                    "alertname": "IdentityBehaviorAnomaly",
+                    "severity": "high",
+                    "instance": "admin-portal",
+                },
+                "annotations": {
+                    "summary": "Impossible travel detected after password spray",
+                },
+            },
+        },
+    )
+    threat.id = "threat-ueba-001"
+
+    perception = build_threat_perception(threat)
+    risk = score_perception(perception)
+
+    assert perception["ueba"]["anomaly_score"] >= 80
+    assert "ueba:credential_attack" in perception["ueba"]["signals"]
+    assert "ueba:impossible_travel" in perception["factors"]
+    assert "ueba:privileged_account" in risk["score_inputs"]["ueba_signals"]
+    assert risk["score_inputs"]["ueba_anomaly_score"] >= 80
+    assert risk["risk_score"] >= 85

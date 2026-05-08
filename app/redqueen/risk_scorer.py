@@ -54,6 +54,7 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
     annotations = _dict(perception.get("annotations"))
     siem = _dict(perception.get("siem"))
     mcp_context = _dict(perception.get("mcp_context"))
+    ueba = _dict(perception.get("ueba"))
 
     try:
         occurrences = int(metadata.get("occurrences", 0) or 0)
@@ -107,6 +108,19 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
         active_incident_count = 0
     if active_incident_count:
         score += min(8, active_incident_count * 2)
+    try:
+        ueba_score = float(ueba.get("anomaly_score", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        ueba_score = 0.0
+    ueba_signals = [str(item) for item in ueba.get("signals", []) if item]
+    if ueba_score:
+        score += min(18.0, ueba_score * 0.22)
+    if "ueba:privileged_account" in ueba_signals:
+        score += 4
+    if "ueba:impossible_travel" in ueba_signals:
+        score += 5
+    if "ueba:large_egress" in ueba_signals:
+        score += 5
 
     text = " ".join(
         str(value).lower()
@@ -135,6 +149,8 @@ def score_perception(perception: dict[str, Any]) -> dict[str, Any]:
             "occurrences": occurrences,
             "active_minutes": active_minutes,
             "matched_signals": matched_signals,
+            "ueba_anomaly_score": ueba_score,
+            "ueba_signals": ueba_signals,
             "mcp_factors": mcp_factors,
             "source_ip_present": bool(perception.get("source_ip")),
             "database_asset": bool(perception.get("database_name") or perception.get("database_host")),
