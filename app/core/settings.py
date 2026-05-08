@@ -110,6 +110,7 @@ class Settings(BaseSettings):
     NETWORK_CONTROL_URL: str | None = None
     IDENTITY_CONTROL_URL: str | None = None
     ENDPOINT_CONTROL_URL: str | None = None
+    SOAR_CONTROL_URL: str | None = None
 
     # ---------------------------------------------------------
     # Pydantic settings config

@@ -7,11 +7,13 @@ from app.actions.base import BaseAction
 from app.actions.endpoint import EndpointAction
 from app.actions.identity import IdentityAction
 from app.actions.network import NetworkAction
+from app.actions.soar import SoarAction
 
 ACTION_EXECUTORS: dict[str, BaseAction] = {
     "network_isolate": NetworkAction(),
     "identity_lockdown": IdentityAction(),
     "endpoint_isolate": EndpointAction(),
+    "soar_delegate": SoarAction(),
 }
 
 
