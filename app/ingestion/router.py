@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, cast
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.security import require_admin_or_monitor_token
 from app.db.session import get_db
+from app.ingestion.adapters import ADAPTERS, adapt_event
 from app.ingestion.normalizer import normalize_event
 from app.models.threat_model import ThreatModel
 
@@ -85,6 +86,7 @@ def ingestion_status():
         "phase": "phase-2-normalizer",
         "status": "ready",
         "inputs": ["siem", "edr", "iam", "netflow", "prometheus"],
+        "adapters": sorted(ADAPTERS),
         "dedupe": "fingerprint",
     }
 
@@ -106,9 +108,51 @@ def ingest_event(payload: IngestEventRequest, db: Session = Depends(get_db)):
     }
 
 
+@router.post("/events/{adapter}")
+def ingest_adapter_event(adapter: str, payload: dict[str, Any], db: Session = Depends(get_db)):
+    try:
+        adapted = adapt_event(adapter, payload)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported ingestion adapter '{adapter}'",
+        ) from exc
+    normalized = normalize_event(adapted)
+    threat, created = _upsert_threat(db, normalized)
+    return {
+        "adapter": adapter.lower(),
+        "status": "created" if created else "updated",
+        "threat_id": threat.id,
+        "fingerprint": threat.fingerprint,
+        "occurrences": (
+            threat.siem_metadata.get("occurrences", 1)
+            if isinstance(threat.siem_metadata, dict)
+            else 1
+        ),
+        "threat": threat.to_dict(),
+    }
+
+
 @router.post("/normalize")
 def normalize_only(payload: IngestEventRequest):
     normalized = normalize_event(payload.model_dump(exclude_none=True))
+    return {
+        **normalized,
+        "level": normalized["level"].value,
+        "category": normalized["category"].value,
+    }
+
+
+@router.post("/normalize/{adapter}")
+def normalize_adapter_only(adapter: str, payload: dict[str, Any]):
+    try:
+        adapted = adapt_event(adapter, payload)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported ingestion adapter '{adapter}'",
+        ) from exc
+    normalized = normalize_event(adapted)
     return {
         **normalized,
         "level": normalized["level"].value,

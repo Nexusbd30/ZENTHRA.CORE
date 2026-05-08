@@ -58,3 +58,36 @@ async def test_ingestion_creates_and_dedupes_threat_by_fingerprint(test_client, 
     assert second_body["occurrences"] == 2
     assert second_body["threat"]["level"] == "critical"
     assert second_body["threat"]["category"] == "auth"
+
+
+@pytest.mark.asyncio
+async def test_ingestion_wazuh_adapter_creates_threat(test_client, monkeypatch):
+    resp = await test_client.post(
+        "/api/v1/ingestion/events/wazuh",
+        headers=monitor_headers(monkeypatch),
+        json={
+            "rule": {"id": "5710", "level": 10, "description": "Multiple failed ssh logins"},
+            "agent": {"name": "linux-prod-01"},
+            "data": {"srcip": "198.51.100.7"},
+            "full_log": "sshd failed password burst",
+        },
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["adapter"] == "wazuh"
+    assert body["status"] == "created"
+    assert body["threat"]["source"] == "wazuh/edr"
+    assert body["threat"]["level"] == "high"
+    assert body["threat"]["target_service"] == "linux-prod-01"
+
+
+@pytest.mark.asyncio
+async def test_ingestion_rejects_unknown_adapter(test_client, monkeypatch):
+    resp = await test_client.post(
+        "/api/v1/ingestion/normalize/unknown_vendor",
+        headers=monitor_headers(monkeypatch),
+        json={"message": "unsupported"},
+    )
+
+    assert resp.status_code == 400
