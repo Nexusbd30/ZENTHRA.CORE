@@ -156,6 +156,16 @@ def list_results(verdict_id: str, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/memory/{target}")
+def get_ares_memory(target: str, limit: int = 20, db: Session = Depends(get_db)):
+    return AutonomyService.get_ares_memory(db, target, limit=max(1, min(limit, 100)))
+
+
+@router.get("/monitor/{target}")
+def get_ares_monitor(target: str, limit: int = 20, db: Session = Depends(get_db)):
+    return AutonomyService.get_ares_health(db, target, limit=max(1, min(limit, 100)))
+
+
 @router.get("/approvals/{verdict_id}")
 def list_approvals(verdict_id: str, db: Session = Depends(get_db)):
     rows = AutonomyService.list_approvals(db, verdict_id)

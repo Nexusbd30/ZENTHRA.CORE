@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.ares.advisor import review_plan
 from app.ares.approval import verify_approval_payload
 from app.ares.executor import execute_plan
+from app.ares.memory import read_ares_memory
+from app.ares.monitor import evaluate_ares_health
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
@@ -99,6 +101,19 @@ class AutonomyService:
     @staticmethod
     def get_risk_memory(db: Session, target: str, limit: int = 10) -> dict:
         return read_entity_risk_memory(db, target=target, limit=limit)
+
+    @staticmethod
+    def get_ares_memory(db: Session, target: str, limit: int = 20) -> dict:
+        return read_ares_memory(db, target=target, limit=limit)
+
+    @staticmethod
+    def get_ares_health(db: Session, target: str, limit: int = 20) -> dict:
+        memory = read_ares_memory(db, target=target, limit=limit)
+        return {
+            "target": target,
+            "memory": memory,
+            "health": evaluate_ares_health(memory),
+        }
 
     @staticmethod
     def issue_verdict(
