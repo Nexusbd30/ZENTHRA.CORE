@@ -103,3 +103,8 @@ def read_risk_drift(
         current_score=current_score,
         limit=limit,
     )
+
+
+@router.get("/training/report")
+def read_training_report(limit: int = 100, db: Session = Depends(get_db)):
+    return AutonomyService.get_training_report(db, limit=max(1, min(limit, 500)))

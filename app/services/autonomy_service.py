@@ -25,6 +25,7 @@ from app.redqueen.memory import recall_threat_context
 from app.redqueen.perception import build_threat_perception
 from app.redqueen.risk_memory import read_entity_risk_memory, record_risk_memory
 from app.redqueen.risk_scorer import score_perception
+from app.redqueen.trainer import build_training_report
 from app.repositories.approval_repository import ApprovalRepository
 from app.repositories.execution_result_repository import ExecutionResultRepository
 from app.repositories.threat_repository import ThreatRepository
@@ -116,6 +117,10 @@ class AutonomyService:
             current_score=current_score,
             limit=limit,
         )
+
+    @staticmethod
+    def get_training_report(db: Session, limit: int = 100) -> dict:
+        return build_training_report(db, limit=limit)
 
     @staticmethod
     def get_ares_memory(db: Session, target: str, limit: int = 20) -> dict:
