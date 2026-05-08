@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     PROMETHEUS_BASE: str = "http://localhost:9090"
     ALERTMANAGER_BASE: str = "http://localhost:9093"
+    ALERTMANAGER_ALLOWED_CIDRS: str = "172.20.0.0/16,127.0.0.1/32,::1/128"
     PROM_TIMEOUT_SEC: float = 8.0
 
     # Aliases legacy

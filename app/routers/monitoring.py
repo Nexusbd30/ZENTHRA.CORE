@@ -40,21 +40,23 @@ _require_internal_bearer = require_admin_or_monitor_token
 
 
 # =============================================================
-# 🛡️ Whitelist por IP para /hooks/alertmanager (red Docker)
-# (Incluye 127.0.0.1 para pruebas locales — quítalo en producción)
+# 🛡️ Whitelist por IP para /hooks/alertmanager
 # =============================================================
 
-_ALLOWED_CIDRS = [
-    "172.20.0.0/16",  # Red nexus_default (ajusta según tu docker network)
-    "127.0.0.1/32",  # SOLO para pruebas locales; elimina en producción
-]
-_ALLOWED_NETS = [ip_network(c) for c in _ALLOWED_CIDRS]
+
+def _alertmanager_allowed_cidrs() -> list[str]:
+    raw = getattr(settings, "ALERTMANAGER_ALLOWED_CIDRS", "")
+    return [cidr.strip() for cidr in str(raw).split(",") if cidr.strip()]
+
+
+def _alertmanager_allowed_nets():
+    return [ip_network(cidr) for cidr in _alertmanager_allowed_cidrs()]
 
 
 def _require_docker_network_source(request: Request) -> None:
     """
     Solo permite llamadas al webhook desde IPs dentro de las
-    redes definidas en _ALLOWED_CIDRS.
+    redes definidas en ALERTMANAGER_ALLOWED_CIDRS.
     """
     client = request.client
     client_ip = client.host if client else None
@@ -65,7 +67,15 @@ def _require_docker_network_source(request: Request) -> None:
     except ValueError as err:
         raise HTTPException(status_code=400, detail="IP de origen inválida") from err
 
-    if not any(ip_obj in net for net in _ALLOWED_NETS):
+    try:
+        allowed_nets = _alertmanager_allowed_nets()
+    except ValueError as err:
+        raise HTTPException(
+            status_code=500,
+            detail="ALERTMANAGER_ALLOWED_CIDRS contiene una red inválida",
+        ) from err
+
+    if not any(ip_obj in net for net in allowed_nets):
         raise HTTPException(
             status_code=403,
             detail="IP no permitida para webhook",
@@ -125,7 +135,7 @@ def debug_alerts_base():
         "ALERTMANAGER_BASE": ALERTMANAGER_BASE,
         "PROMETHEUS_BASE": PROMETHEUS_BASE,
         "HTTP_TIMEOUT": HTTP_TIMEOUT,
-        "ALLOWED_CIDRS": _ALLOWED_CIDRS,
+        "ALERTMANAGER_ALLOWED_CIDRS": _alertmanager_allowed_cidrs(),
     }
 
 
@@ -663,4 +673,3 @@ async def alertmanager_hook(request: Request):
         "hash": payload_hash,
         "received": len(payload) if isinstance(payload, list) else 1,
     }
-

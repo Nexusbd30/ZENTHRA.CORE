@@ -170,3 +170,13 @@ async def test_alertmanager_hook_hashes_payload_from_localhost(test_client):
     assert data["ok"] is True
     assert data["received"] == 1
     assert data["hash"] == expected_hash
+
+
+@pytest.mark.asyncio
+async def test_alertmanager_hook_rejects_ip_outside_configured_cidrs(test_client, monkeypatch):
+    monkeypatch.setattr(settings, "ALERTMANAGER_ALLOWED_CIDRS", "10.0.0.0/8")
+
+    resp = await test_client.post("/hooks/alertmanager", json=[{"status": "firing"}])
+
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "IP no permitida para webhook"
