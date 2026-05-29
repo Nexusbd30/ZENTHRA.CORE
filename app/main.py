@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from logging.handlers import RotatingFileHandler
+from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,21 +24,36 @@ from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
 from app.db.session import SessionLocal, get_db
 from app.health.router import router as system_health_router
+from app.identity.router import router as identity_router
+from app.ingestion.aresx_router import router as aresx_ingest_router
 from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
 from app.models.user import User
 from app.redqueen.router import router as redqueen_router
-from app.routers import auth, monitoring, monitoring_correlation, monitoring_health, threats, users
+from app.routers import (
+    audit,
+    auth,
+    monitoring,
+    monitoring_correlation,
+    monitoring_health,
+    threats,
+    users,
+)
+from app.secops.router import router as secops_router
 from app.services.correlation_engine import correlation_engine
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
 os.makedirs("logs", exist_ok=True)
 
 log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
-log_handler = RotatingFileHandler(
-    "logs/app.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8"
-)
+log_handler: logging.Handler
+try:
+    log_handler = RotatingFileHandler(
+        "logs/app.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8"
+    )
+except PermissionError:
+    log_handler = logging.StreamHandler()
 log_handler.setFormatter(log_formatter)
 
 logger = logging.getLogger("zenthra")
@@ -127,7 +143,15 @@ async def correlation_worker():
 @app.on_event("startup")
 async def startup():
     logger.info("ZENTHRA iniciado")
-    logger.info("ENV=%s DB=%s", settings.ENV, settings.SQLALCHEMY_DATABASE_URI)
+    db_url = urlparse(settings.SQLALCHEMY_DATABASE_URI)
+    logger.info(
+        "ENV=%s DB=%s://%s:%s/%s",
+        settings.ENV,
+        db_url.scheme,
+        db_url.hostname,
+        db_url.port,
+        db_url.path.lstrip("/"),
+    )
 
     if settings.ZENTHRA_CORRELATION_ENABLED:
         global correlation_task
@@ -184,6 +208,7 @@ async def shutdown():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(threats.router)
+app.include_router(audit.router)
 app.include_router(monitoring.router)
 app.include_router(monitoring_health.router)
 app.include_router(monitoring_correlation.router)
@@ -191,7 +216,10 @@ app.include_router(monitoring.hooks_router)
 app.include_router(metrics_router)
 
 app.include_router(system_health_router)
+app.include_router(aresx_ingest_router)
 app.include_router(ingestion_router)
+app.include_router(identity_router)
+app.include_router(secops_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
 
