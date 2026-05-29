@@ -13,23 +13,24 @@ VITE_PROMETHEUS_PUBLIC_URL=http://<prometheus>:9090  # opcional
 
 2) Instala dependencias:
 ```
-npm install
+corepack enable
+corepack pnpm install
 ```
 
 3) Desarrollo:
 ```
-npm run dev -- --host
+corepack pnpm run dev -- --host
 ```
 
 4) Build producción:
 ```
-npm run build
-npm run preview   # sirve el build localmente para validar
+corepack pnpm run build
+corepack pnpm run preview   # sirve el build localmente para validar
 ```
 
 ## Despliegue con Docker
 
-- Construye el frontend con `npm run build` y sirve `dist/` detrás del reverse proxy que expone el backend.
+- Construye el frontend con `corepack pnpm run build` y sirve `dist/` detrás del reverse proxy que expone el backend.
 - Ajusta `VITE_API_URL` al dominio del proxy (idealmente mismo dominio + ruta `/api` para evitar CORS).
 - Inyecta `VITE_ZENTHRA_MONITOR_TOKEN` solo en entornos seguros; no lo dejes vacío si usas las vistas de monitorización.
 

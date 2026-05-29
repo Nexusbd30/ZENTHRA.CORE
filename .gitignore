@@ -27,6 +27,8 @@ node_modules/
 ZENTHRA.CORE_SECURITY/node_modules/
 ZENTHRA.CORE_SECURITY/dist/
 ZENTHRA.CORE_SECURITY/.vite/
+ZENTHRA.CORE_SECURITY/.agents/
+ZENTHRA.CORE_SECURITY/skills-lock.json
 
 # IDE
 .idea/
