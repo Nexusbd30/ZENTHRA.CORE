@@ -220,6 +220,76 @@ async def test_secops_security_events_export_contract_for_case_management(
 
 
 @pytest.mark.asyncio
+async def test_secops_security_events_export_sends_signed_webhook(
+    test_client,
+    db_session,
+    monkeypatch,
+):
+    append_audit_record(
+        db_session,
+        verdict_id="identity:entra:webhook",
+        actor="monitor_token",
+        actor_role="internal",
+        tenant_id="tenant-export-send",
+        capability="identity:triage",
+        request_id="req-export-send-1",
+        action="identity_entra_webhook_rejected",
+        result={
+            "status": "rejected",
+            "reason": "invalid_signature",
+            "status_code": 401,
+            "provider": "entra",
+            "source": "identity:entra",
+            "source_event_id": "entra-export-send-1",
+            "client_ip": "203.0.113.60",
+            "payload_sha256": "sendhash",
+            "secrets_exposed": False,
+        },
+    )
+    monkeypatch.setattr(settings, "SOC_WEBHOOK_URL", "https://soc.example/webhook")
+    monkeypatch.setattr(settings, "SOC_WEBHOOK_TOKEN", "soc-token")
+    monkeypatch.setattr(settings, "SOC_WEBHOOK_HMAC_SECRET", "soc-secret")
+    calls = []
+
+    class FakeResponse:
+        status_code = 202
+
+        def raise_for_status(self):
+            return None
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeResponse()
+
+    monkeypatch.setattr("app.secops.service.requests.post", fake_post)
+
+    response = await test_client.post(
+        "/api/v1/secops/security/events/export",
+        headers=monitor_headers(monkeypatch),
+        json={
+            "destination": "generic_webhook",
+            "format": "soc_case.v1",
+            "tenant_id": "tenant-export-send",
+            "include_items": True,
+            "send": True,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_to_send"] is True
+    assert body["delivery"]["status"] == "sent"
+    assert body["delivery"]["http_status"] == 202
+    assert body["delivery"]["signature"]["enabled"] is True
+    assert body["delivery"]["secrets_exposed"] is False
+    assert calls[0][0] == "https://soc.example/webhook"
+    headers = calls[0][1]["headers"]
+    assert headers["Authorization"] == "Bearer soc-token"
+    assert headers["X-Zenthra-Signature"].startswith("sha256=")
+    assert headers["X-Zenthra-Idempotency-Key"]
+
+
+@pytest.mark.asyncio
 async def test_secops_posture_marks_security_event_abuse_for_soc(
     test_client,
     db_session,

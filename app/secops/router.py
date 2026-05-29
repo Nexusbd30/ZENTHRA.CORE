@@ -152,6 +152,7 @@ def export_secops_security_events(
         limit=payload.limit,
         reason=payload.reason,
         tenant_id=payload.tenant_id,
+        send=payload.send,
     )
 
 

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import time
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
+import requests
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.observability.metrics import record_soc_materialization
+from app.core.settings import settings
 from app.identity.providers import list_provider_capability_payloads as list_identity_providers
 from app.identity.service import summarize_identity_activity
 from app.models.audit_record import AuditRecord
@@ -816,6 +822,7 @@ def build_security_event_export_payload(
     limit: int = 100,
     reason: str | None = None,
     tenant_id: str | None = None,
+    send: bool = False,
 ) -> dict[str, Any]:
     summary = summarize_security_events(
         db,
@@ -838,13 +845,79 @@ def build_security_event_export_payload(
         "items": summary["items"] if include_items else [],
         "secrets_exposed": False,
     }
-    return {
+    response = {
         "module": "secops_security_export",
         "contract": export_format,
         "destination": destination,
-        "ready_to_send": False,
+        "ready_to_send": bool(settings.SOC_WEBHOOK_URL),
         "count": int(summary["count"]),
         "payload": payload,
+        "delivery": None,
+        "secrets_exposed": False,
+    }
+    if send:
+        response["delivery"] = send_security_event_export_webhook(payload)
+    return response
+
+
+def send_security_event_export_webhook(payload: dict[str, Any]) -> dict[str, Any]:
+    if not settings.SOC_WEBHOOK_URL:
+        return {
+            "status": "not_configured",
+            "ready_to_send": False,
+            "detail": "SOC_WEBHOOK_URL is not configured",
+        }
+
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    payload_sha256 = hashlib.sha256(body).hexdigest()
+    idempotency_key = str(uuid4())
+    timestamp = str(int(time.time()))
+    headers = {
+        "Content-Type": "application/json",
+        "X-Zenthra-Contract": str(payload.get("contract") or "soc_case.v1"),
+        "X-Zenthra-Idempotency-Key": idempotency_key,
+        "X-Zenthra-Timestamp": timestamp,
+        "X-Zenthra-Payload-SHA256": payload_sha256,
+    }
+    if settings.SOC_WEBHOOK_TOKEN:
+        headers["Authorization"] = f"Bearer {settings.SOC_WEBHOOK_TOKEN}"
+    if settings.SOC_WEBHOOK_HMAC_SECRET:
+        digest = hmac.new(
+            settings.SOC_WEBHOOK_HMAC_SECRET.encode("utf-8"),
+            f"{timestamp}.".encode("utf-8") + body,
+            hashlib.sha256,
+        ).hexdigest()
+        headers["X-Zenthra-Signature"] = f"sha256={digest}"
+
+    try:
+        outbound = requests.post(
+            settings.SOC_WEBHOOK_URL,
+            data=body,
+            headers=headers,
+            timeout=float(settings.SOC_WEBHOOK_TIMEOUT_SEC),
+        )
+        outbound.raise_for_status()
+    except requests.RequestException as exc:
+        return {
+            "status": "failed",
+            "ready_to_send": True,
+            "detail": str(exc),
+            "payload_sha256": payload_sha256,
+            "idempotency_key": idempotency_key,
+            "secrets_exposed": False,
+        }
+
+    return {
+        "status": "sent",
+        "ready_to_send": True,
+        "http_status": outbound.status_code,
+        "payload_sha256": payload_sha256,
+        "idempotency_key": idempotency_key,
+        "signature": {
+            "enabled": bool(settings.SOC_WEBHOOK_HMAC_SECRET),
+            "algorithm": "hmac-sha256",
+            "signed_payload": "timestamp.body",
+        },
         "secrets_exposed": False,
     }
 

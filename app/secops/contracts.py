@@ -217,6 +217,7 @@ class SecurityEventExportRequest(BaseModel):
     destination: str = Field(default="generic_webhook", min_length=1)
     format: str = Field(default="soc_case.v1", min_length=1)
     include_items: bool = True
+    send: bool = False
     limit: int = Field(default=100, ge=1, le=500)
     reason: str | None = None
     tenant_id: str | None = None
@@ -229,6 +230,7 @@ class SecurityEventExportResponse(BaseModel):
     ready_to_send: bool
     count: int
     payload: dict[str, Any]
+    delivery: dict[str, Any] | None = None
     secrets_exposed: bool = False
 
 
