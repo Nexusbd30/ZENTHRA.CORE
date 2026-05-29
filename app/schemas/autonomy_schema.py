@@ -11,13 +11,14 @@ class RedQueenStatusResponse(BaseModel):
     role: str
     phase: str
     autonomy_target: int
+    thinking_model: dict[str, Any] | None = None
 
 
 class AresStatusResponse(BaseModel):
     module: str
     role: str
     phase: str
-    kill_switch: dict[str, bool]
+    kill_switch: dict[str, Any]
 
 
 class PolicyEvaluationResponse(BaseModel):
@@ -49,7 +50,7 @@ class NotFoundResponse(BaseModel):
 
 class KillSwitchResponse(BaseModel):
     status: str
-    kill_switch: dict[str, bool] | None = None
+    kill_switch: dict[str, Any] | None = None
     detail: str | None = None
 
 

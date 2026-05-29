@@ -12,6 +12,7 @@
 #   - El webhook de Alertmanager SOLO acepta tráfico de la red Docker.
 # =============================================================
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -379,7 +380,7 @@ async def list_windows_nics():
             if results:
                 break
     except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Error de red obteniendo NICs: {e}") from e
+        return {"data": [], "count": 0, "errors": [f"Prometheus no disponible: {e}"]}
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=502,
@@ -398,14 +399,21 @@ async def list_windows_nics():
         if key in seen:
             continue
         seen.add(key)
+        raw_value = row.get("value", [None, None])[1]
+        try:
+            bytes_total = float(raw_value)
+        except (TypeError, ValueError):
+            bytes_total = 0.0
         items.append(
             {
                 "name": name,
                 "instance": instance,
                 "job": metric.get("job", "windows-exporter"),
+                "bytes_total": bytes_total,
             }
         )
 
+    items.sort(key=lambda item: float(item.get("bytes_total") or 0), reverse=True)
     return {"data": items, "count": len(items)}
 
 
@@ -443,7 +451,8 @@ async def gpu_summary():
         try:
             results = await _prometheus_query_result(candidate["query"])
         except httpx.RequestError as e:
-            raise HTTPException(status_code=502, detail=f"Error de red obteniendo GPU: {e}") from e
+            errors.append(f"{candidate['source']}: Prometheus no disponible: {e}")
+            break
         except httpx.HTTPStatusError as e:
             errors.append(f"{candidate['source']}: {e.response.status_code}")
             continue
@@ -482,25 +491,40 @@ async def host_summary():
     peticiones desde el frontend. No inventa valores: cada métrica indica si
     está disponible y qué consulta la originó.
     """
-    cpu = await _first_prometheus_scalar(
+    cpu_task = _first_prometheus_scalar(
         ['100 - (avg(rate(windows_cpu_time_total{mode="idle"}[2m])) * 100)']
     )
-    memory = await _first_prometheus_scalar(
+    memory_task = _first_prometheus_scalar(
         [
+            "100 * (1 - (windows_memory_available_bytes / windows_memory_physical_total_bytes))",
+            "100 * (1 - (windows_memory_physical_free_bytes / windows_memory_physical_total_bytes))",
             "100 * (1 - (windows_os_physical_memory_free_bytes / windows_cs_physical_memory_bytes))",
-            "100 * (1 - (windows_memory_available_bytes / windows_cs_physical_memory_bytes))",
         ]
     )
-    latency = await _first_prometheus_scalar(
+    latency_task = _first_prometheus_scalar(
         ['avg(probe_duration_seconds{job="blackbox_http"}) * 1000']
     )
+    nics_task = list_windows_nics()
+    gpu_task = gpu_summary()
 
-    nics_payload = await list_windows_nics()
+    cpu, memory, latency, nics_payload, gpu = await asyncio.gather(
+        cpu_task,
+        memory_task,
+        latency_task,
+        nics_task,
+        gpu_task,
+    )
+
     nics = nics_payload.get("data", []) if isinstance(nics_payload, dict) else []
     primary_nic = None
     for nic in nics:
         name = str(nic.get("name") or "")
-        if name and ("ethernet" in name.lower() or "lan" in name.lower() or "wi-fi" in name.lower()):
+        bytes_total = float(nic.get("bytes_total") or 0)
+        if (
+            name
+            and bytes_total > 0
+            and ("ethernet" in name.lower() or "lan" in name.lower() or "wi-fi" in name.lower())
+        ):
             primary_nic = name
             break
     if not primary_nic and nics:
@@ -516,11 +540,14 @@ async def host_summary():
                     f'(sum(rate(windows_net_bytes_received_total{{nic="{nic_escaped}"}}[2m])) + '
                     f'sum(rate(windows_net_bytes_sent_total{{nic="{nic_escaped}"}}[2m]))) * 8 / 1024 / 1024'
                 ),
+                "sum(rate(windows_net_bytes_total[2m])) * 8 / 1024 / 1024",
+                (
+                    "(sum(rate(windows_net_bytes_received_total[2m])) + "
+                    "sum(rate(windows_net_bytes_sent_total[2m]))) * 8 / 1024 / 1024"
+                ),
             ]
         )
         network["nic"] = primary_nic
-
-    gpu = await gpu_summary()
 
     return {
         "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -556,40 +583,34 @@ async def source_diagnostics(db: Session = Depends(get_db)):
     except Exception as e:  # noqa: BLE001
         sources["database"] = {"status": "down", "detail": str(e)}
 
-    try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            response = await client.get(f"{PROMETHEUS_BASE}/-/ready")
-        sources["prometheus"]["status"] = "up" if response.status_code == 200 else "down"
-        sources["prometheus"]["http_status"] = response.status_code
-    except Exception as e:  # noqa: BLE001
-        sources["prometheus"] = {"status": "down", "detail": str(e)}
+    async def check_ready(base_url: str) -> dict[str, Any]:
+        try:
+            async with httpx.AsyncClient(timeout=1.0) as client:
+                response = await client.get(f"{base_url}/-/ready")
+            return {
+                "status": "up" if response.status_code == 200 else "down",
+                "http_status": response.status_code,
+            }
+        except Exception as e:  # noqa: BLE001
+            return {"status": "down", "detail": str(e)}
 
-    try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            response = await client.get(f"{ALERTMANAGER_BASE}/-/ready")
-        sources["alertmanager"]["status"] = "up" if response.status_code == 200 else "down"
-        sources["alertmanager"]["http_status"] = response.status_code
-    except Exception as e:  # noqa: BLE001
-        sources["alertmanager"] = {"status": "down", "detail": str(e)}
+    prom_status, alertmanager_status = await asyncio.gather(
+        check_ready(PROMETHEUS_BASE),
+        check_ready(ALERTMANAGER_BASE),
+    )
+    sources["prometheus"].update(prom_status)
+    sources["alertmanager"].update(alertmanager_status)
 
-    try:
-        nics_payload = await list_windows_nics()
-        count = int(nics_payload.get("count", 0))
-        sources["windows_exporter"] = {
-            "status": "up" if count > 0 else "missing",
-            "detail": f"{count} NIC(s) detected",
-        }
-    except HTTPException as e:
-        sources["windows_exporter"] = {"status": "down", "detail": str(e.detail)}
-
-    try:
-        gpu_payload = await gpu_summary()
-        sources["gpu"] = {
-            "status": "up" if gpu_payload.get("available") else "missing",
-            "detail": gpu_payload.get("source") or "GPU exporter no detectado",
-        }
-    except HTTPException as e:
-        sources["gpu"] = {"status": "down", "detail": str(e.detail)}
+    nics_payload, gpu_payload = await asyncio.gather(list_windows_nics(), gpu_summary())
+    count = int(nics_payload.get("count", 0))
+    sources["windows_exporter"] = {
+        "status": "up" if count > 0 else "missing",
+        "detail": f"{count} NIC(s) detected",
+    }
+    sources["gpu"] = {
+        "status": "up" if gpu_payload.get("available") else "missing",
+        "detail": gpu_payload.get("source") or "GPU exporter no detectado",
+    }
 
     try:
         logs_payload = list_runtime_logs(limit=1)
@@ -654,7 +675,12 @@ async def _first_prometheus_scalar(candidates: list[str]) -> dict[str, Any]:
         try:
             payload = await _cached_prometheus_get("/query", {"query": query})
         except httpx.RequestError as e:
-            raise HTTPException(status_code=502, detail=f"Error de red consultando Prometheus: {e}") from e
+            return {
+                "available": False,
+                "value": None,
+                "query": None,
+                "errors": [f"Prometheus no disponible: {e}"],
+            }
         except httpx.HTTPStatusError as e:
             errors.append(f"{query}: {e.response.status_code}")
             continue

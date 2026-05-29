@@ -40,6 +40,47 @@ THREATS_CREATED = Counter(
 )
 THREATS_DELETED = Counter("zenthra_threats_deleted_total", "Threats deleted")
 SCANNER_RUNNING = Gauge("zenthra_scanner_running", "Scanner running flag")
+SECURITY_WEBHOOK_REJECTIONS = Counter(
+    "zenthra_security_webhook_rejections_total",
+    "Security webhook rejections",
+    ["provider", "reason", "status_code"],
+)
+SECURITY_RATE_LIMIT_REJECTIONS = Counter(
+    "zenthra_security_rate_limit_rejections_total",
+    "Security webhook rate limit rejections",
+    ["provider"],
+)
+SECURITY_REPLAY_REJECTIONS = Counter(
+    "zenthra_security_replay_rejections_total",
+    "Security webhook replay rejections",
+    ["provider"],
+)
+SOC_MATERIALIZATIONS = Counter(
+    "zenthra_soc_materializations_total",
+    "SOC security events materialized as threat events",
+    ["event_type", "status"],
+)
+SOC_LIFECYCLES = Counter(
+    "zenthra_soc_lifecycles_total",
+    "SOC security event lifecycles routed through RedQueen and ARES",
+    ["event_type", "status"],
+)
+
+
+def record_security_webhook_rejection(*, provider: str, reason: str, status_code: int) -> None:
+    SECURITY_WEBHOOK_REJECTIONS.labels(provider, reason, str(status_code)).inc()
+    if reason == "rate_limit_exceeded":
+        SECURITY_RATE_LIMIT_REJECTIONS.labels(provider).inc()
+    if reason == "replay_detected":
+        SECURITY_REPLAY_REJECTIONS.labels(provider).inc()
+
+
+def record_soc_materialization(*, event_type: str, status: str) -> None:
+    SOC_MATERIALIZATIONS.labels(event_type, status).inc()
+
+
+def record_soc_lifecycle(*, event_type: str, status: str) -> None:
+    SOC_LIFECYCLES.labels(event_type, status).inc()
 
 router = APIRouter()
 
