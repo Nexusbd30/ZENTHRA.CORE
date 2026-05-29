@@ -6,6 +6,7 @@ import requests
 
 from app.core.settings import settings
 from app.identity.entra_graph import dispatch_entra_graph_command
+from app.secops.github import dispatch_github_command
 
 
 def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
@@ -24,6 +25,12 @@ def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
         and settings.ENTRA_GRAPH_ENABLED
     ):
         return dispatch_entra_graph_command(command=command, payload=payload)
+
+    if (
+        mode in {"provider", "real"}
+        and str(payload.get("provider") or "").strip().lower() == "github_actions"
+    ):
+        return dispatch_github_command(command=command, payload=payload)
 
     if mode != "webhook":
         raise RuntimeError(f"Unsupported ACTION_EXECUTION_MODE={mode}")
