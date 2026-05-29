@@ -49,6 +49,20 @@ def build_causal_chain(
         action_rationale = "aislar red reduce movimiento lateral y exfiltracion"
     elif action_type == "identity_lockdown":
         action_rationale = "bloquear identidad reduce abuso de credenciales"
+    elif action_type == "require_mfa":
+        action_rationale = "exigir MFA reduce abuso de sesion con bajo impacto operativo"
+    elif action_type == "revoke_session":
+        action_rationale = "revocar sesiones corta tokens activos potencialmente robados"
+    elif action_type == "degrade_privileges":
+        action_rationale = "reducir privilegios limita abuso de permisos durante la investigacion"
+    elif action_type == "require_release_approval":
+        action_rationale = "exigir aprobacion de release reduce riesgo sin bloquear el pipeline completo"
+    elif action_type == "revoke_pipeline_token":
+        action_rationale = "revocar token de pipeline corta credenciales CI/CD potencialmente expuestas"
+    elif action_type == "quarantine_artifact":
+        action_rationale = "cuarentenar artefacto evita despliegues de builds vulnerables o manipulados"
+    elif action_type == "block_deployment":
+        action_rationale = "bloquear despliegue contiene riesgo de produccion hasta validacion SecOps"
     elif action_type == "endpoint_isolate":
         action_rationale = "aislar endpoint contiene ejecucion y preserva evidencia"
     elif action_type == "soar_delegate":

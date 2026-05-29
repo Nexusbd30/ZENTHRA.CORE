@@ -1,4 +1,5 @@
-﻿import uuid
+import uuid
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -12,14 +13,8 @@ from app.models.base import Base
 from app.models.threat_model import ThreatModel  # noqa: F401
 from app.models.user import User  # noqa: F401
 
-TEST_DB_URL = "sqlite:///./test.db"
-test_engine = create_engine(
-    TEST_DB_URL,
-    connect_args={"check_same_thread": False},
-    future=True,
-)
+test_engine = None
 TestingSessionLocal = sessionmaker(
-    bind=test_engine,
     autocommit=False,
     autoflush=False,
     expire_on_commit=False,
@@ -27,6 +22,8 @@ TestingSessionLocal = sessionmaker(
 
 
 def override_get_db():
+    if test_engine is None:
+        raise RuntimeError("Test database engine has not been initialized")
     db = TestingSessionLocal()
     try:
         yield db
@@ -36,10 +33,21 @@ def override_get_db():
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
+    global test_engine
+    db_dir = Path(".test-data") / "test-dbs" / uuid.uuid4().hex
+    db_dir.mkdir(parents=True, exist_ok=True)
+    db_path: Path = db_dir / "test.db"
+    test_engine = create_engine(
+        f"sqlite:///{db_path.as_posix()}",
+        connect_args={"check_same_thread": False},
+        future=True,
+    )
+    TestingSessionLocal.configure(bind=test_engine)
     app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+    test_engine.dispose()
     app.dependency_overrides.clear()
 
 

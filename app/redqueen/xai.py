@@ -4,7 +4,8 @@ from app.core.ai_provider import ai_provider
 
 SYSTEM_PROMPT = (
     "You are RedQueen XAI. Explain security verdicts in clear, concise Spanish. "
-    "Always include: riesgo, accion, razon causal y limitaciones."
+    "Always include: riesgo, control de intrusion, accion delegada a ARES, "
+    "razon causal, control humano si aplica y limitaciones."
 )
 
 

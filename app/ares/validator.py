@@ -5,8 +5,11 @@ from dataclasses import dataclass
 from app.ares.kill_switch import kill_switch_state
 from app.ares.planner import DISRUPTIVE_ACTIONS
 from app.core.mcp_context import evaluate_mcp_action_policy, normalize_mcp_context
+from app.core.mcp_gateway import evaluate_mcp_tool_policy
 from app.core.signing import verify_payload_signature
+from app.identity.providers import IDENTITY_ACTION_REQUIRED_COMMANDS, validate_identity_action
 from app.redqueen.policy_matrix import evaluate_policy
+from app.secops.providers import DEVSECOPS_ACTION_REQUIRED_COMMANDS, validate_devsecops_action
 
 
 @dataclass
@@ -47,6 +50,25 @@ def validate_verdict(verdict: dict) -> ValidationResult:
             str(mcp_policy.get("code") or "mcp_action_denied"),
             str(mcp_policy.get("detail") or "MCP action policy denied action"),
         )
+    mcp_tool_policy = evaluate_mcp_tool_policy(mcp_context)
+    if not mcp_tool_policy.get("allowed", False):
+        return ValidationResult(
+            False,
+            str(mcp_tool_policy.get("code") or "mcp_tool_denied"),
+            str(mcp_tool_policy.get("detail") or "MCP tool policy denied context"),
+        )
+
+    if action_type in IDENTITY_ACTION_REQUIRED_COMMANDS:
+        try:
+            validate_identity_action(controls.get("identity_provider"), action_type)
+        except ValueError as exc:
+            return ValidationResult(False, "identity_provider_unsupported_action", str(exc))
+
+    if action_type in DEVSECOPS_ACTION_REQUIRED_COMMANDS:
+        try:
+            validate_devsecops_action(controls.get("devsecops_provider"), action_type)
+        except ValueError as exc:
+            return ValidationResult(False, "devsecops_provider_unsupported_action", str(exc))
 
     dry_run = bool(controls.get("dry_run", False))
     if action_type in DISRUPTIVE_ACTIONS and not dry_run:

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from app.actions.base import BaseAction
 from app.actions.crypto import CryptoAction
+from app.actions.devsecops import DevSecOpsAction
 from app.actions.endpoint import EndpointAction
 from app.actions.identity import IdentityAction
 from app.actions.network import NetworkAction
@@ -13,9 +14,16 @@ from app.actions.soar import SoarAction
 ACTION_EXECUTORS: dict[str, BaseAction] = {
     "network_isolate": NetworkAction(),
     "identity_lockdown": IdentityAction(),
+    "require_mfa": IdentityAction(),
+    "revoke_session": IdentityAction(),
+    "degrade_privileges": IdentityAction(),
     "endpoint_isolate": EndpointAction(),
     "soar_delegate": SoarAction(),
     "crypto_rotate": CryptoAction(),
+    "require_release_approval": DevSecOpsAction(),
+    "revoke_pipeline_token": DevSecOpsAction(),
+    "quarantine_artifact": DevSecOpsAction(),
+    "block_deployment": DevSecOpsAction(),
 }
 
 
@@ -101,7 +109,8 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
     try:
         for idx, step in enumerate(plan.get("steps", []), start=1):
             result = executor.execute_step(step, controls)
-            tx.record(result.rollback_payload or {})
+            if result.rollback_payload:
+                tx.record(result.rollback_payload)
 
             executed.append(
                 {

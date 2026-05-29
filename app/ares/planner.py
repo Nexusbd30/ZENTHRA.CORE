@@ -7,6 +7,11 @@ DISRUPTIVE_ACTIONS = {
     "identity_lockdown",
     "endpoint_isolate",
     "crypto_rotate",
+    "revoke_session",
+    "degrade_privileges",
+    "revoke_pipeline_token",
+    "quarantine_artifact",
+    "block_deployment",
 }
 
 
@@ -87,6 +92,58 @@ def build_plan(verdict: dict) -> dict:
                 criticality=3,
             ),
         ]
+    elif action_type == "require_mfa":
+        steps = [
+            _step(
+                "resolve_identity",
+                target=target,
+                impact="identity lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "require_mfa",
+                target=target,
+                impact="requires strong re-authentication for the target identity",
+                rollback=None,
+                criticality=2,
+            ),
+        ]
+    elif action_type == "revoke_session":
+        steps = [
+            _step(
+                "resolve_identity",
+                target=target,
+                impact="identity lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "revoke_sessions",
+                target=target,
+                impact="invalidates active sessions and refresh tokens",
+                rollback=None,
+                criticality=3,
+            ),
+        ]
+    elif action_type == "degrade_privileges":
+        steps = [
+            _step(
+                "resolve_identity",
+                target=target,
+                impact="identity lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "degrade_privileges",
+                target=target,
+                impact="temporarily removes elevated privileges from the target identity",
+                rollback="identity_rollback",
+                criticality=3,
+                requires_confirmation=True,
+            ),
+        ]
     elif action_type == "endpoint_isolate":
         steps = [
             _step(
@@ -152,6 +209,97 @@ def build_plan(verdict: dict) -> dict:
                 impact="verifies consumers can use the new material",
                 rollback=None,
                 criticality=2,
+            ),
+        ]
+    elif action_type == "require_release_approval":
+        steps = [
+            _step(
+                "resolve_pipeline",
+                target=target,
+                impact="pipeline lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "require_release_approval",
+                target=target,
+                impact="requires release owner or SecOps approval before deployment",
+                rollback="devsecops_rollback",
+                criticality=2,
+            ),
+            _step(
+                "notify_release_owner",
+                target=target,
+                impact="notifies release owner and SecOps queue",
+                rollback=None,
+                criticality=1,
+            ),
+        ]
+    elif action_type == "revoke_pipeline_token":
+        steps = [
+            _step(
+                "resolve_pipeline",
+                target=target,
+                impact="pipeline lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "revoke_pipeline_token",
+                target=target,
+                impact="invalidates suspected CI/CD token or runner credential",
+                rollback=None,
+                criticality=3,
+            ),
+        ]
+    elif action_type == "quarantine_artifact":
+        steps = [
+            _step(
+                "resolve_pipeline",
+                target=target,
+                impact="pipeline and artifact lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "quarantine_artifact",
+                target=target,
+                impact="marks build artifact as not deployable",
+                rollback="devsecops_rollback",
+                criticality=4,
+                requires_confirmation=True,
+            ),
+            _step(
+                "notify_release_owner",
+                target=target,
+                impact="notifies release owner and SecOps queue",
+                rollback=None,
+                criticality=1,
+            ),
+        ]
+    elif action_type == "block_deployment":
+        steps = [
+            _step(
+                "resolve_pipeline",
+                target=target,
+                impact="pipeline and deployment target lookup only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "block_deployment",
+                target=target,
+                impact="blocks deployment until security approval or rollback",
+                rollback="devsecops_rollback",
+                criticality=4,
+                requires_confirmation=True,
+            ),
+            _step(
+                "notify_release_owner",
+                target=target,
+                impact="notifies release owner and SecOps queue",
+                rollback=None,
+                criticality=1,
             ),
         ]
     else:

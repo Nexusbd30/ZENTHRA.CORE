@@ -5,6 +5,7 @@ import uuid
 import requests
 
 from app.core.settings import settings
+from app.identity.entra_graph import dispatch_entra_graph_command
 
 
 def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
@@ -16,6 +17,13 @@ def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
             "payload": payload,
             "status": "ok",
         }
+
+    if (
+        mode in {"provider", "real"}
+        and str(payload.get("provider") or "").strip().lower() == "entra"
+        and settings.ENTRA_GRAPH_ENABLED
+    ):
+        return dispatch_entra_graph_command(command=command, payload=payload)
 
     if mode != "webhook":
         raise RuntimeError(f"Unsupported ACTION_EXECUTION_MODE={mode}")
