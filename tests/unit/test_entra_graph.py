@@ -9,6 +9,7 @@ class FakeResponse:
         self.status_code = status_code
         self._payload = payload or {}
         self.content = b"{}" if payload is not None else b""
+        self.headers = {"request-id": "req-test-1"}
 
     def json(self):
         return self._payload
@@ -71,6 +72,18 @@ def test_entra_graph_resolve_uses_client_credentials_and_graph_user_lookup(monke
         "graph_user_id": "graph-user-1",
         "user_principal_name": "alice@corp.com",
         "account_enabled": True,
+        "provider_evidence": {
+            "kind": "identity_provider_graph_action",
+            "provider": "entra",
+            "command": "identity.resolve",
+            "operation": "resolve_user",
+            "graph_path": "users/alice%40corp.com?$select=id,userPrincipalName,accountEnabled",
+            "http_status": 200,
+            "provider_request_id": "req-test-1",
+            "target_sha256": result["provider_evidence"]["target_sha256"],
+            "recorded_at": result["provider_evidence"]["recorded_at"],
+            "secrets_exposed": False,
+        },
     }
 
 
@@ -99,6 +112,8 @@ def test_entra_graph_disable_credentials_patches_account_enabled(monkeypatch):
     assert [call[0] for call in calls] == ["POST", "PATCH"]
     assert result["mode"] == "entra_graph"
     assert result["operation"] == "accountEnabled=false"
+    assert result["provider_evidence"]["http_status"] == 204
+    assert result["provider_evidence"]["secrets_exposed"] is False
 
 
 def test_entra_graph_require_mfa_fails_without_policy_bridge(monkeypatch):
@@ -118,3 +133,37 @@ def test_entra_graph_require_mfa_fails_without_policy_bridge(monkeypatch):
         assert "ENTRA_REQUIRE_MFA_POLICY_URL" in str(exc)
     else:
         raise AssertionError("require_mfa must require an approved policy bridge")
+
+
+def test_entra_graph_degrade_privileges_resolves_user_id_before_group_removal(monkeypatch):
+    configure_entra(monkeypatch)
+    monkeypatch.setattr(settings, "ENTRA_DEGRADE_PRIVILEGES_GROUP_IDS", "group-admins,group-release")
+    calls: list[tuple[str, str, dict]] = []
+
+    def fake_post(url, **kwargs):
+        calls.append(("POST", url, kwargs))
+        return FakeResponse(payload={"access_token": "token-1"})
+
+    def fake_get(url, **kwargs):
+        calls.append(("GET", url, kwargs))
+        return FakeResponse(payload={"id": "graph-user-1", "userPrincipalName": "alice@corp.com"})
+
+    def fake_delete(url, **kwargs):
+        calls.append(("DELETE", url, kwargs))
+        assert "members/graph-user-1/$ref" in url
+        return FakeResponse(status_code=204)
+
+    monkeypatch.setattr("app.identity.entra_graph.requests.post", fake_post)
+    monkeypatch.setattr("app.identity.entra_graph.requests.get", fake_get)
+    monkeypatch.setattr("app.identity.entra_graph.requests.delete", fake_delete)
+
+    result = dispatch_entra_graph_command(
+        command="identity.degrade_privileges",
+        payload={"target": "user:alice@corp.com"},
+    )
+
+    assert [call[0] for call in calls] == ["POST", "GET", "DELETE", "DELETE"]
+    assert result["graph_user_id"] == "graph-user-1"
+    assert result["group_ids"] == ["group-admins", "group-release"]
+    assert result["provider_evidence"]["kind"] == "identity_provider_graph_action_batch"
+    assert len(result["provider_evidence"]["items"]) == 3
