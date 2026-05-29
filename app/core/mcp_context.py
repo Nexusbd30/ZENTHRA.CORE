@@ -44,6 +44,10 @@ def normalize_mcp_context(
         "maintenance_window": str(raw.get("maintenance_window") or ""),
         "allowed_actions": _list(raw.get("allowed_actions")),
         "blocked_actions": _list(raw.get("blocked_actions")),
+        "allowed_tools": _list(raw.get("allowed_tools")),
+        "blocked_tools": _list(raw.get("blocked_tools")),
+        "tools": _list(raw.get("tools")),
+        "tool_results": _list(raw.get("tool_results")),
         "related_assets": _list(raw.get("related_assets")),
         "evidence_refs": _list(raw.get("evidence_refs")),
     }
@@ -72,6 +76,12 @@ def mcp_risk_factors(context: dict[str, Any] | None) -> list[str]:
         factors.append(f"mcp:active_incidents:{active_incidents}")
     if context.get("blocked_actions"):
         factors.append("mcp:blocked_actions_present")
+    for tool in context.get("tools", [])[:10]:
+        factors.append(f"mcp:tool:{tool}")
+    for evidence_ref in context.get("evidence_refs", [])[:10]:
+        factors.append(f"mcp:evidence:{evidence_ref}")
+    if context.get("tool_results"):
+        factors.append("mcp:tool_results_present")
     return factors
 
 
