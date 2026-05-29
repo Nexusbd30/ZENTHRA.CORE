@@ -1,0 +1,11 @@
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 43200
+
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+  fsevents: false
