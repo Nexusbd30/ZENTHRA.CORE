@@ -27,6 +27,9 @@ CATEGORY_HINTS = {
     "availability": ThreatCategory.availability,
     "performance": ThreatCategory.performance,
     "edr": ThreatCategory.other,
+    "siem": ThreatCategory.other,
+    "sentinel": ThreatCategory.other,
+    "wazuh": ThreatCategory.other,
 }
 
 LEVEL_SCORE = {

@@ -6,6 +6,7 @@ from app.ingestion.adapters.edr import adapt_edr_event
 from app.ingestion.adapters.iam import adapt_iam_event
 from app.ingestion.adapters.netflow import adapt_netflow_event
 from app.ingestion.adapters.qradar import adapt_qradar_event
+from app.ingestion.adapters.sentinel import adapt_sentinel_event
 from app.ingestion.adapters.wazuh import adapt_wazuh_event
 
 ADAPTERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
@@ -13,6 +14,8 @@ ADAPTERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "iam": adapt_iam_event,
     "netflow": adapt_netflow_event,
     "qradar": adapt_qradar_event,
+    "sentinel": adapt_sentinel_event,
+    "microsoft_sentinel": adapt_sentinel_event,
     "wazuh": adapt_wazuh_event,
 }
 
