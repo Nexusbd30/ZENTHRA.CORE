@@ -19,6 +19,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
@@ -32,9 +34,32 @@ services:
       - PROM_TIMEOUT_SEC=${PROM_TIMEOUT_SEC:-2}
       - PROM_CACHE_TTL_SECONDS=${PROM_CACHE_TTL_SECONDS:-5}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-redis}
+      - REPLAY_GUARD_BACKEND=${REPLAY_GUARD_BACKEND:-redis}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX:-zenthra}
+      - SECRET_BACKEND=${SECRET_BACKEND:-file}
+      - SECRET_FILE_DIR=${SECRET_FILE_DIR:-/run/secrets}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
       interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - zenthra_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zenthra_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
       timeout: 5s
       retries: 10
     networks:
@@ -179,6 +204,7 @@ volumes:
   prometheus_data:
   grafana_data:
   postgres_data:
+  redis_data:
 
 # ==========================================================
 # NETWORK (interno)

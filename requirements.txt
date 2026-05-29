@@ -13,3 +13,4 @@ httpx==0.28.1
 prometheus-client==0.24.1
 alembic==1.18.4
 psycopg[binary]==3.3.3
+redis==5.2.1

@@ -4,6 +4,13 @@ import time
 from dataclasses import dataclass
 from typing import Protocol
 
+from app.core.settings import settings
+
+try:
+    import redis
+except ImportError:  # pragma: no cover
+    redis = None
+
 
 @dataclass(frozen=True)
 class ReplayDecision:
@@ -48,7 +55,38 @@ class InMemoryReplayGuardStore:
         self._seen.clear()
 
 
-_STORE: ReplayGuardStore = InMemoryReplayGuardStore(_SEEN)
+class RedisReplayGuardStore:
+    backend_name = "redis"
+
+    def __init__(self, *, url: str, key_prefix: str) -> None:
+        if redis is None:
+            raise RuntimeError("redis package is required for REPLAY_GUARD_BACKEND=redis")
+        self._client = redis.Redis.from_url(url, decode_responses=True)
+        self._key_prefix = key_prefix.strip(":") or "zenthra"
+
+    def _key(self, key: str) -> str:
+        return f"{self._key_prefix}:replay:{key}"
+
+    def check(self, *, key: str, ttl_seconds: int) -> ReplayDecision:
+        normalized_ttl = max(1, int(ttl_seconds))
+        redis_key = self._key(key)
+        accepted = bool(self._client.set(redis_key, "1", nx=True, ex=normalized_ttl))
+        return ReplayDecision(accepted=accepted, replay_key=key, ttl_seconds=normalized_ttl)
+
+    def reset(self) -> None:
+        pattern = f"{self._key_prefix}:replay:*"
+        for key in self._client.scan_iter(match=pattern):
+            self._client.delete(key)
+
+
+def _build_store() -> ReplayGuardStore:
+    backend = str(settings.REPLAY_GUARD_BACKEND or "in_memory").strip().lower()
+    if backend == "redis":
+        return RedisReplayGuardStore(url=settings.REDIS_URL, key_prefix=settings.REDIS_KEY_PREFIX)
+    return InMemoryReplayGuardStore(_SEEN)
+
+
+_STORE: ReplayGuardStore = _build_store()
 
 
 def replay_guard_backend_status() -> dict[str, str | bool]:

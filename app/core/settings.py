@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     ENTERPRISE_TENANT_MODE: str = "single_tenant"  # single_tenant | header_scoped | strict
     DEFAULT_TENANT_ID: str = "default"
     ENTERPRISE_RBAC_ENABLED: bool = True
+    RATE_LIMIT_BACKEND: str = "in_memory"  # in_memory | redis
+    REPLAY_GUARD_BACKEND: str = "in_memory"  # in_memory | redis
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
+    REDIS_KEY_PREFIX: str = "zenthra"
+    SECRET_BACKEND: str = "env"  # env | file
+    SECRET_FILE_DIR: str = "/run/secrets"
 
     # ---------------------------------------------------------
     # Base de datos
@@ -149,6 +155,14 @@ class Settings(BaseSettings):
     SOAR_CONTROL_URL: str | None = None
     CRYPTO_CONTROL_URL: str | None = None
     DEVSECOPS_CONTROL_URL: str | None = None
+    SOC_WEBHOOK_URL: str | None = None
+    SOC_WEBHOOK_TOKEN: str | None = None
+    SOC_WEBHOOK_HMAC_SECRET: str | None = None
+    SOC_WEBHOOK_TIMEOUT_SEC: float = 5.0
+    GITHUB_API_BASE_URL: str = "https://api.github.com"
+    GITHUB_TOKEN: str | None = None
+    GITHUB_DEFAULT_OWNER: str | None = None
+    GITHUB_TOKEN_SECRET_NAMES: str = ""
 
     # ---------------------------------------------------------
     # Pydantic settings config
