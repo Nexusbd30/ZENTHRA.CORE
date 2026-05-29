@@ -2,7 +2,7 @@
 # ZENTHRA - Observabilidad Stack + PostgreSQL (v3.9.1)
 # ==========================================================
 # Stack completo: backend, PostgreSQL y observabilidad.
-# Expone PostgreSQL en 55432 para acceso local desde herramientas externas.
+# Expone PostgreSQL en ${ZENTHRA_POSTGRES_PORT:-56432} para acceso local desde herramientas externas.
 #
 # Nota:
 # - El backend dockerizado conecta a postgres por hostname "postgres:5432".
@@ -28,6 +28,8 @@ services:
       - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://zenthra:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zenthra}
       - PROMETHEUS_BASE=http://prometheus:9090
       - ALERTMANAGER_BASE=http://alertmanager:9093
+      - ALERTMANAGER_ALLOWED_CIDRS=${ALERTMANAGER_ALLOWED_CIDRS:-172.16.0.0/12,127.0.0.1/32,::1/128}
+      - PROM_TIMEOUT_SEC=${PROM_TIMEOUT_SEC:-2}
       - PROM_CACHE_TTL_SECONDS=${PROM_CACHE_TTL_SECONDS:-5}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     healthcheck:
@@ -48,7 +50,7 @@ services:
 
     # Como tu backend corre en Windows HOST, exponemos el puerto al host
     ports:
-      - "55432:5432"
+      - "${ZENTHRA_POSTGRES_PORT:-56432}:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-zenthra}
       - POSTGRES_USER=${POSTGRES_USER:-zenthra}

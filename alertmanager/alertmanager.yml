@@ -7,4 +7,5 @@ route:
 receivers:
   - name: 'default'
     webhook_configs:
-      - url: 'http://localhost:5001/'  # replace with your handler or remove
+      - url: 'http://backend:8000/hooks/alertmanager'
+        send_resolved: true
