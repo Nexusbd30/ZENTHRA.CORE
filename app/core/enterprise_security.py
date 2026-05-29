@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.rate_limit import rate_limit_backend_status
 from app.core.replay_guard import replay_guard_backend_status
+from app.core.secrets import secret_backend_status
 from app.core.settings import settings
 from app.identity.providers import list_provider_capability_payloads as list_identity_providers
 from app.secops.providers import list_provider_capability_payloads as list_devsecops_providers
@@ -182,6 +183,7 @@ def build_enterprise_readiness(*, tenant_id: str | None = None) -> dict[str, Any
         "security_runtime": {
             "rate_limit_store": rate_limit_backend_status(),
             "replay_guard_store": replay_guard_backend_status(),
+            "secret_backend": secret_backend_status(),
         },
         "next_gate": "connect_first_live_identity_or_devsecops_provider",
     }
