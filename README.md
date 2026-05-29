@@ -85,8 +85,9 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
 Desde `ZENTHRA.CORE_SECURITY/`:
 
 ```powershell
-npm install
-npm run dev
+corepack enable
+corepack pnpm install
+sigue 
 ```
 
 Variables frontend (`ZENTHRA.CORE_SECURITY/.env`):
@@ -108,7 +109,7 @@ Servicios por defecto:
 - Grafana: `http://localhost:3000`
 - Alertmanager: `http://localhost:9093`
 - Blackbox: `http://localhost:9115`
-- PostgreSQL: `localhost:55432`
+- PostgreSQL: `localhost:56432`
 
 ## Diagnostico operativo
 
@@ -163,8 +164,8 @@ pytest
 ```
 
 Estado detectado en este entorno:
-- Backend: `60 passed` con `.\venv\Scripts\python.exe -m pytest`.
-- Frontend: `npm run build` completa correctamente.
+- Backend: `134 passed` con `.\venv\Scripts\pytest.exe -q`.
+- Frontend: `corepack pnpm run build` completa correctamente.
 - CI incluye una guarda temporal contra nuevas corrupciones de codificacion/mojibake.
 
 ## Hallazgos del analisis tecnico
@@ -277,5 +278,6 @@ Comportamiento:
 - Policy Matrix valida decision antes de ejecutar.
 - Kill-switch global bloquea ejecucion inmediatamente.
 - Riesgo alto puede requerir aprobacion humana (`requires_human=true`).
-#   Z E N T H R A . C O R E  
+#   Z E N T H R A . C O R E 
+ 
  
