@@ -69,6 +69,7 @@ else:
     # PostgreSQL (PROD / DEV avanzado)
     engine_kwargs.update(
         {
+            "connect_args": {"connect_timeout": 5},
             "pool_pre_ping": True,   # detecta y recicla conexiones rotas
             "pool_size": 10,         # conexiones persistentes
             "max_overflow": 20,      # conexiones extra en picos
