@@ -21,8 +21,8 @@ const toSeries = (result) => {
   if (!Array.isArray(values) || values.length === 0) return [];
   return values.map(([ts, v]) => ({
     t: Number(ts) * 1000,
-    gpu: Math.max(0, Math.min(Number(v) || 0, 100)),
-  }));
+    gpu: Math.max(0, Math.min(Number(v), 100)),
+  })).filter((point) => Number.isFinite(point.t) && Number.isFinite(point.gpu));
 };
 
 const instantPoint = async (q) => {

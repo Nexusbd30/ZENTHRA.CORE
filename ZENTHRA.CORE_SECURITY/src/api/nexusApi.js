@@ -28,7 +28,8 @@ import axios from "axios";
 
 // URL base del backend (definida en .env → VITE_API_URL)
 const API_BASE_URL =
-  (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+  (import.meta.env.VITE_API_URL || "http://127.0.0.1:8010").replace(/\/+$/, "");
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 45000);
 
 // Token interno para /monitoring/* (NO es el JWT de usuario)
 const MONITOR_TOKEN = (import.meta.env.VITE_ZENTHRA_MONITOR_TOKEN || "").trim();
@@ -49,7 +50,7 @@ if (!MONITOR_TOKEN) {
 const nexusApi = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
-  timeout: 10000,
+  timeout: API_TIMEOUT_MS,
 });
 
 // =============================================================
@@ -75,11 +76,18 @@ const isAutonomyPath = (config) => {
     const url = new URL(config.url, API_BASE_URL);
     return (
       url.pathname.startsWith("/api/v1/redqueen/") ||
-      url.pathname.startsWith("/api/v1/ares/")
+      url.pathname.startsWith("/api/v1/ares/") ||
+      url.pathname.startsWith("/api/v1/audit/") ||
+      url.pathname.startsWith("/api/v1/ingest/")
     );
   } catch {
     const url = String(config?.url || "");
-    return url.startsWith("/api/v1/redqueen/") || url.startsWith("/api/v1/ares/");
+    return (
+      url.startsWith("/api/v1/redqueen/") ||
+      url.startsWith("/api/v1/ares/") ||
+      url.startsWith("/api/v1/audit/") ||
+      url.startsWith("/api/v1/ingest/")
+    );
   }
 };
 
@@ -164,6 +172,9 @@ nexusApi.interceptors.response.use(
         "[ZENTHRA] Error de conexión con el servidor:",
         error.message
       );
+      if (error.code === "ECONNABORTED") {
+        throw new Error("La petición al backend tardó demasiado.");
+      }
       throw new Error("No se puede conectar con el servidor.");
     }
 
@@ -430,6 +441,56 @@ export const getRedQueenVerdict = async (verdictId) => {
   return data;
 };
 
+export const ingestAresXEvent = async ({ source, payload }) => {
+  const { data } = await nexusApi.post("/api/v1/ingest/event", { source, payload });
+  return data;
+};
+
+export const listAresXIngestSources = async () => {
+  const { data } = await nexusApi.get("/api/v1/ingest/sources");
+  return data;
+};
+
+export const getAresXIngestStats = async () => {
+  const { data } = await nexusApi.get("/api/v1/ingest/stats");
+  return data;
+};
+
+export const listRedQueenVerdicts = async ({ status, target, limit = 25 } = {}) => {
+  const params = { limit };
+  if (status && status !== "all") params.status = status;
+  if (target) params.target = target;
+  const { data } = await nexusApi.get("/api/v1/redqueen/verdicts", { params });
+  return data;
+};
+
+export const getAresXVerdict = async (verdictId) => {
+  const { data } = await nexusApi.get(`/api/v1/redqueen/verdicts/${verdictId}`);
+  return data;
+};
+
+export const approveAresXVerdict = async (verdictId) => {
+  const { data } = await nexusApi.post(`/api/v1/redqueen/verdicts/${verdictId}/approve`);
+  return data;
+};
+
+export const rejectAresXVerdict = async (verdictId) => {
+  const { data } = await nexusApi.post(`/api/v1/redqueen/verdicts/${verdictId}/reject`);
+  return data;
+};
+
+export const getRedQueenStats = async () => {
+  const { data } = await nexusApi.get("/api/v1/redqueen/stats");
+  return data;
+};
+
+export const getEntityProfile = async (entityId) => {
+  const { data } = await nexusApi.get(
+    `/api/v1/redqueen/entities/${encodeURIComponent(entityId)}/profile`
+  );
+  return data;
+};
+
 export const getAresStatus = async () => {
   const { data } = await nexusApi.get("/api/v1/ares/status");
   return data;
@@ -442,6 +503,27 @@ export const getAresOperationFlow = async () => {
 
 export const setAresKillSwitch = async (mode) => {
   const { data } = await nexusApi.post(`/api/v1/ares/kill-switch/${mode}`);
+  return data;
+};
+
+export const getAresKillSwitch = async () => {
+  const { data } = await nexusApi.get("/api/v1/ares/kill-switch");
+  return data;
+};
+
+export const activateAresKillSwitch = async ({ reason, actor = "frontend" }) => {
+  const { data } = await nexusApi.post("/api/v1/ares/kill-switch/activate", {
+    reason,
+    actor,
+  });
+  return data;
+};
+
+export const deactivateAresKillSwitch = async ({ reason, actor = "frontend" }) => {
+  const { data } = await nexusApi.post("/api/v1/ares/kill-switch/deactivate", {
+    reason,
+    actor,
+  });
   return data;
 };
 
@@ -463,6 +545,36 @@ export const getAresResults = async (verdictId) => {
   return data;
 };
 
+export const listAresExecutions = async ({
+  verdictId,
+  status,
+  targetEntity,
+  limit = 25,
+} = {}) => {
+  const params = { limit };
+  if (verdictId) params.verdict_id = verdictId;
+  if (status && status !== "all") params.status = status;
+  if (targetEntity) params.target_entity = targetEntity;
+  const { data } = await nexusApi.get("/api/v1/ares/executions", { params });
+  return data;
+};
+
+export const getAresExecution = async (executionId) => {
+  const { data } = await nexusApi.get(`/api/v1/ares/executions/${executionId}`);
+  return data;
+};
+
+export const rollbackAresExecution = async (
+  executionId,
+  { reason, actor = "frontend" }
+) => {
+  const { data } = await nexusApi.post(`/api/v1/ares/executions/${executionId}/rollback`, {
+    reason,
+    actor,
+  });
+  return data;
+};
+
 export const getAresApprovals = async (verdictId) => {
   const { data } = await nexusApi.get(`/api/v1/ares/approvals/${verdictId}`);
   return data;
@@ -478,6 +590,27 @@ export const getAresAudit = async ({ verdictId, limit = 50 } = {}) => {
 
 export const verifyAresAudit = async () => {
   const { data } = await nexusApi.get("/api/v1/ares/audit/verify");
+  return data;
+};
+
+export const listAresXAuditRecords = async ({
+  verdictId,
+  eventType,
+  actor,
+  limit = 25,
+} = {}) => {
+  const params = { limit };
+  if (verdictId) params.verdict_id = verdictId;
+  if (eventType) params.event_type = eventType;
+  if (actor) params.actor = actor;
+  const { data } = await nexusApi.get("/api/v1/audit/records", { params });
+  return data;
+};
+
+export const verifyAresXAudit = async ({ fromSequence = 1 } = {}) => {
+  const { data } = await nexusApi.post("/api/v1/audit/verify", {
+    from_sequence: fromSequence,
+  });
   return data;
 };
 

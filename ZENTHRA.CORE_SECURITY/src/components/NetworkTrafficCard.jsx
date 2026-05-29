@@ -28,8 +28,8 @@ const toSeries = (result, key) => {
   if (!Array.isArray(values) || values.length === 0) return [];
   return values.map(([ts, v]) => ({
     t: Number(ts) * 1000,
-    [key]: Number(v) || 0,
-  }));
+    [key]: Number(v),
+  })).filter((point) => Number.isFinite(point.t) && Number.isFinite(point[key]));
 };
 
 const instantPoint = async (q, key) => {
@@ -84,6 +84,13 @@ export default function NetworkTrafficCard({
           `sum(rate(windows_net_bytes_received_total{nic="${nicEscaped}"}[2m])) + ` +
           `sum(rate(windows_net_bytes_sent_total{nic="${nicEscaped}"}[2m]))` +
           `) * 8 / 1024 / 1024`;
+        const allNicsTotalQuery =
+          "sum(rate(windows_net_bytes_total[2m])) * 8 / 1024 / 1024";
+        const allNicsSplitQuery =
+          "(" +
+          "sum(rate(windows_net_bytes_received_total[2m])) + " +
+          "sum(rate(windows_net_bytes_sent_total[2m]))" +
+          ") * 8 / 1024 / 1024";
 
         let res = await promRange({ q: totalQuery, start, end, step });
         let result = res?.data?.result?.[0];
@@ -99,6 +106,14 @@ export default function NetworkTrafficCard({
         }
         if (!series.length) {
           series = await instantPoint(splitQuery, "traffic");
+        }
+        if (!series.length) {
+          res = await promRange({ q: allNicsTotalQuery, start, end, step });
+          series = toSeries(res?.data?.result?.[0], "traffic");
+        }
+        if (!series.length) {
+          res = await promRange({ q: allNicsSplitQuery, start, end, step });
+          series = toSeries(res?.data?.result?.[0], "traffic");
         }
 
         if (!cancelled) {
