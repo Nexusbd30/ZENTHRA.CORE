@@ -23,7 +23,7 @@ def _add_feedback(
     status: str,
     confidence: float = 0.9,
     factors: str = '["ueba:privileged_account"]',
-    minutes_ago: int = 1,
+    minutes_ago: int = 0,
 ):
     db_session.add(
         Verdict(
@@ -77,7 +77,7 @@ def test_redqueen_trainer_builds_feedback_report(db_session):
         confidence=0.7,
     )
 
-    report = build_training_report(db_session)
+    report = build_training_report(db_session, limit=3)
 
     assert report["status"] == "ok"
     assert report["sample_count"] >= 3

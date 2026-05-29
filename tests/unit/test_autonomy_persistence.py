@@ -47,7 +47,7 @@ async def test_transactional_rollback_on_simulated_failure(test_client, monkeypa
             "risk_score": 76,
             "factors": ["endpoint_compromise"],
             "execution_controls": {
-                "simulate_failure_after_steps": 1,
+                "simulate_failure_after_steps": 2,
                 "change_ticket": "TEST-ARES-ROLLBACK-001",
             },
             "human_approved": True,

@@ -14,6 +14,10 @@ def audit_autonomy_event(
     actor: str,
     action: str,
     result: dict[str, Any],
+    actor_role: str = "system",
+    tenant_id: str = "default",
+    capability: str = "",
+    request_id: str = "",
 ) -> dict[str, Any]:
     record = append_audit_record(
         db,
@@ -21,6 +25,10 @@ def audit_autonomy_event(
         actor=actor,
         action=action,
         result=result,
+        actor_role=actor_role,
+        tenant_id=tenant_id,
+        capability=capability,
+        request_id=request_id,
     )
     return {
         "record_id": record.record_id,

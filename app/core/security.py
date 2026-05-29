@@ -22,6 +22,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from app.core.enterprise_security import build_security_context, has_capability
 from app.core.settings import settings
 from app.db.session import get_db
 from app.services.user_service import UserService
@@ -255,3 +256,44 @@ def require_admin_or_monitor_token(
 
     return user
 
+
+def require_enterprise_capability(capability: str):
+    def capability_checker(
+        auth_context=Depends(require_admin_or_monitor_token),
+        x_tenant_id: str | None = Header(default=None),
+        x_request_id: str | None = Header(default=None),
+    ):
+        if isinstance(auth_context, dict):
+            context = build_security_context(
+                actor=str(auth_context.get("auth_type", "internal")),
+                role=str(auth_context.get("role", "internal")),
+                tenant_id=x_tenant_id,
+            )
+            return {
+                "actor": context.actor,
+                "role": context.role,
+                "tenant_id": context.tenant_id,
+                "capability": capability,
+                "request_id": x_request_id or "n/a",
+            }
+
+        role = getattr(auth_context, "role", "user")
+        if not has_capability(role, capability):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Capability requerida: {capability}",
+            )
+        context = build_security_context(
+            actor=getattr(auth_context, "email", "user"),
+            role=role,
+            tenant_id=x_tenant_id,
+        )
+        return {
+            "actor": context.actor,
+            "role": context.role,
+            "tenant_id": context.tenant_id,
+            "capability": capability,
+            "request_id": x_request_id or "n/a",
+        }
+
+    return capability_checker

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from urllib.parse import quote_plus, urlparse, urlunparse
 
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     BOOTSTRAP_ADMIN_EMAIL: str = "admin@zenthra.dev"
     BOOTSTRAP_ADMIN_PASSWORD: str | None = None
+    ENTERPRISE_TENANT_MODE: str = "single_tenant"  # single_tenant | header_scoped | strict
+    DEFAULT_TENANT_ID: str = "default"
+    ENTERPRISE_RBAC_ENABLED: bool = True
 
     # ---------------------------------------------------------
     # Base de datos
@@ -46,6 +50,7 @@ class Settings(BaseSettings):
     # Opción B (pro): define POSTGRES_* y se construye el URI
     POSTGRES_HOST: str | None = None
     POSTGRES_PORT: int = 5432
+    ZENTHRA_POSTGRES_PORT: int | None = None
     POSTGRES_DB: str | None = None
     POSTGRES_USER: str | None = None
     POSTGRES_PASSWORD: str | None = None
@@ -112,8 +117,8 @@ class Settings(BaseSettings):
     KAFKA_POLL_TIMEOUT_SEC: float = 1.0
 
     # Governance thresholds
-    REDQUEEN_AUTONOMY_MAX: float = 95.0
-    REDQUEEN_HUMAN_APPROVAL_SCORE: float = 90.0
+    REDQUEEN_AUTONOMY_MAX: float = 80.0
+    REDQUEEN_HUMAN_APPROVAL_SCORE: float = 80.0
 
     # ---------------------------------------------------------
     # ARES execution adapters
@@ -124,9 +129,26 @@ class Settings(BaseSettings):
 
     NETWORK_CONTROL_URL: str | None = None
     IDENTITY_CONTROL_URL: str | None = None
+    ENTRA_GRAPH_ENABLED: bool = False
+    ENTRA_GRAPH_BASE_URL: str = "https://graph.microsoft.com/v1.0"
+    ENTRA_GRAPH_TOKEN_URL: str | None = None
+    ENTRA_GRAPH_SCOPE: str = "https://graph.microsoft.com/.default"
+    ENTRA_TENANT_ID: str | None = None
+    ENTRA_CLIENT_ID: str | None = None
+    ENTRA_CLIENT_SECRET: str | None = None
+    ENTRA_REQUIRE_MFA_POLICY_URL: str | None = None
+    ENTRA_DEGRADE_PRIVILEGES_GROUP_IDS: str = ""
+    ENTRA_WEBHOOK_SECRET: str | None = None
+    ENTRA_WEBHOOK_MAX_SKEW_SEC: int = 300
+    ENTRA_WEBHOOK_RATE_LIMIT_ENABLED: bool = True
+    ENTRA_WEBHOOK_RATE_LIMIT_REQUESTS: int = 120
+    ENTRA_WEBHOOK_RATE_LIMIT_WINDOW_SEC: int = 60
+    ENTRA_WEBHOOK_REPLAY_GUARD_ENABLED: bool = True
+    ENTRA_WEBHOOK_REPLAY_TTL_SEC: int = 300
     ENDPOINT_CONTROL_URL: str | None = None
     SOAR_CONTROL_URL: str | None = None
     CRYPTO_CONTROL_URL: str | None = None
+    DEVSECOPS_CONTROL_URL: str | None = None
 
     # ---------------------------------------------------------
     # Pydantic settings config
@@ -179,19 +201,33 @@ settings.ALERTMANAGER_BASE = (
 # 🧠 Post-procesado: construir URI Postgres si POSTGRES_* existe
 # -------------------------------------------------------------
 # ✅ CLAVE: escapamos user/password para evitar UnicodeDecodeError y caracteres especiales
-if (
-    settings.POSTGRES_HOST
-    and settings.POSTGRES_DB
-    and settings.POSTGRES_USER
-    and settings.POSTGRES_PASSWORD
-):
+postgres_config_complete = all(
+    [
+        settings.POSTGRES_HOST,
+        settings.POSTGRES_DB,
+        settings.POSTGRES_USER,
+        settings.POSTGRES_PASSWORD,
+    ]
+)
+explicit_database_uri = bool(os.environ.get("SQLALCHEMY_DATABASE_URI"))
+explicit_postgres_config = all(
+    os.environ.get(key)
+    for key in ("POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD")
+)
+
+if postgres_config_complete and (not explicit_database_uri or explicit_postgres_config):
     pg_user = quote_plus(str(settings.POSTGRES_USER))
     pg_pass = quote_plus(str(settings.POSTGRES_PASSWORD))
+    pg_port = (
+        int(settings.POSTGRES_PORT)
+        if explicit_postgres_config or settings.ZENTHRA_POSTGRES_PORT is None
+        else int(settings.ZENTHRA_POSTGRES_PORT)
+    )
 
     settings.SQLALCHEMY_DATABASE_URI = (
         "postgresql+psycopg://"
         f"{pg_user}:{pg_pass}"
-        f"@{settings.POSTGRES_HOST}:{int(settings.POSTGRES_PORT)}"
+        f"@{settings.POSTGRES_HOST}:{pg_port}"
         f"/{settings.POSTGRES_DB}"
     )
 
