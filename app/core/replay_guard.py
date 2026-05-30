@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.core.settings import settings
 
+redis_module: Any | None
 try:
-    import redis
+    import redis as redis_module
 except ImportError:  # pragma: no cover
-    redis = None
+    redis_module = None
+
+redis: Any | None = redis_module
 
 
 @dataclass(frozen=True)

@@ -3,14 +3,17 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from app.core.settings import settings
 
+redis_module: Any | None
 try:
-    import redis
+    import redis as redis_module
 except ImportError:  # pragma: no cover - exercised by environments without redis extra
-    redis = None
+    redis_module = None
+
+redis: Any | None = redis_module
 
 
 @dataclass(frozen=True)
@@ -96,7 +99,8 @@ class RedisRateLimitStore:
         pipe = self._client.pipeline()
         pipe.zremrangebyscore(redis_key, 0, cutoff_ms)
         pipe.zcard(redis_key)
-        _, current_count = pipe.execute()
+        first_result = cast(list[Any], pipe.execute())
+        current_count = first_result[1]
 
         if int(current_count) >= normalized_limit:
             oldest = self._client.zrange(redis_key, 0, 0, withscores=True)
@@ -116,7 +120,8 @@ class RedisRateLimitStore:
         pipe.zadd(redis_key, {member: now_ms})
         pipe.expire(redis_key, normalized_window)
         pipe.zcard(redis_key)
-        _, _, new_count = pipe.execute()
+        second_result = cast(list[Any], pipe.execute())
+        new_count = second_result[2]
         return RateLimitDecision(
             allowed=True,
             limit=normalized_limit,
