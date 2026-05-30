@@ -26,6 +26,8 @@ from app.secops.contracts import (
     DevSecOpsSignalIngestResponse,
     DevSecOpsSignalSummaryResponse,
     IntelligenceStatusResponse,
+    SecOpsExecutionPreflightRequest,
+    SecOpsExecutionPreflightResponse,
     SecOpsPostureResponse,
     SecOpsStatusResponse,
     SecurityEventExportRequest,
@@ -39,6 +41,11 @@ from app.secops.providers import (
     action_preflight_payload,
     list_provider_capability_payloads,
     provider_capability_payload,
+)
+from app.secops.readiness import (
+    build_all_readiness,
+    build_execution_preflight,
+    build_secops_integration_readiness,
 )
 from app.secops.service import (
     build_secops_posture,
@@ -227,6 +234,50 @@ def run_secops_security_event_lifecycle(
 @router.get("/enterprise/readiness")
 def secops_enterprise_readiness(x_tenant_id: str | None = Header(default=None)):
     return build_enterprise_readiness(tenant_id=x_tenant_id)
+
+
+@router.get("/integrations/readiness")
+def secops_integrations_readiness():
+    return build_all_readiness()
+
+
+@router.get("/providers/github_actions/readiness")
+def github_actions_readiness():
+    return build_secops_integration_readiness("github_actions")
+
+
+@router.get("/providers/{provider}/readiness")
+def secops_provider_readiness(provider: str):
+    return build_secops_integration_readiness(provider)
+
+
+@router.get("/readiness/redis")
+def redis_readiness():
+    return build_secops_integration_readiness("redis")
+
+
+@router.get("/readiness/soc-webhook")
+def soc_webhook_readiness():
+    return build_secops_integration_readiness("soc_webhook")
+
+
+@router.get("/readiness/secrets")
+def secret_backend_readiness():
+    return build_secops_integration_readiness("secret_backend")
+
+
+@router.get("/readiness/ingestion")
+def siem_ingestion_readiness():
+    return build_secops_integration_readiness("ingestion")
+
+
+@router.post("/execution/preflight", response_model=SecOpsExecutionPreflightResponse)
+def secops_execution_preflight(payload: SecOpsExecutionPreflightRequest):
+    return build_execution_preflight(
+        provider=payload.provider,
+        action_type=payload.action_type,
+        execution_controls=payload.execution_controls,
+    )
 
 
 @router.get("/providers", response_model=list[DevSecOpsProviderCapabilitiesResponse])

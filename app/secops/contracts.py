@@ -113,6 +113,13 @@ class DevSecOpsCorrelationMaterializeResponse(BaseModel):
 
 class DevSecOpsProviderPreflightRequest(BaseModel):
     action_type: str = Field(..., min_length=1)
+    execution_controls: dict[str, Any] = Field(default_factory=dict)
+
+
+class SecOpsExecutionPreflightRequest(BaseModel):
+    provider: str = Field(..., min_length=1)
+    action_type: str = Field(..., min_length=1)
+    execution_controls: dict[str, Any] = Field(default_factory=dict)
 
 
 class DevSecOpsProviderCapabilitiesResponse(BaseModel):
@@ -131,6 +138,27 @@ class DevSecOpsProviderPreflightResponse(BaseModel):
     adjusted: bool
     supported_actions: list[str]
     reason: str
+
+
+class SecOpsReadinessResponse(BaseModel):
+    integration: str | None = None
+    module: str | None = None
+    status: str | None = None
+    overall: str | None = None
+    configured: bool | None = None
+    secrets_exposed: bool = False
+
+
+class SecOpsExecutionPreflightResponse(BaseModel):
+    provider: str
+    action_type: str
+    mode: str
+    allowed: bool
+    checks: dict[str, bool]
+    provider_preflight: dict[str, Any]
+    readiness: dict[str, Any]
+    reason: str
+    secrets_exposed: bool = False
 
 
 class DevSecOpsControl(BaseModel):
