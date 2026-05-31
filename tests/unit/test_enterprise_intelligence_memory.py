@@ -5,6 +5,7 @@ from datetime import datetime
 import pytest
 
 from app.core.settings import settings
+from app.intelligence.contract_registry import build_enterprise_ai_contract_registry
 from app.intelligence.contracts import KnowledgeDocument
 from app.intelligence.readiness import build_enterprise_ai_readiness
 from app.intelligence.repository import (
@@ -164,6 +165,25 @@ def test_enterprise_ai_readiness_combines_memory_governance_and_evaluation(db_se
     assert all(check["passed"] for check in readiness["checks"])
 
 
+def test_enterprise_ai_contract_registry_exposes_frontend_entrypoints():
+    registry = build_enterprise_ai_contract_registry()
+
+    assert registry["contract"] == "zenthra.enterprise_ai_contract_registry.v1"
+    assert registry["secrets_exposed"] is False
+    schemas = {item["schema"] for item in registry["contracts"]}
+    assert {
+        "zenthra.knowledge_document.v1",
+        "zenthra.enterprise_memory.v1",
+        "zenthra.llm_governance.v1",
+        "zenthra.ai_evaluation.v1",
+        "zenthra.ares_ai_evidence_bundle.v1",
+        "zenthra.enterprise_ai_readiness.v1",
+    } <= schemas
+    assert registry["frontend_entrypoints"]["evidence_bundle"] == (
+        "/api/v1/ares/evidence/{verdict_id}"
+    )
+
+
 @pytest.mark.asyncio
 async def test_enterprise_ai_readiness_api_exposes_operational_gate(
     test_client,
@@ -243,3 +263,21 @@ async def test_enterprise_ai_readiness_api_exposes_operational_gate(
     }
     assert body["evaluation"]["sample_count"] >= 1
     assert body["evaluation"]["traceable_result_rate"] > 0.0
+
+
+@pytest.mark.asyncio
+async def test_enterprise_ai_contract_registry_api(test_client, monkeypatch):
+    response = await test_client.get(
+        "/api/v1/secops/intelligence/enterprise/contracts",
+        headers=monitor_headers(monkeypatch),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["module"] == "enterprise_ai"
+    assert body["contract"] == "zenthra.enterprise_ai_contract_registry.v1"
+    assert body["count"] == len(body["contracts"])
+    assert any(
+        item["schema"] == "zenthra.ares_ai_evidence_bundle.v1"
+        for item in body["contracts"]
+    )

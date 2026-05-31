@@ -11,6 +11,7 @@ from app.core.enterprise_security import build_enterprise_readiness
 from app.core.observability.metrics import record_soc_lifecycle
 from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
 from app.db.session import get_db
+from app.intelligence.contract_registry import build_enterprise_ai_contract_registry
 from app.intelligence.contracts import KnowledgeDocument
 from app.intelligence.readiness import build_enterprise_ai_readiness
 from app.intelligence.repository import (
@@ -147,6 +148,11 @@ def secops_enterprise_ai_readiness(db: Session = Depends(get_db)):
         repository,
         ai_evaluation=training_report.get("ai_governance", {}),
     )
+
+
+@router.get("/intelligence/enterprise/contracts")
+def secops_enterprise_ai_contracts():
+    return build_enterprise_ai_contract_registry()
 
 
 @router.get("/intelligence/documents", response_model=list[KnowledgeDocumentResponse])
