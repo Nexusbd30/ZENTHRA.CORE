@@ -12,6 +12,7 @@ from app.core.observability.metrics import record_soc_lifecycle
 from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
 from app.db.session import get_db
 from app.intelligence.contracts import KnowledgeDocument
+from app.intelligence.readiness import build_enterprise_ai_readiness
 from app.intelligence.repository import (
     document_to_payload,
     get_persistent_knowledge_repository,
@@ -136,6 +137,16 @@ def secops_intelligence_status():
 def secops_enterprise_intelligence_status(db: Session = Depends(get_db)):
     repository = get_persistent_knowledge_repository(db)
     return build_enterprise_intelligence_status(repository)
+
+
+@router.get("/intelligence/enterprise/readiness")
+def secops_enterprise_ai_readiness(db: Session = Depends(get_db)):
+    repository = get_persistent_knowledge_repository(db)
+    training_report = AutonomyService.get_training_report(db)
+    return build_enterprise_ai_readiness(
+        repository,
+        ai_evaluation=training_report.get("ai_governance", {}),
+    )
 
 
 @router.get("/intelligence/documents", response_model=list[KnowledgeDocumentResponse])
