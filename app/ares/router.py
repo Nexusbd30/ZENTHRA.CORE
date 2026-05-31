@@ -8,6 +8,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.ares.approval import build_approval_payload
+from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.ares.kill_switch import kill_switch_state
 from app.core.audit import audit_autonomy_event
 from app.core.security import require_admin_or_monitor_token
@@ -401,6 +402,11 @@ def list_results(verdict_id: str, db: Session = Depends(get_db)):
             for r in rows
         ],
     }
+
+
+@router.get("/evidence/{verdict_id}")
+def get_ai_evidence_bundle(verdict_id: str, db: Session = Depends(get_db)):
+    return build_ares_ai_evidence_bundle(db, verdict_id=verdict_id)
 
 
 @router.get("/memory/{target}")

@@ -115,6 +115,22 @@ async def test_redqueen_ares_contract_preserves_dry_run_evidence_and_audit(
     assert results["items"][0]["status"] == "success"
     assert results["items"][0]["result_hash"] == execution["result"]["result_hash"]
 
+    bundle_response = await test_client.get(
+        f"/api/v1/ares/evidence/{verdict['verdict_id']}",
+        headers=headers,
+    )
+    assert bundle_response.status_code == 200, bundle_response.text
+    bundle = bundle_response.json()
+    assert bundle["contract"] == "zenthra.ares_ai_evidence_bundle.v1"
+    assert bundle["status"] == "ok"
+    assert bundle["execution_count"] == 1
+    assert bundle["trace_count"] == 1
+    assert bundle["bundle_hash"]
+    assert bundle["intelligence"]["llm_contract"]["schema"] == "redqueen.llm_decision.v1"
+    assert bundle["intelligence"]["llm_governance"]["approved_for_ares"] is True
+    assert bundle["audit"]["hash_chain"] == "valid"
+    assert bundle["audit"]["records"]
+
     audit_response = await test_client.get(
         f"/api/v1/ares/audit?verdict_id={verdict['verdict_id']}",
         headers=headers,
@@ -173,6 +189,7 @@ def test_redqueen_ares_openapi_keeps_contract_entrypoints():
     assert "/api/v1/redqueen/verdict" in paths
     assert "/api/v1/ares/execute" in paths
     assert "/api/v1/ares/results/{verdict_id}" in paths
+    assert "/api/v1/ares/evidence/{verdict_id}" in paths
     assert "/api/v1/ares/audit" in paths
     assert "/api/v1/ares/audit/verify" in paths
 
