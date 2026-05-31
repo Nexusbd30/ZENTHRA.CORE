@@ -4,7 +4,11 @@ from typing import Any
 
 from app.core.mcp_gateway import list_mcp_tools
 from app.intelligence.llm_contract import LLM_DECISION_SCHEMA
-from app.intelligence.repository import get_knowledge_repository
+from app.intelligence.repository import (
+    KnowledgeRepository,
+    document_to_payload,
+    get_knowledge_repository,
+)
 
 MCP_CONTEXT_FIELDS: tuple[str, ...] = (
     "allowed_actions",
@@ -19,20 +23,13 @@ MCP_CONTEXT_FIELDS: tuple[str, ...] = (
 )
 
 
-def build_intelligence_status() -> dict[str, Any]:
-    repository = get_knowledge_repository()
+def build_intelligence_status(repository: KnowledgeRepository | None = None) -> dict[str, Any]:
+    repository = repository or get_knowledge_repository()
     knowledge_documents = repository.list_documents()
     domains = sorted({doc.domain for doc in knowledge_documents})
     actions = sorted({action for doc in knowledge_documents for action in doc.recommended_actions})
     documents = [
-        {
-            "doc_id": doc.doc_id,
-            "title": doc.title,
-            "domain": doc.domain,
-            "tags": list(doc.tags),
-            "recommended_actions": list(doc.recommended_actions),
-            "evidence_requirements": list(doc.evidence_requirements),
-        }
+        document_to_payload(doc)
         for doc in knowledge_documents
     ]
     return {
@@ -42,6 +39,9 @@ def build_intelligence_status() -> dict[str, Any]:
             "provider": repository.provider,
             "document_count": len(knowledge_documents),
             "repository_contract": "zenthra.knowledge_repository.v1",
+            "document_contract": "zenthra.knowledge_document.v1",
+            "persistent": repository.provider != "in_memory",
+            "versioned_documents": True,
             "domains": domains,
             "documents": documents,
         },
@@ -66,3 +66,20 @@ def build_intelligence_status() -> dict[str, Any]:
         "domains": domains,
         "recommended_actions": actions,
     }
+
+
+def build_enterprise_intelligence_status(repository: KnowledgeRepository) -> dict[str, Any]:
+    status = build_intelligence_status(repository)
+    documents = status["rag"]["documents"]
+    latest_versions: dict[str, int] = {}
+    for document in documents:
+        doc_id = str(document.get("doc_id") or "")
+        latest_versions[doc_id] = max(
+            latest_versions.get(doc_id, 0),
+            int(document.get("version") or 1),
+        )
+    status["mode"] = "enterprise-memory-core"
+    status["rag"]["storage_contract"] = "zenthra.enterprise_memory.v1"
+    status["rag"]["latest_versions"] = latest_versions
+    status["rag"]["ready_for_phase3"] = bool(status["rag"]["persistent"])
+    return status

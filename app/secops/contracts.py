@@ -270,3 +270,33 @@ class IntelligenceStatusResponse(BaseModel):
     mcp: dict[str, Any]
     domains: list[str]
     recommended_actions: list[str]
+
+
+class KnowledgeDocumentRequest(BaseModel):
+    doc_id: str = Field(..., min_length=1)
+    version: int = Field(default=1, ge=1)
+    title: str = Field(..., min_length=1)
+    domain: str = Field(default="generic", min_length=1)
+    tags: list[str] = Field(default_factory=list)
+    summary: str = Field(..., min_length=1)
+    recommended_actions: list[str] = Field(default_factory=list)
+    evidence_requirements: list[str] = Field(default_factory=list)
+    source: str = Field(default="operator", min_length=1)
+    status: str = Field(default="active", min_length=1)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class KnowledgeDocumentResponse(BaseModel):
+    doc_id: str
+    version: int
+    title: str
+    domain: str
+    tags: list[str]
+    summary: str
+    recommended_actions: list[str]
+    evidence_requirements: list[str]
+    source: str
+    status: str
+    metadata: dict[str, Any]
+    content_hash: str
+    contract: str

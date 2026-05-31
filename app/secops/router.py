@@ -11,7 +11,12 @@ from app.core.enterprise_security import build_enterprise_readiness
 from app.core.observability.metrics import record_soc_lifecycle
 from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
 from app.db.session import get_db
-from app.intelligence.status import build_intelligence_status
+from app.intelligence.contracts import KnowledgeDocument
+from app.intelligence.repository import (
+    document_to_payload,
+    get_persistent_knowledge_repository,
+)
+from app.intelligence.status import build_enterprise_intelligence_status, build_intelligence_status
 from app.models.threat_event import ThreatEvent
 from app.secops.contracts import (
     DevSecOpsCorrelationLifecycleRequest,
@@ -26,6 +31,8 @@ from app.secops.contracts import (
     DevSecOpsSignalIngestResponse,
     DevSecOpsSignalSummaryResponse,
     IntelligenceStatusResponse,
+    KnowledgeDocumentRequest,
+    KnowledgeDocumentResponse,
     SecOpsExecutionPreflightRequest,
     SecOpsExecutionPreflightResponse,
     SecOpsPostureResponse,
@@ -123,6 +130,40 @@ def secops_posture(db: Session = Depends(get_db)):
 @router.get("/intelligence/status", response_model=IntelligenceStatusResponse)
 def secops_intelligence_status():
     return build_intelligence_status()
+
+
+@router.get("/intelligence/enterprise/status", response_model=IntelligenceStatusResponse)
+def secops_enterprise_intelligence_status(db: Session = Depends(get_db)):
+    repository = get_persistent_knowledge_repository(db)
+    return build_enterprise_intelligence_status(repository)
+
+
+@router.get("/intelligence/documents", response_model=list[KnowledgeDocumentResponse])
+def list_enterprise_knowledge_documents(db: Session = Depends(get_db)):
+    repository = get_persistent_knowledge_repository(db)
+    return [document_to_payload(document) for document in repository.list_documents()]
+
+
+@router.post("/intelligence/documents", response_model=KnowledgeDocumentResponse)
+def upsert_enterprise_knowledge_document(
+    payload: KnowledgeDocumentRequest,
+    db: Session = Depends(get_db),
+):
+    repository = get_persistent_knowledge_repository(db)
+    document = KnowledgeDocument(
+        doc_id=payload.doc_id,
+        version=payload.version,
+        title=payload.title,
+        domain=payload.domain,
+        tags=tuple(payload.tags),
+        summary=payload.summary,
+        recommended_actions=tuple(payload.recommended_actions),
+        evidence_requirements=tuple(payload.evidence_requirements),
+        source=payload.source,
+        status=payload.status,
+        metadata=payload.metadata,
+    )
+    return document_to_payload(repository.upsert_document(document))
 
 
 @router.get("/security/events", response_model=SecurityEventSummaryResponse)
