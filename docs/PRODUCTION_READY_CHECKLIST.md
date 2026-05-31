@@ -2,7 +2,7 @@
 
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
-Fase 3 Enterprise AI queda documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
+Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
 
 ## Backend Core Status
 
