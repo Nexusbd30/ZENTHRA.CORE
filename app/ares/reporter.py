@@ -18,6 +18,7 @@ def _intelligence_trace(verdict: dict) -> dict:
         "mcp_action_policy": controls.get("mcp_action_policy", {}),
         "mcp_tool_policy": controls.get("mcp_tool_policy", {}),
         "llm_contract": controls.get("llm_contract", {}),
+        "llm_governance": controls.get("llm_governance", {}),
         "llm_final_action_source": controls.get("llm_final_action_source", ""),
         "llm_guardrail_decisions": controls.get("llm_guardrail_decisions", []),
         "provider_action_adjusted": controls.get("provider_action_adjusted", False),

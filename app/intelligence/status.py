@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.mcp_gateway import list_mcp_tools
+from app.intelligence.governance import build_llm_governance_status
 from app.intelligence.llm_contract import LLM_DECISION_SCHEMA
 from app.intelligence.repository import (
     KnowledgeRepository,
@@ -47,6 +48,7 @@ def build_intelligence_status(repository: KnowledgeRepository | None = None) -> 
         },
         "llm": {
             "decision_schema": LLM_DECISION_SCHEMA,
+            "governance": build_llm_governance_status(),
             "contract_enforced": True,
             "fallback_guardrails": [
                 "allowed_action_validation",

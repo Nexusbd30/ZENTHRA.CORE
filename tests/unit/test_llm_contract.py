@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.intelligence.governance import assess_llm_contract
 from app.intelligence.llm_contract import normalize_llm_decision
 
 
@@ -36,6 +37,9 @@ def test_llm_contract_normalizes_action_outside_domain_to_minimum_action():
     }
     assert result["confidence"] == 0.99
     assert result["contract"]["domain"] == "devsecops"
+    assert result["governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert result["governance"]["approved_for_ares"] is True
+    assert "domain_action_validation" in result["governance"]["present_guardrails"]
     assert "secret_exposure" in result["factors"]
     assert "llm_requested_network" in result["factors"]
 
@@ -56,5 +60,22 @@ def test_llm_contract_marks_model_action_accepted_when_no_guardrail_changes():
     assert result["action_type"] == "require_mfa"
     assert result["llm_action_accepted"] is True
     assert result["final_action_source"] == "llm"
+    assert result["governance"]["approved_for_ares"] is True
     assert result["guardrail_decisions"][0]["result"] == "accepted"
     assert result["guardrail_decisions"][1]["result"] == "not_required"
+
+
+def test_llm_governance_rejects_incomplete_contract():
+    governance = assess_llm_contract(
+        {
+            "schema": "redqueen.llm_decision.v1",
+            "domain": "identity",
+            "confidence": 1.2,
+            "guardrail_decisions": [],
+        }
+    )
+
+    assert governance["approved_for_ares"] is False
+    assert governance["confidence_valid"] is False
+    assert "action_type" in governance["missing_fields"]
+    assert "minimum_action_enforcement" in governance["missing_guardrails"]

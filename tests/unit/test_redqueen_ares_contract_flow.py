@@ -72,6 +72,8 @@ async def test_redqueen_ares_contract_preserves_dry_run_evidence_and_audit(
         "redqueen_decides_ares_executes"
     )
     assert controls["llm_contract"]["schema"] == "redqueen.llm_decision.v1"
+    assert controls["llm_governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert controls["llm_governance"]["approved_for_ares"] is True
     assert controls["mcp_action_policy"]["allowed"] is True
     assert controls["mcp_tool_policy"]["allowed"] is True
 
@@ -98,6 +100,7 @@ async def test_redqueen_ares_contract_preserves_dry_run_evidence_and_audit(
     assert len(intelligence_traces) == 1
     trace = intelligence_traces[0]
     assert trace["llm_contract"]["schema"] == "redqueen.llm_decision.v1"
+    assert trace["llm_governance"]["approved_for_ares"] is True
     assert trace["mcp_action_policy"]["allowed"] is True
     assert trace["mcp_tool_policy"]["allowed"] is True
     assert "execution_boundary:ares_only" in trace["decision_factors"]

@@ -324,6 +324,7 @@ def generate_verdict(
             "mcp_tool_policy": mcp_tool_policy,
             "llm_reasoning": ai_decision["reasoning"],
             "llm_contract": ai_decision["contract"],
+            "llm_governance": ai_decision["governance"],
             "llm_action_accepted": ai_decision["llm_action_accepted"],
             "llm_final_action_source": ai_decision["final_action_source"],
             "llm_guardrail_decisions": ai_decision["guardrail_decisions"],

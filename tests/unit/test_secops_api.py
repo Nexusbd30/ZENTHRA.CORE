@@ -85,6 +85,9 @@ async def test_secops_intelligence_status_exposes_rag_llm_mcp_core(test_client, 
     assert "devsecops" in body["domains"]
     assert body["llm"]["decision_schema"] == "redqueen.llm_decision.v1"
     assert body["llm"]["contract_enforced"] is True
+    assert body["llm"]["governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert body["llm"]["governance"]["ares_execution_requires_approved_contract"] is True
+    assert "llm_governance" in body["llm"]["governance"]["evidence_required"]
     assert "allowed_action_validation" in body["llm"]["fallback_guardrails"]
     assert body["mcp"]["context_schema"] == "zenthra.mcp_context.v1"
     assert body["mcp"]["tool_policy_schema"] == "zenthra.mcp_tool_policy.v1"

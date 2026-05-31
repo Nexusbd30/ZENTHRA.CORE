@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.intelligence.governance import assess_llm_contract
+
 LLM_DECISION_SCHEMA = "redqueen.llm_decision.v1"
 
 
@@ -110,8 +112,10 @@ def normalize_llm_decision(
         "reasoning": str(parsed.get("reasoning", "llm_reasoning_unavailable")),
         "factor_count": len(merged_factors),
     }
+    governance = assess_llm_contract(contract)
     return {
         **contract,
+        "governance": governance,
         "factors": merged_factors,
         "contract": contract,
     }
