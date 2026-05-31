@@ -2,13 +2,14 @@
 
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
+Fase 3 Enterprise AI queda documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
 
 ## Backend Core Status
 
-- Backend suite: `231 passed`.
+- Backend suite: `242 passed`.
 - Coverage total: `90%`.
 - RedQueen/ARES core: ready for controlled pilot with real-integration gates.
-- Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract, local RAG, provider readiness, execution preflight and controlled SOC export are implemented.
+- Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract/governance, enterprise AI memory, provider readiness, execution preflight and controlled SOC export are implemented.
 
 ## Ready For Controlled Pilot
 
@@ -25,10 +26,13 @@ Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 - Integration readiness contracts are available for GitHub Actions, Redis, SOC webhook, secret backend and Sentinel/Wazuh ingestion.
 - Execution preflight is available at `POST /api/v1/secops/execution/preflight`.
 - Real provider execution is guarded by provider readiness, action capability, explicit mode, `change_ticket`, ARES validation and signed human approval when required.
+- Enterprise AI readiness is available at `GET /api/v1/secops/intelligence/enterprise/readiness`.
+- Enterprise AI contract registry is available at `GET /api/v1/secops/intelligence/enterprise/contracts`.
+- ARES AI evidence bundle is available at `GET /api/v1/ares/evidence/{verdict_id}`.
 
 ## Pilot Only Until External Backend Exists
 
-- RAG uses in-memory knowledge repository.
+- Baseline RAG can still use in-memory documents, but Enterprise AI memory now supports persistent SQL-backed versioned knowledge documents.
 - Provider connectors require real secrets and provider-side permissions before live execution.
 - Redis must be selected through `RATE_LIMIT_BACKEND=redis` and `REPLAY_GUARD_BACKEND=redis` for multi-instance production.
 - SOC export can send a real generic webhook when `SOC_WEBHOOK_URL`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET` are configured.
@@ -38,7 +42,7 @@ Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 ## Required For Production
 
 - Select Redis, API Gateway or WAF distributed enforcement for rate limit and replay stores.
-- Replace local RAG with pgvector, Qdrant or Azure AI Search.
+- Decide whether SQL-backed knowledge documents are enough for pilot or replace retrieval with pgvector, Qdrant or Azure AI Search.
 - Connect real MCP servers and keep allow/block policy enforced per action.
 - Activate Microsoft Entra Graph with least-privilege permissions and managed secrets.
 - Activate at least one DevSecOps provider: GitHub Actions/GHAS, Azure DevOps or GitLab CI.
