@@ -1,13 +1,14 @@
 # Production Readiness Checklist
 
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
+Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 
 ## Backend Core Status
 
-- Backend suite: `193 passed`.
-- Coverage total: `84%`.
-- RedQueen/ARES core: ready for controlled pilot.
-- Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract and local RAG are implemented.
+- Backend suite: `231 passed`.
+- Coverage total: `90%`.
+- RedQueen/ARES core: ready for controlled pilot with real-integration gates.
+- Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract, local RAG, provider readiness, execution preflight and controlled SOC export are implemented.
 
 ## Ready For Controlled Pilot
 
@@ -21,24 +22,27 @@ Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 - Prometheus exposes security counters for webhook rejections, rate limits, replay, SOC materialization and SOC lifecycle.
 - Export contract `soc_case.v1` is available for SIEM/case management payload generation.
 - SOC capabilities are separated as `soc:read`, `soc:materialize` and `soc:execute`.
+- Integration readiness contracts are available for GitHub Actions, Redis, SOC webhook, secret backend and Sentinel/Wazuh ingestion.
+- Execution preflight is available at `POST /api/v1/secops/execution/preflight`.
+- Real provider execution is guarded by provider readiness, action capability, explicit mode, `change_ticket`, ARES validation and signed human approval when required.
 
 ## Pilot Only Until External Backend Exists
 
 - RAG uses in-memory knowledge repository.
-- Rate limit store is `in_memory`.
-- Replay guard store is `in_memory`.
-- SOC export returns `ready_to_send=false`; no external SIEM/case destination is connected.
-- Entra Graph active response is not connected yet.
-- DevSecOps providers are capability contracts and dry-run bridges until real provider credentials are configured.
+- Provider connectors require real secrets and provider-side permissions before live execution.
+- Redis must be selected through `RATE_LIMIT_BACKEND=redis` and `REPLAY_GUARD_BACKEND=redis` for multi-instance production.
+- SOC export can send a real generic webhook when `SOC_WEBHOOK_URL`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET` are configured.
+- Entra Graph active response requires `ACTION_EXECUTION_MODE=provider`, `ENTRA_GRAPH_ENABLED=true` and least-privilege Graph credentials.
+- GitHub/GHAS execution requires `ACTION_EXECUTION_MODE=provider` or `real` and configured GitHub token permissions.
 
 ## Required For Production
 
-- Replace rate limit and replay stores with Redis, API Gateway or WAF distributed enforcement.
+- Select Redis, API Gateway or WAF distributed enforcement for rate limit and replay stores.
 - Replace local RAG with pgvector, Qdrant or Azure AI Search.
 - Connect real MCP servers and keep allow/block policy enforced per action.
-- Connect Microsoft Entra Graph with least-privilege permissions and managed secrets.
-- Connect at least one DevSecOps provider: GitHub Actions/GHAS, Azure DevOps or GitLab CI.
-- Connect at least one SIEM/SOC export destination: Microsoft Sentinel or generic webhook.
+- Activate Microsoft Entra Graph with least-privilege permissions and managed secrets.
+- Activate at least one DevSecOps provider: GitHub Actions/GHAS, Azure DevOps or GitLab CI.
+- Activate at least one SIEM/SOC export destination: Microsoft Sentinel or generic webhook.
 - Move secrets to Key Vault or equivalent secret manager.
 - Add tenant policy persistence for strict multi-tenant mode.
 - Add frontend SOC/SecOps command center.
