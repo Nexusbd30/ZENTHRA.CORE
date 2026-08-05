@@ -1,0 +1,21 @@
+{
+  "name": "NexusVault",
+  "type": "knowledge_memory_rag_layer",
+  "status": "mapped_to_existing_backend",
+  "responsibilities": [
+    "document_ingestion",
+    "text_extraction",
+    "chunking",
+    "embeddings",
+    "retrieval",
+    "reranking",
+    "citations",
+    "enterprise_memory"
+  ],
+  "current_backend_mapping": [
+    "app.intelligence",
+    "app.db.vector",
+    "app.models.knowledge_document"
+  ],
+  "rule": "private_knowledge_answers_require_citations"
+}

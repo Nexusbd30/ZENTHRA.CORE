@@ -25,7 +25,7 @@ jobs:
     - name: Mypy
       run: mypy app
     - name: Pytest
-      run: pytest --cov=app --cov-report=xml --cov-fail-under=65
+      run: pytest --cov=app --cov-report=xml --cov-fail-under=90
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:

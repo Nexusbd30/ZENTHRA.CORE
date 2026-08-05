@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .test-data/
+tests/unit/test_backend_coverage_95.py
 .mypy_cache/
 .ruff_cache/
 .coverage

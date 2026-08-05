@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
 from app.ares.router import router as ares_router
+from app.code_intelligence.router import router as code_intelligence_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
@@ -30,6 +31,7 @@ from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
 from app.models.user import User
+from app.platform.router import router as platform_router
 from app.redqueen.router import router as redqueen_router
 from app.routers import (
     audit,
@@ -220,8 +222,10 @@ app.include_router(aresx_ingest_router)
 app.include_router(ingestion_router)
 app.include_router(identity_router)
 app.include_router(secops_router)
+app.include_router(platform_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
+app.include_router(code_intelligence_router)
 
 
 @app.get("/", include_in_schema=False)

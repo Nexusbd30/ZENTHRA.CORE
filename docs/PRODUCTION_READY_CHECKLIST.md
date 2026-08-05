@@ -3,11 +3,13 @@
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
+Fase 4 queda como cierre de endurecimiento backend y code intelligence en `docs/PHASE4_BACKEND_HARDENING.md`.
+El trabajo restante se divide en Fase 5 Production Activation y Fase 6 Product and Operations Closure.
 
 ## Backend Core Status
 
-- Backend suite: `242 passed`.
-- Coverage total: `90%`.
+- Backend suite: `252 passed`.
+- Coverage total: `90.24%`.
 - RedQueen/ARES core: ready for controlled pilot with real-integration gates.
 - Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract/governance, enterprise AI memory, provider readiness, execution preflight and controlled SOC export are implemented.
 
@@ -29,6 +31,8 @@ Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y doc
 - Enterprise AI readiness is available at `GET /api/v1/secops/intelligence/enterprise/readiness`.
 - Enterprise AI contract registry is available at `GET /api/v1/secops/intelligence/enterprise/contracts`.
 - ARES AI evidence bundle is available at `GET /api/v1/ares/evidence/{verdict_id}`.
+- Static backend architecture analysis is available at `POST /api/v1/code-intelligence/analyze`.
+- Restricted RedQueen, ARES, and ingestion ASGI entrypoints are available without scheduler ownership.
 
 ## Pilot Only Until External Backend Exists
 
@@ -41,6 +45,8 @@ Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y doc
 
 ## Required For Production
 
+### Phase 5 - Production Activation
+
 - Select Redis, API Gateway or WAF distributed enforcement for rate limit and replay stores.
 - Decide whether SQL-backed knowledge documents are enough for pilot or replace retrieval with pgvector, Qdrant or Azure AI Search.
 - Connect real MCP servers and keep allow/block policy enforced per action.
@@ -49,13 +55,18 @@ Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y doc
 - Activate at least one SIEM/SOC export destination: Microsoft Sentinel or generic webhook.
 - Move secrets to Key Vault or equivalent secret manager.
 - Add tenant policy persistence for strict multi-tenant mode.
+
+### Phase 6 - Product And Operations Closure
+
 - Add frontend SOC/SecOps command center.
 - Add Terraform/IaC only after the deployment target is fixed.
+- Add service dashboards, alerts, SLOs, backup/restore, rollback, incident, load,
+  resilience and security validation.
 
 ## CI/CD
 
 - `CI` workflow in `.github/workflows/ci.yml`
-  - Backend: `ruff`, `mypy`, `pytest` with coverage gate.
+  - Backend: `ruff`, `mypy`, `pytest` with 90% coverage gate.
   - Frontend: `pnpm run lint`, `pnpm run build`.
 - `CD` workflow in `.github/workflows/cd.yml`
   - Builds and pushes image to GHCR.
@@ -96,3 +107,7 @@ Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y doc
 - External connectors are not live yet.
 - Frontend product workflow is pending.
 - Terraform should wait until provider and deployment decisions are stable.
+- Strict tenant policy persistence is pending.
+- A real LLM gateway and vector retrieval backend are not selected.
+- Restricted service routing and NetworkPolicies are required before enabling split deployments.
+- ARES must remain single-replica until kill-switch state is distributed.

@@ -1,10 +1,31 @@
-#  - ZENTHRA.CORE_SECURITY - powered by NEXUSBD
+# NEXUSOPS AI / ZENTHRA.CORE_SECURITY - powered by NEXUSBIGDATA
 
 Plataforma de ciberseguridad/SOC con:
 - Backend `FastAPI` + `SQLAlchemy` + `Alembic`
 - Frontend `React` + `Vite`
 - Observabilidad con `Prometheus`, `Alertmanager`, `Grafana`, `Blackbox Exporter`
 - Motor de correlacion SIEM para generar y deduplicar amenazas
+
+## Direccion estrategica
+
+Este repositorio mantiene el backend operativo de `ZENTHRA.CORE_SECURITY` y empieza su evolucion hacia `NexusOps AI`, el sistema operativo seguro para agentes empresariales bajo el paraguas `NEXUSBIGDATA`.
+
+Los nuevos dominios estrategicos quedan definidos como:
+
+- `CortexFlow`: runtime de agentes, razonamiento, planificacion y memoria.
+- `NexusFlow`: workflows, triggers, eventos, aprobaciones y orquestacion.
+- `BlackNode`: seguridad, RBAC, auditoria, guardrails y motor de riesgo.
+- `NexusVault`: conocimiento, memoria, RAG, embeddings, retrieval y citas.
+- `NexusAPI`: integraciones, registry de tools, conectores y webhooks.
+
+La migracion sera incremental: el runtime actual sigue siendo `app.main:app`, mientras `platform/`, `domains/`, `security/`, `observability/` y `docs/architecture/` fijan la estructura enterprise final.
+
+Documentos base:
+
+- [NexusOps AI Enterprise Blueprint](docs/NEXUSOPS_AI_ENTERPRISE_BLUEPRINT.md)
+- [Platform Architecture](docs/architecture/NEXUSOPS_PLATFORM_ARCHITECTURE.md)
+- [Domain Map](docs/architecture/NEXUSOPS_DOMAIN_MAP.json)
+- [BlackNode Security Architecture](docs/security/BLACKNODE_SECURITY_ARCHITECTURE.md)
 
 ## Estructura del proyecto
 
@@ -87,7 +108,6 @@ Desde `ZENTHRA.CORE_SECURITY/`:
 ```powershell
 corepack enable
 corepack pnpm install
-sigue 
 ```
 
 Variables frontend (`ZENTHRA.CORE_SECURITY/.env`):
@@ -164,25 +184,27 @@ pytest
 ```
 
 Estado detectado en este entorno:
-- Backend: `134 passed` con `.\venv\Scripts\pytest.exe -q`.
+- Backend cerrado en Fase 4: `252 passed`, cobertura total `90.24%`, Ruff y Mypy correctos.
 - Frontend: `corepack pnpm run build` completa correctamente.
-- CI incluye una guarda temporal contra nuevas corrupciones de codificacion/mojibake.
+- CI exige Ruff, Mypy, guarda de codificacion y cobertura backend minima del `90%`.
 
 ## Hallazgos del analisis tecnico
 
-1. La suite de tests pasa en el entorno local, pero la cobertura total sigue siendo mejorable.
-   - Modulos como `app/routers/monitoring.py`, `app/services/prometheus_client.py` y `app/services/runtime_log_service.py` necesitan tests mas profundos antes de produccion.
-2. Hay componentes de fases futuras marcados como stubs estructurales.
-   - RedQueen/ARES, ingestion adapters, vector store y audit chain tienen piezas preparadas para evolucion incremental.
-3. La configuracion local usa archivos `.env` ignorados por Git.
+1. El backend esta listo para piloto controlado, pero los proveedores externos todavia deben activarse y validarse con credenciales reales.
+2. El despliegue actual es un monolito FastAPI modular. RedQueen, ARES e ingestion no deben separarse en deployments hasta disponer de entrypoints independientes.
+3. Enterprise AI mantiene defaults seguros `local_stub` y `dry_run`; la activacion real exige readiness, preflight y evidencia de auditoria.
+4. La configuracion local usa archivos `.env` ignorados por Git.
    - Solo se debe commitear `.env.example`; los secretos reales deben vivir en variables de entorno, vault o secretos del cluster.
+5. Fase 4 continua como endurecimiento backend y code intelligence, sin iniciar frontend.
+6. Hay entrypoints ASGI restringidos para RedQueen, ARES e ingestion; permanecen fuera del CD hasta completar routing interno, NetworkPolicies y estado distribuido de ARES.
 
 ## Recomendaciones inmediatas
 
-1. Mantener el primer commit como baseline limpio del codigo y configuracion reales.
-2. Subir la cobertura de monitoring/runtime antes de promover a produccion.
-3. Decidir una ruta unica de migraciones antes de despliegues productivos.
-4. Reemplazar modos `local_stub`/`mock` por integraciones reales cuando se active autonomia fuera de laboratorio.
+1. Persistir politicas tenant antes de activar modo multi-tenant estricto.
+2. Validar al menos un proveedor Identity, DevSecOps y SOC de extremo a extremo.
+3. Seleccionar gateway LLM y backend de recuperacion vectorial.
+4. Mantener `local_stub` y `dry_run` hasta superar readiness, preflight y validacion operativa.
+5. Usar `POST /api/v1/code-intelligence/analyze` para inventariar componentes, dependencias, rutas y puntos de ejecucion sin ejecutar el codigo analizado.
 
 ## Licencia
 
@@ -272,12 +294,9 @@ Comportamiento:
 2. `POST /api/v1/ares/execute`
 3. o todo en uno: `POST /api/v1/ares/lifecycle`
 
-### 5) Gobernanza crítica
+### 5) Gobernanza critica
 
 - Veredictos requieren firma valida.
 - Policy Matrix valida decision antes de ejecutar.
 - Kill-switch global bloquea ejecucion inmediatamente.
 - Riesgo alto puede requerir aprobacion humana (`requires_human=true`).
-#   Z E N T H R A . C O R E 
- 
- 

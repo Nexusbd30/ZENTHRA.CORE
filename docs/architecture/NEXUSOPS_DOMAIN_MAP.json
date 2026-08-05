@@ -1,0 +1,106 @@
+{
+  "umbrella": "NEXUSBIGDATA",
+  "product": "NexusOps AI",
+  "current_core": "ZENTHRA.CORE_SECURITY",
+  "runtime": "app.main:app",
+  "domains": {
+    "cortexflow": {
+      "name": "CortexFlow",
+      "type": "enterprise_agent_runtime",
+      "responsibilities": [
+        "reasoning",
+        "planning",
+        "agent_lifecycle",
+        "context_building",
+        "tool_routing",
+        "response_generation",
+        "memory_coordination"
+      ],
+      "current_backend_mapping": [
+        "app.redqueen",
+        "app.ares",
+        "app.intelligence"
+      ]
+    },
+    "nexusflow": {
+      "name": "NexusFlow",
+      "type": "workflow_orchestration_engine",
+      "responsibilities": [
+        "workflows",
+        "triggers",
+        "events",
+        "queues",
+        "schedules",
+        "human_approvals",
+        "escalations",
+        "multi_step_operations"
+      ],
+      "current_backend_mapping": [
+        "app.ares",
+        "app.services.autonomy_service",
+        "app.models.approval_record"
+      ]
+    },
+    "blacknode": {
+      "name": "BlackNode",
+      "type": "security_governance_risk_layer",
+      "responsibilities": [
+        "authentication",
+        "authorization",
+        "rbac",
+        "policy_enforcement",
+        "audit_trails",
+        "prompt_injection_protection",
+        "risk_scoring",
+        "approval_enforcement"
+      ],
+      "current_backend_mapping": [
+        "app.core.security",
+        "app.core.enterprise_security",
+        "app.middlewares.audit_middleware",
+        "app.models.audit_record",
+        "app.ares.approval"
+      ]
+    },
+    "nexusvault": {
+      "name": "NexusVault",
+      "type": "knowledge_memory_rag_layer",
+      "responsibilities": [
+        "document_ingestion",
+        "text_extraction",
+        "chunking",
+        "embeddings",
+        "retrieval",
+        "reranking",
+        "citations",
+        "enterprise_memory"
+      ],
+      "current_backend_mapping": [
+        "app.intelligence",
+        "app.db.vector",
+        "app.models.knowledge_document"
+      ]
+    },
+    "nexusapi": {
+      "name": "NexusAPI",
+      "type": "integration_tool_platform",
+      "responsibilities": [
+        "tool_registry",
+        "external_apis",
+        "github",
+        "jira",
+        "slack",
+        "cloud_providers",
+        "databases",
+        "webhooks",
+        "tool_call_audit"
+      ],
+      "current_backend_mapping": [
+        "app.actions",
+        "app.identity",
+        "app.secops",
+        "app.ingestion"
+      ]
+    }
+  }
+}

@@ -58,3 +58,9 @@ spec:
           readOnlyRootFilesystem: true
           capabilities:
             drop: ["ALL"]
+        volumeMounts:
+        - name: runtime-logs
+          mountPath: /app/logs
+      volumes:
+      - name: runtime-logs
+        emptyDir: {}
