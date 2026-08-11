@@ -110,8 +110,9 @@ class NetworkMonitor:
 
         # Inicializa contadores para el modo real
         if not self.simulate:
-            self.last_bytes_sent = psutil.net_io_counters().bytes_sent
-            self.last_bytes_recv = psutil.net_io_counters().bytes_recv
+            counters = psutil.net_io_counters()
+            self.last_bytes_sent = counters.bytes_sent
+            self.last_bytes_recv = counters.bytes_recv
 
         while self.running:
             if self.simulate:

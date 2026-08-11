@@ -51,10 +51,26 @@ def setup_test_environment():
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def reset_ares_kill_switch(monkeypatch):
+    from app.ares.kill_switch import reset_kill_switch_store, set_kill_switch
+    from app.core.settings import settings
+
+    monkeypatch.setattr(settings, "ARES_KILL_SWITCH_BACKEND", "in_memory")
+    reset_kill_switch_store()
+    set_kill_switch(False, reason="test reset", actor="pytest")
+    yield
+    monkeypatch.setattr(settings, "ARES_KILL_SWITCH_BACKEND", "in_memory")
+    reset_kill_switch_store()
+
+
 @pytest.fixture(scope="function")
 def db_session():
     session = TestingSessionLocal()
     try:
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
         yield session
     finally:
         session.close()
@@ -85,10 +101,10 @@ async def test_user(test_client):
     return {"id": data.get("id"), "email": email, "password": password}
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def auth_token(test_client):
     test_email = "auth_fixture_admin@test.com"
-    test_password = "secure123"
+    test_password = "securepassword123"
 
     create_resp = await test_client.post(
         "/users/",

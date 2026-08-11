@@ -24,6 +24,10 @@ ProcessProfile = Literal["redqueen", "ares", "ingestion"]
 LOG = logging.getLogger("zenthra.process")
 
 
+def _include_router_routes(app: FastAPI, router: APIRouter) -> None:
+    app.router.routes.extend(router.routes)
+
+
 def create_restricted_application(
     profile: ProcessProfile,
     *,
@@ -56,10 +60,10 @@ def create_restricted_application(
         )
         return response
 
-    profile_app.include_router(system_health_router)
-    profile_app.include_router(metrics_router)
+    _include_router_routes(profile_app, system_health_router)
+    _include_router_routes(profile_app, metrics_router)
     for profile_router in routers:
-        profile_app.include_router(profile_router)
+        _include_router_routes(profile_app, profile_router)
 
     @profile_app.get("/health")
     def health():

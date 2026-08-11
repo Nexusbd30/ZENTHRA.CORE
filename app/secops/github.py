@@ -33,6 +33,8 @@ def _repo(payload: dict[str, Any]) -> str:
     raw_repo = _compact(pipeline.get("repository") or payload.get("target"))
     if raw_repo.startswith("repository:"):
         raw_repo = raw_repo.removeprefix("repository:")
+    if not raw_repo:
+        raise RuntimeError("GitHub repository must be provided as owner/repo")
     if "/" not in raw_repo and settings.GITHUB_DEFAULT_OWNER:
         raw_repo = f"{settings.GITHUB_DEFAULT_OWNER}/{raw_repo}"
     if "/" not in raw_repo:
