@@ -12,7 +12,11 @@ class PolicyRule(Base):
     __tablename__ = "policy_rules"
 
     rule_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id: Mapped[str] = mapped_column(String(120), default="default", index=True)
+    name: Mapped[str] = mapped_column(String(120), default="")
     condition_dsl: Mapped[str] = mapped_column(Text, default="")
     action_allowed: Mapped[str] = mapped_column(Text, default="[]")
+    provider_assignments: Mapped[str] = mapped_column(Text, default="{}")
     max_autonomy_score: Mapped[float] = mapped_column(Float, default=50.0)
     requires_human: Mapped[bool] = mapped_column(Boolean, default=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)

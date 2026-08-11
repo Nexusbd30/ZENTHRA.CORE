@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.enterprise_security import build_enterprise_readiness
@@ -67,6 +68,11 @@ from app.secops.service import (
     summarize_devsecops_signals,
     summarize_security_events,
 )
+from app.secops.tenant_policies import (
+    list_tenant_policies,
+    tenant_policy_readiness,
+    upsert_tenant_policy,
+)
 from app.services.autonomy_service import AutonomyService
 
 router = APIRouter(
@@ -74,6 +80,18 @@ router = APIRouter(
     tags=["secops-devsecops"],
     dependencies=[Depends(require_admin_or_monitor_token)],
 )
+
+
+class TenantPolicyRequest(BaseModel):
+    rule_id: str | None = None
+    tenant_id: str = Field(default="default", min_length=1)
+    name: str = Field(default="tenant-policy", min_length=1)
+    condition_dsl: str = ""
+    action_allowed: list[str] = Field(default_factory=list)
+    provider_assignments: dict[str, str] = Field(default_factory=dict)
+    max_autonomy_score: float = Field(default=50.0, ge=0, le=100)
+    requires_human: bool = False
+    enabled: bool = True
 
 
 def _event_response(event: ThreatEvent, *, duplicate: bool, elapsed_ms: float) -> dict[str, Any]:
@@ -290,8 +308,44 @@ def run_secops_security_event_lifecycle(
 
 
 @router.get("/enterprise/readiness")
-def secops_enterprise_readiness(x_tenant_id: str | None = Header(default=None)):
-    return build_enterprise_readiness(tenant_id=x_tenant_id)
+def secops_enterprise_readiness(
+    x_tenant_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    readiness = build_enterprise_readiness(tenant_id=x_tenant_id)
+    readiness["tenant_policy"] = tenant_policy_readiness(db, tenant_id=x_tenant_id)
+    return readiness
+
+
+@router.get("/tenant-policies")
+def read_tenant_policies(
+    tenant_id: str | None = None,
+    db: Session = Depends(get_db),
+    enterprise_context: dict[str, Any] = Depends(require_enterprise_capability("security:admin")),
+):
+    _ = enterprise_context
+    return list_tenant_policies(db, tenant_id=tenant_id)
+
+
+@router.post("/tenant-policies")
+def write_tenant_policy(
+    payload: TenantPolicyRequest,
+    db: Session = Depends(get_db),
+    enterprise_context: dict[str, Any] = Depends(require_enterprise_capability("security:admin")),
+):
+    _ = enterprise_context
+    return upsert_tenant_policy(
+        db,
+        rule_id=payload.rule_id,
+        tenant_id=payload.tenant_id,
+        name=payload.name,
+        condition_dsl=payload.condition_dsl,
+        action_allowed=payload.action_allowed,
+        provider_assignments=payload.provider_assignments,
+        max_autonomy_score=payload.max_autonomy_score,
+        requires_human=payload.requires_human,
+        enabled=payload.enabled,
+    )
 
 
 @router.get("/integrations/readiness")
