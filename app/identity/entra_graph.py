@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import requests
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 
 ENTRA_GRAPH_COMMANDS = {
@@ -45,12 +46,13 @@ def _target_user_id(target: str) -> str:
 
 
 def _graph_config() -> EntraGraphConfig:
+    client_secret = get_secret("ENTRA_CLIENT_SECRET", settings.ENTRA_CLIENT_SECRET)
     missing = [
         name
         for name, value in {
             "ENTRA_TENANT_ID": settings.ENTRA_TENANT_ID,
             "ENTRA_CLIENT_ID": settings.ENTRA_CLIENT_ID,
-            "ENTRA_CLIENT_SECRET": settings.ENTRA_CLIENT_SECRET,
+            "ENTRA_CLIENT_SECRET": client_secret,
         }.items()
         if not value
     ]
@@ -64,7 +66,7 @@ def _graph_config() -> EntraGraphConfig:
     return EntraGraphConfig(
         tenant_id=tenant_id,
         client_id=_compact(settings.ENTRA_CLIENT_ID),
-        client_secret=_compact(settings.ENTRA_CLIENT_SECRET),
+        client_secret=_compact(client_secret),
         base_url=_compact(settings.ENTRA_GRAPH_BASE_URL).rstrip("/"),
         token_url=token_url,
         scope=_compact(settings.ENTRA_GRAPH_SCOPE) or "https://graph.microsoft.com/.default",

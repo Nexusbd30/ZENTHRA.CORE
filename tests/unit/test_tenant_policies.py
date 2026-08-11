@@ -83,3 +83,27 @@ async def test_tenant_policy_api_updates_and_readiness(test_client, db_session, 
     )
     assert readiness.status_code == 200
     assert readiness.json()["tenant_policy"]["strict_mode_ready"] is True
+
+
+@pytest.mark.asyncio
+async def test_tenant_policy_api_rejects_missing_or_mismatched_strict_tenant(
+    test_client,
+    monkeypatch,
+):
+    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "strict")
+    headers = {"Authorization": "Bearer monitor-test-token"}
+
+    missing = await test_client.get("/api/v1/secops/tenant-policies", headers=headers)
+    assert missing.status_code == 400
+
+    mismatch = await test_client.post(
+        "/api/v1/secops/tenant-policies",
+        headers={**headers, "X-Tenant-ID": "tenant-a"},
+        json={
+            "tenant_id": "tenant-b",
+            "name": "blocked",
+            "action_allowed": ["observe"],
+        },
+    )
+    assert mismatch.status_code == 403

@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.observability.metrics import record_soc_materialization
+from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.identity.providers import list_provider_capability_payloads as list_identity_providers
 from app.identity.service import summarize_identity_activity
@@ -879,11 +880,13 @@ def send_security_event_export_webhook(payload: dict[str, Any]) -> dict[str, Any
         "X-Zenthra-Timestamp": timestamp,
         "X-Zenthra-Payload-SHA256": payload_sha256,
     }
-    if settings.SOC_WEBHOOK_TOKEN:
-        headers["Authorization"] = f"Bearer {settings.SOC_WEBHOOK_TOKEN}"
-    if settings.SOC_WEBHOOK_HMAC_SECRET:
+    webhook_token = get_secret("SOC_WEBHOOK_TOKEN", settings.SOC_WEBHOOK_TOKEN)
+    webhook_hmac_secret = get_secret("SOC_WEBHOOK_HMAC_SECRET", settings.SOC_WEBHOOK_HMAC_SECRET)
+    if webhook_token:
+        headers["Authorization"] = f"Bearer {webhook_token}"
+    if webhook_hmac_secret:
         digest = hmac.new(
-            settings.SOC_WEBHOOK_HMAC_SECRET.encode("utf-8"),
+            webhook_hmac_secret.encode("utf-8"),
             f"{timestamp}.".encode("utf-8") + body,
             hashlib.sha256,
         ).hexdigest()
@@ -914,7 +917,7 @@ def send_security_event_export_webhook(payload: dict[str, Any]) -> dict[str, Any
         "payload_sha256": payload_sha256,
         "idempotency_key": idempotency_key,
         "signature": {
-            "enabled": bool(settings.SOC_WEBHOOK_HMAC_SECRET),
+            "enabled": bool(webhook_hmac_secret),
             "algorithm": "hmac-sha256",
             "signed_payload": "timestamp.body",
         },

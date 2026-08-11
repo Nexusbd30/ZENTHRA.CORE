@@ -5,6 +5,7 @@ import hmac
 import json
 from typing import Any
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 
 
@@ -13,7 +14,14 @@ def _normalize_payload(payload: dict[str, Any]) -> bytes:
 
 
 def sign_payload(payload: dict[str, Any]) -> str:
-    key = settings.SECRET_KEY.encode("utf-8")
+    default_secret: object = settings.SECRET_KEY
+    if hasattr(default_secret, "get_secret_value"):
+        default_secret = default_secret.get_secret_value()
+    secret_key = get_secret(
+        "SECRET_KEY",
+        str(default_secret) if default_secret is not None else None,
+    )
+    key = str(secret_key).encode("utf-8")
     raw = _normalize_payload(payload)
     return hmac.new(key, raw, hashlib.sha256).hexdigest()
 

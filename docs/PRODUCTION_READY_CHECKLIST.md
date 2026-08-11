@@ -9,12 +9,13 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 
 ## Backend Core Status
 
-- Backend suite: `276 passed`.
-- Coverage total: `93.51%`.
+- Backend suite: `282 passed`.
+- Coverage total: `93.53%`.
 - RedQueen/ARES core: ready for controlled pilot with real-integration gates.
 - Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract/governance, enterprise AI memory, provider readiness, execution preflight and controlled SOC export are implemented.
 - ARES kill-switch supports Redis-backed distributed state and fails closed when the configured distributed backend is unavailable.
 - Tenant/provider policies are persisted in `policy_rules` and exposed through SecOps tenant-policy endpoints.
+- Runtime secret consumption now supports file-backed secrets for core auth, JWT/HMAC signing, Entra, GitHub, ARES webhook dispatch and SOC export.
 
 ## Ready For Controlled Pilot
 
@@ -37,6 +38,7 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 - Static backend architecture analysis is available at `POST /api/v1/code-intelligence/analyze`.
 - Restricted RedQueen, ARES, and ingestion ASGI entrypoints are available without scheduler ownership.
 - Tenant policy management is available through `GET /api/v1/secops/tenant-policies` and `POST /api/v1/secops/tenant-policies`.
+- Strict tenant mode rejects missing tenant headers on enterprise capability routes and rejects tenant-policy read/write mismatches.
 
 ## Pilot Only Until External Backend Exists
 
@@ -46,6 +48,7 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 - SOC export can send a real generic webhook when `SOC_WEBHOOK_URL`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET` are configured.
 - Entra Graph active response requires `ACTION_EXECUTION_MODE=provider`, `ENTRA_GRAPH_ENABLED=true` and least-privilege Graph credentials.
 - GitHub/GHAS execution requires `ACTION_EXECUTION_MODE=provider` or `real` and configured GitHub token permissions.
+- K8s backend deployments mount `aresx-secrets` at `/run/secrets/aresx` and select `SECRET_BACKEND=file`.
 
 ## Required For Production
 
@@ -93,6 +96,7 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
   - `SECRET_KEY`
   - `ZENTHRA_MONITOR_TOKEN`
   - Provider secrets through a secret manager, not plain env files.
+- K8s secret templates include placeholders for `ACTION_SHARED_TOKEN`, `ENTRA_CLIENT_SECRET`, `ENTRA_WEBHOOK_SECRET`, `GITHUB_TOKEN`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET`.
 
 ## Infrastructure Hardening
 
@@ -112,7 +116,7 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 - External connectors are not live yet.
 - Frontend product workflow is pending.
 - Terraform should wait until provider and deployment decisions are stable.
-- Strict tenant policy persistence exists; strict tenant isolation enforcement across every critical read/write path is still pending.
+- Strict tenant policy persistence exists; additional domain-specific row-level isolation should still be reviewed before broad multi-tenant onboarding.
 - A real LLM gateway and vector retrieval backend are not selected.
 - Restricted service routing and NetworkPolicies are required before enabling split deployments.
 - ARES may only scale horizontally after the shared Redis kill-switch backend is validated in the target environment.

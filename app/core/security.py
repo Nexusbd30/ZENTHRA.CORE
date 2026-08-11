@@ -23,6 +23,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.enterprise_security import build_security_context, has_capability
+from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.db.session import get_db
 from app.services.user_service import UserService
@@ -32,6 +33,13 @@ from app.services.user_service import UserService
 # =============================================================
 
 ALGORITHM = "HS256"
+
+
+def _configured_secret(name: str, default: object) -> str:
+    if hasattr(default, "get_secret_value"):
+        default = default.get_secret_value()
+    value = get_secret(name, str(default) if default is not None else None)
+    return str(value or "")
 
 
 # =============================================================
@@ -72,9 +80,7 @@ def create_access_token(
     )
     to_encode.update({"exp": expire})
 
-    secret = settings.SECRET_KEY
-    if hasattr(secret, "get_secret_value"):
-        secret = secret.get_secret_value()
+    secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
 
     return jwt.encode(to_encode, secret, algorithm=ALGORITHM)
 
@@ -113,9 +119,7 @@ def get_current_user(
     )
 
     try:
-        secret = settings.SECRET_KEY
-        if hasattr(secret, "get_secret_value"):
-            secret = secret.get_secret_value()
+        secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
 
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
@@ -209,14 +213,12 @@ def require_admin_or_monitor_token(
         )
 
     token = authorization.split(" ", 1)[1].strip()
-    monitor_token = settings.ZENTHRA_MONITOR_TOKEN
+    monitor_token = get_secret("ZENTHRA_MONITOR_TOKEN", settings.ZENTHRA_MONITOR_TOKEN)
     if monitor_token and secrets.compare_digest(token, monitor_token):
         return {"auth_type": "monitor_token", "role": "internal"}
 
     try:
-        secret = settings.SECRET_KEY
-        if hasattr(secret, "get_secret_value"):
-            secret = secret.get_secret_value()
+        secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if not email:
@@ -263,6 +265,14 @@ def require_enterprise_capability(capability: str):
         x_tenant_id: str | None = Header(default=None),
         x_request_id: str | None = Header(default=None),
     ):
+        if str(settings.ENTERPRISE_TENANT_MODE or "").strip().lower() == "strict" and not str(
+            x_tenant_id or ""
+        ).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="X-Tenant-ID requerido en modo multi-tenant estricto",
+            )
+
         if isinstance(auth_context, dict):
             context = build_security_context(
                 actor=str(auth_context.get("auth_type", "internal")),

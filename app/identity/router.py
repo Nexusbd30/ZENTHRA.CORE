@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.observability.metrics import record_security_webhook_rejection
 from app.core.rate_limit import check_rate_limit
 from app.core.replay_guard import check_replay
+from app.core.secrets import get_secret
 from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
 from app.core.settings import settings
 from app.db.audit_store import append_audit_record
@@ -177,7 +178,8 @@ def _enforce_entra_replay_guard(
     timestamp: str | None,
     enterprise_context: dict[str, Any],
 ) -> None:
-    if not settings.ENTRA_WEBHOOK_REPLAY_GUARD_ENABLED or not settings.ENTRA_WEBHOOK_SECRET:
+    webhook_secret = get_secret("ENTRA_WEBHOOK_SECRET", settings.ENTRA_WEBHOOK_SECRET)
+    if not settings.ENTRA_WEBHOOK_REPLAY_GUARD_ENABLED or not webhook_secret:
         return
     decision = check_replay(
         key=entra_replay_key(body=body, signature=signature, timestamp=timestamp),

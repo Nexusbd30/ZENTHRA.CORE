@@ -61,6 +61,12 @@ spec:
         volumeMounts:
         - name: runtime-logs
           mountPath: /app/logs
+        - name: secret-files
+          mountPath: /run/secrets/aresx
+          readOnly: true
       volumes:
       - name: runtime-logs
         emptyDir: {}
+      - name: secret-files
+        secret:
+          secretName: aresx-secrets

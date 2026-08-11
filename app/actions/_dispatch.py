@@ -4,6 +4,7 @@ import uuid
 
 import requests
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.identity.entra_graph import dispatch_entra_graph_command
 from app.secops.github import dispatch_github_command
@@ -42,8 +43,9 @@ def dispatch_command(*, url: str | None, command: str, payload: dict) -> dict:
         "Content-Type": "application/json",
         "X-Idempotency-Key": str(uuid.uuid4()),
     }
-    if settings.ACTION_SHARED_TOKEN:
-        headers["Authorization"] = f"Bearer {settings.ACTION_SHARED_TOKEN}"
+    shared_token = get_secret("ACTION_SHARED_TOKEN", settings.ACTION_SHARED_TOKEN)
+    if shared_token:
+        headers["Authorization"] = f"Bearer {shared_token}"
 
     body = {"command": command, "payload": payload}
     response = requests.post(url, json=body, headers=headers, timeout=float(settings.ACTION_TIMEOUT_SEC))

@@ -5,13 +5,14 @@ from typing import Optional
 
 from fastapi import Header, HTTPException, status
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 
 
 def require_internal_bearer(
     authorization: Optional[str] = Header(default=None),
 ) -> None:
-    expected = settings.ZENTHRA_MONITOR_TOKEN
+    expected = get_secret("ZENTHRA_MONITOR_TOKEN", settings.ZENTHRA_MONITOR_TOKEN)
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

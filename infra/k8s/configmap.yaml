@@ -5,6 +5,8 @@ metadata:
 data:
   ENV: "production"
   LOG_LEVEL: "INFO"
+  SECRET_BACKEND: "file"
+  SECRET_FILE_DIR: "/run/secrets/aresx"
   ACCESS_TOKEN_EXPIRE_MINUTES: "30"
   ZENTHRA_CORRELATION_ENABLED: "true"
   ZENTHRA_CORRELATION_INTERVAL_SEC: "60"

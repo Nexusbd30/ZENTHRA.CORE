@@ -32,6 +32,7 @@ from fastapi import (
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.secrets import get_secret
 from app.core.security import require_admin_or_monitor_token
 from app.core.settings import settings  # ✅ Config dinámica desde .env
 from app.db.session import get_db  # 🔁 Ajusta este import si tu get_db está en otro módulo
@@ -148,13 +149,14 @@ UI_ROLE_CAPABILITIES = {
 def _production_readiness_report() -> dict[str, Any]:
     ai_provider = str(getattr(settings, "AI_PROVIDER", "local_stub") or "local_stub").lower()
     action_mode = str(getattr(settings, "ACTION_EXECUTION_MODE", "mock") or "mock").lower()
+    action_shared_token = get_secret("ACTION_SHARED_TOKEN", settings.ACTION_SHARED_TOKEN)
     warnings = []
 
     if ai_provider in {"local_stub", "stub", "mock"}:
         warnings.append("AI_PROVIDER usa modo laboratorio; configurar ollama/openai/azure_openai.")
     if action_mode in {"mock", "dry_run"}:
         warnings.append("ACTION_EXECUTION_MODE no ejecuta acciones reales; configurar webhook.")
-    if action_mode == "webhook" and not getattr(settings, "ACTION_SHARED_TOKEN", None):
+    if action_mode == "webhook" and not action_shared_token:
         warnings.append("ACTION_SHARED_TOKEN requerido para ejecucion webhook real.")
     if not _alertmanager_allowed_cidrs():
         warnings.append("ALERTMANAGER_ALLOWED_CIDRS esta vacio.")
@@ -171,7 +173,7 @@ def _production_readiness_report() -> dict[str, Any]:
         "ares": {
             "execution_mode": action_mode,
             "real_mode": action_mode == "webhook",
-            "shared_token_configured": bool(getattr(settings, "ACTION_SHARED_TOKEN", None)),
+            "shared_token_configured": bool(action_shared_token),
             "control_urls_configured": {
                 "network": bool(settings.NETWORK_CONTROL_URL),
                 "identity": bool(settings.IDENTITY_CONTROL_URL),

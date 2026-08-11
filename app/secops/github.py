@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import requests
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 
 GITHUB_COMMANDS = {
@@ -43,11 +44,12 @@ def _repo(payload: dict[str, Any]) -> str:
 
 
 def _headers() -> dict[str, str]:
-    if not settings.GITHUB_TOKEN:
+    token = get_secret("GITHUB_TOKEN", settings.GITHUB_TOKEN)
+    if not token:
         raise RuntimeError("GITHUB_TOKEN is required for GitHub provider execution")
     return {
         "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
 

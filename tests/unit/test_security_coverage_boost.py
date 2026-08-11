@@ -135,6 +135,16 @@ def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_sessio
     )
     assert user_context["actor"] == "lead@example.com"
 
+    monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "strict")
+    with pytest.raises(HTTPException) as strict_missing_tenant:
+        checker(
+            auth_context={"auth_type": "monitor_token", "role": "internal"},
+            x_tenant_id=None,
+            x_request_id="req-strict",
+        )
+    assert strict_missing_tenant.value.status_code == 400
+    monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "single_tenant")
+
     with pytest.raises(HTTPException) as missing_capability:
         checker(
             auth_context=SimpleNamespace(email="viewer@example.com", role="viewer"),

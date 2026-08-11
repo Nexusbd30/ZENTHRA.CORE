@@ -46,6 +46,7 @@ This runbook defines the minimum production setup for the Phase 2 backend integr
 - Production must not use `SECRET_BACKEND=env`.
 - Use `SECRET_BACKEND=file` or a managed equivalent wired through the same secret access contract.
 - Set `SECRET_FILE_DIR` to the mounted secret directory.
+- The bundled K8s manifests set `SECRET_BACKEND=file`, mount `aresx-secrets` at `/run/secrets/aresx`, and use that path as `SECRET_FILE_DIR`.
 - Verify readiness with `GET /api/v1/secops/readiness/secrets`.
 
 ## Execution Preflight

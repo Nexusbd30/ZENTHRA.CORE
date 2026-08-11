@@ -4,7 +4,7 @@ import json
 import time
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -80,6 +80,21 @@ router = APIRouter(
     tags=["secops-devsecops"],
     dependencies=[Depends(require_admin_or_monitor_token)],
 )
+
+
+def _reject_tenant_mismatch(context: dict[str, Any], requested_tenant: str | None) -> None:
+    from app.core.settings import settings
+
+    if str(settings.ENTERPRISE_TENANT_MODE or "").strip().lower() != "strict":
+        return
+    if not requested_tenant:
+        return
+    context_tenant = str(context.get("tenant_id") or "").strip()
+    if context_tenant and context_tenant != requested_tenant.strip():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tenant context does not match requested tenant",
+        )
 
 
 class TenantPolicyRequest(BaseModel):
@@ -323,7 +338,7 @@ def read_tenant_policies(
     db: Session = Depends(get_db),
     enterprise_context: dict[str, Any] = Depends(require_enterprise_capability("security:admin")),
 ):
-    _ = enterprise_context
+    _reject_tenant_mismatch(enterprise_context, tenant_id)
     return list_tenant_policies(db, tenant_id=tenant_id)
 
 
@@ -333,7 +348,7 @@ def write_tenant_policy(
     db: Session = Depends(get_db),
     enterprise_context: dict[str, Any] = Depends(require_enterprise_capability("security:admin")),
 ):
-    _ = enterprise_context
+    _reject_tenant_mismatch(enterprise_context, payload.tenant_id)
     return upsert_tenant_policy(
         db,
         rule_id=payload.rule_id,

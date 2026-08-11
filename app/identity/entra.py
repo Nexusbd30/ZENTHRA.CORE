@@ -6,6 +6,7 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.identity.contracts import IdentitySignal
 
@@ -131,7 +132,7 @@ def verify_entra_webhook_signature(
     signature: str | None,
     timestamp: str | None,
 ) -> bool:
-    secret = settings.ENTRA_WEBHOOK_SECRET
+    secret = get_secret("ENTRA_WEBHOOK_SECRET", settings.ENTRA_WEBHOOK_SECRET)
     if not secret:
         return True
     if not signature or not _timestamp_is_fresh(timestamp):
@@ -161,7 +162,7 @@ def build_entra_provider_evidence(
         "received_at": datetime.now(UTC).isoformat(),
         "payload_sha256": payload_sha256,
         "signature": {
-            "verified": bool(settings.ENTRA_WEBHOOK_SECRET),
+            "verified": bool(get_secret("ENTRA_WEBHOOK_SECRET", settings.ENTRA_WEBHOOK_SECRET)),
             "algorithm": "hmac-sha256",
             "timestamp": _compact(timestamp),
             "timestamp_header": "X-Zenthra-Timestamp",
@@ -178,14 +179,16 @@ def build_entra_provider_evidence(
 
 
 def build_entra_readiness() -> dict[str, Any]:
+    client_secret = get_secret("ENTRA_CLIENT_SECRET", settings.ENTRA_CLIENT_SECRET)
+    webhook_secret = get_secret("ENTRA_WEBHOOK_SECRET", settings.ENTRA_WEBHOOK_SECRET)
     has_graph_credentials = all(
         [
             settings.ENTRA_TENANT_ID,
             settings.ENTRA_CLIENT_ID,
-            settings.ENTRA_CLIENT_SECRET,
+            client_secret,
         ]
     )
-    has_webhook_secret = bool(settings.ENTRA_WEBHOOK_SECRET)
+    has_webhook_secret = bool(webhook_secret)
     graph_enabled = bool(settings.ENTRA_GRAPH_ENABLED and has_graph_credentials)
     graph_actions = {
         "resolve": graph_enabled,
