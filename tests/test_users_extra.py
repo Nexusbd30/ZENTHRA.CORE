@@ -17,6 +17,18 @@ async def test_create_duplicate_user(test_client):
 
 
 @pytest.mark.asyncio
+async def test_create_user_rejects_weak_password(test_client):
+    email = f"weak_{uuid.uuid4().hex[:6]}@test.com"
+
+    create = await test_client.post(
+        "/users/",
+        json={"email": email, "password": "short"},
+    )
+
+    assert create.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_update_nonexistent_user(test_client):
     update = await test_client.put(
         "/users/99999",
@@ -69,6 +81,29 @@ async def test_reset_password_requires_authentication(test_client):
 
 
 @pytest.mark.asyncio
+async def test_reset_password_rejects_weak_password(test_client):
+    email = f"weak_reset_{uuid.uuid4().hex[:6]}@test.com"
+    password = "password123"
+
+    create = await test_client.post("/users/", json={"email": email, "password": password})
+    assert create.status_code == 201
+
+    login = await test_client.post(
+        "/auth/login",
+        json={"username": email, "password": password},
+    )
+    assert login.status_code == 200
+
+    reset = await test_client.post(
+        "/users/reset-password",
+        json={"email": email, "new_password": "short"},
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+
+    assert reset.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_reset_password_rejects_other_non_admin_user(test_client):
     owner_email = f"owner_{uuid.uuid4().hex[:6]}@test.com"
     intruder_email = f"intruder_{uuid.uuid4().hex[:6]}@test.com"
@@ -109,4 +144,22 @@ async def test_update_user_invalid_email(test_client, auth_token):
         json={"email": "bademail"},
         headers={"Authorization": f"Bearer {auth_token}"},
     )
+    assert update.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_update_user_rejects_weak_password(test_client, auth_token):
+    create = await test_client.post(
+        "/users/",
+        json={"email": f"weak_update_{uuid.uuid4().hex[:6]}@test.com", "password": "password123"},
+    )
+    assert create.status_code == 201
+    user_id = create.json()["id"]
+
+    update = await test_client.put(
+        f"/users/{user_id}",
+        json={"password": "short"},
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+
     assert update.status_code == 422
