@@ -132,6 +132,8 @@ class Settings(BaseSettings):
     ACTION_EXECUTION_MODE: str = "mock"  # mock | dry_run | webhook
     ACTION_TIMEOUT_SEC: float = 5.0
     ACTION_SHARED_TOKEN: str | None = None
+    ARES_KILL_SWITCH_BACKEND: str = "in_memory"  # in_memory | redis
+    ARES_KILL_SWITCH_KEY: str = "ares:kill_switch"
 
     NETWORK_CONTROL_URL: str | None = None
     IDENTITY_CONTROL_URL: str | None = None

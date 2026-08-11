@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+from app.ares import kill_switch
+from app.ares.kill_switch import RedisKillSwitchStore
 from app.core import rate_limit, replay_guard
 from app.core.rate_limit import RedisRateLimitStore
 from app.core.replay_guard import RedisReplayGuardStore
+from app.core.settings import settings
 
 
 class FakePipeline:
@@ -71,6 +74,12 @@ class FakeRedisClient:
         self.values[key] = {"value": value, "ex": ex}
         return True
 
+    def get(self, key):
+        item = self.values.get(key)
+        if not item:
+            return None
+        return item["value"]
+
     def scan_iter(self, match):
         prefix = match.rstrip("*")
         keys = [*self.zsets.keys(), *self.values.keys()]
@@ -115,3 +124,45 @@ def test_redis_replay_guard_store_accepts_only_first_key(monkeypatch):
     assert first.accepted is True
     assert second.accepted is False
     assert fake_client.values["test:replay:payload-hash"]["ex"] == 300
+
+
+def test_redis_kill_switch_store_shares_state(monkeypatch):
+    fake_client = FakeRedisClient()
+    monkeypatch.setattr(
+        kill_switch,
+        "redis",
+        SimpleNamespace(Redis=SimpleNamespace(from_url=lambda *args, **kwargs: fake_client)),
+    )
+    first = RedisKillSwitchStore(url="redis://test", key_prefix="test", key="ares:kill_switch")
+    second = RedisKillSwitchStore(url="redis://test", key_prefix="test", key="ares:kill_switch")
+
+    first.write(
+        {
+            "enabled": False,
+            "reason": "provider outage",
+            "actor": "soc-admin",
+            "updated_at": "2026-08-11T00:00:00+00:00",
+        }
+    )
+
+    assert second.read()["enabled"] is False
+    assert second.read()["reason"] == "provider outage"
+    assert "test:ares:kill_switch" in fake_client.values
+
+
+def test_kill_switch_state_fails_closed_when_redis_unavailable(monkeypatch):
+    class BrokenRedis:
+        @staticmethod
+        def from_url(*args, **kwargs):
+            raise RuntimeError("redis unavailable")
+
+    monkeypatch.setattr(settings, "ARES_KILL_SWITCH_BACKEND", "redis")
+    monkeypatch.setattr(kill_switch, "redis", SimpleNamespace(Redis=BrokenRedis))
+    kill_switch.reset_kill_switch_store()
+
+    state = kill_switch.kill_switch_state()
+
+    assert state["ares_enabled"] is False
+    assert state["active"] is True
+    assert state["fail_closed"] is True
+    assert state["backend"] == "redis"
