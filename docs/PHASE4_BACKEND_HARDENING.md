@@ -28,8 +28,8 @@ Completed increments:
 
 Current validation baseline:
 
-- Test suite: `252 passed`.
-- Coverage: `90.24%`.
+- Test suite: `276 passed`.
+- Coverage: `93.51%`.
 - Ruff: passing.
 - Mypy: passing.
 
@@ -163,8 +163,9 @@ processes. They use `app.process_factory` and do not import or construct the ful
 entrypoints. They remain outside CD until service routing, persistent ownership, and
 end-to-end validation are complete.
 
-ARES remains limited to one replica because kill-switch state is currently local to
-the process. Horizontal ARES scaling requires a distributed kill-switch store.
+ARES kill-switch state now supports Redis-backed distributed storage. Horizontal
+ARES scaling still requires validating that all ARES processes or replicas share
+the same Redis-backed state in the target environment.
 
 Initial static inventory:
 
@@ -197,13 +198,13 @@ Current guarantees:
 - No correlation worker ownership in restricted processes.
 - Internal process status requires authentication.
 - Internal profiles do not expose browser CORS.
-- ARES is single-replica while kill-switch state is process-local.
+- ARES has a Redis-backed kill-switch option with fail-closed behavior.
 
 Not yet guaranteed:
 
 - Independent databases or schemas per domain.
 - NetworkPolicy routing between the restricted services.
-- Distributed ARES kill-switch state.
+- Target-environment validation of distributed ARES kill-switch state.
 - Event-driven contracts replacing direct Python service calls.
 - Independent migrations and release cadence.
 
@@ -219,7 +220,7 @@ Migration order:
 2. Deploy restricted ARES and ingestion services only after internal service routing
    and NetworkPolicies are defined.
 3. Move direct domain calls behind versioned internal contracts or events.
-4. Move ARES kill-switch state to Redis or another distributed store.
+4. Validate ARES Redis-backed kill-switch state across multiple processes or replicas.
 5. Deploy restricted RedQueen and route its API prefix explicitly.
 6. Extract correlation into a single-owner worker process.
 7. Retire the full API only after route-by-route traffic migration and rollback tests.
@@ -237,7 +238,7 @@ environment concern and requires:
 
 ## Remaining Gates
 
-- Persist tenant policies and enforce strict tenant isolation in repositories.
+- Tenant policies are persisted; enforce strict tenant isolation in all critical repositories.
 - Select and validate the real LLM gateway and vector retrieval backend.
 - Validate one identity, one DevSecOps, and one SOC provider end to end.
 - Replace placeholder Kubernetes secret workflow with the selected secret manager.

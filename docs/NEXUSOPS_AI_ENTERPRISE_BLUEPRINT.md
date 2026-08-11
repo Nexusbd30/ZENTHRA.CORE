@@ -168,8 +168,8 @@ Phase 4 closes the backend-only platform hardening baseline:
 
 Phase 5: Production Activation
 
-- Distributed ARES safety state.
-- Strict multi-tenant persistence.
+- Distributed ARES safety state in code; target-environment Redis validation remains required.
+- Tenant/provider policy persistence in code; strict read/write enforcement remains required.
 - Internal service routing and worker ownership.
 - Controlled live Identity, DevSecOps and SOC integrations.
 - Real LLM gateway and retrieval backend selection.

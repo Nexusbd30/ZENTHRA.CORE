@@ -184,7 +184,7 @@ pytest
 ```
 
 Estado detectado en este entorno:
-- Backend cerrado en Fase 4: `252 passed`, cobertura total `90.24%`, Ruff y Mypy correctos.
+- Backend cerrado en codigo de Fase 5: `276 passed`, cobertura total `93.51%`, Ruff y Mypy correctos.
 - Frontend: `corepack pnpm run build` completa correctamente.
 - CI exige Ruff, Mypy, guarda de codificacion y cobertura backend minima del `90%`.
 
@@ -200,11 +200,17 @@ Estado detectado en este entorno:
 
 ## Recomendaciones inmediatas
 
-1. Persistir politicas tenant antes de activar modo multi-tenant estricto.
+1. Aplicar politicas tenant persistidas a todos los repositorios criticos antes de activar modo multi-tenant estricto.
 2. Validar al menos un proveedor Identity, DevSecOps y SOC de extremo a extremo.
 3. Seleccionar gateway LLM y backend de recuperacion vectorial.
 4. Mantener `local_stub` y `dry_run` hasta superar readiness, preflight y validacion operativa.
 5. Usar `POST /api/v1/code-intelligence/analyze` para inventariar componentes, dependencias, rutas y puntos de ejecucion sin ejecutar el codigo analizado.
+
+Estado backend Fase 5:
+
+- Kill-switch ARES con backend Redis opcional y fail-closed si Redis no esta disponible.
+- Politicas tenant/provider persistidas y disponibles en `/api/v1/secops/tenant-policies`.
+- La activacion productiva completa sigue dependiendo de secretos gestionados, proveedores reales y validacion externa.
 
 ## Licencia
 
