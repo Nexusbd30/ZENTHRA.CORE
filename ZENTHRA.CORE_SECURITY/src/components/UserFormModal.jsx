@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 ZENTHRA UserFormModal — v2.4 Final
+// =============================================================
+// 💠 VAELQORIX UserFormModal — v2.4 Final
 // =============================================================
 // Modal profesional para creación y edición de usuarios.
 // Integrado con:

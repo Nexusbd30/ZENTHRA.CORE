@@ -69,7 +69,7 @@ export default function SocSummaryCard() {
       )}
 
       <div className="mt-3 text-[11px] text-slate-400/80">
-        ZENTHRA.CORE_SECURITY - Vista rapida del estado SOC.
+        VAELQORIX XDR Command - Vista rapida del estado SOC.
       </div>
     </div>
   );

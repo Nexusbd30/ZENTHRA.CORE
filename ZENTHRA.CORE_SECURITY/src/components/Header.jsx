@@ -1,5 +1,5 @@
 // =============================================================
-// 💠 Header — ZENTHRA.CORE_SECURITY (v3.6)
+// 💠 Header — VAELQORIX XDR Command (v3.6)
 // =============================================================
 // Cabecera principal del sistema:
 //  - Branding (logo + nombre)
@@ -26,7 +26,7 @@ export default function Header({ user, onLogout }) {
         <div className="text-right leading-tight">
           <p className="text-[11px] text-[#424754] uppercase">Operador</p>
           <p className="text-sm font-semibold text-[#adc6ff]">
-            {user?.email || "usuario@zenthra"}
+            {user?.email || "usuario@vaelqorix"}
           </p>
         </div>
         <button

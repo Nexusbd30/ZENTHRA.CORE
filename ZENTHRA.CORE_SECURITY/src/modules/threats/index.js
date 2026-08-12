@@ -1,5 +1,5 @@
 // =============================================================
-// 📦 Módulo de Amenazas — ZENTHRA.CORE_SECURITY (v2.1 Tailwind)
+// 📦 Módulo de Amenazas — VAELQORIX XDR Command (v2.1 Tailwind)
 // =============================================================
 // Centraliza las exportaciones del módulo Threats para facilitar
 // su uso en el router principal del dashboard.

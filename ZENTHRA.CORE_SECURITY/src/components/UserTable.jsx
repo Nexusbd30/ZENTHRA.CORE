@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 ZENTHRA UserTable — v2.5 Final Offline-aware
+// =============================================================
+// 💠 VAELQORIX UserTable — v2.5 Final Offline-aware
 // =============================================================
 // Módulo de gestión de usuarios (CRUD completo)
 // - Integrado con backend FastAPI (/users/)

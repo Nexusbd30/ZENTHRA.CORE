@@ -1,9 +1,9 @@
 // =============================================================
-// ZENTHRA.CORE_SECURITY — API CLIENT
+// VAELQORIX XDR Command — API CLIENT
 // v3.20 Elite Secure RealAuth+UX + Hardening + Correlation+Health
 // =============================================================
 // Responsabilidades:
-//   - Gestionar todas las llamadas HTTP al backend ZENTHRA.
+//   - Gestionar todas las llamadas HTTP al backend VAELQORIX.
 //   - Inyectar el JWT de sesión en rutas protegidas (/users, /threats, ...).
 //   - Usar un monitor token *dedicado* para /monitoring/* (no JWT de usuario).
 //   - Manejo global de errores (401/403/network) con mensajes UX-friendly.
@@ -32,14 +32,17 @@ const API_BASE_URL =
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 45000);
 
 // Token interno para /monitoring/* (NO es el JWT de usuario)
-const MONITOR_TOKEN = (import.meta.env.VITE_ZENTHRA_MONITOR_TOKEN || "").trim();
+const MONITOR_TOKEN = (
+  import.meta.env.VITE_VAELQORIX_MONITOR_TOKEN ||
+  ""
+).trim();
 
 // Clave donde guardamos el JWT real de usuario
 const USER_TOKEN_KEY = "access_token";
 
 if (!MONITOR_TOKEN) {
   console.warn(
-    "[ZENTHRA] VITE_ZENTHRA_MONITOR_TOKEN vacio; /monitoring/* usara JWT admin si existe"
+    "[VAELQORIX] VITE_VAELQORIX_MONITOR_TOKEN vacio; /monitoring/* usara JWT admin si existe"
   );
 }
 
@@ -169,7 +172,7 @@ nexusApi.interceptors.response.use(
     // =========================================================
     if (!error.response) {
       console.error(
-        "[ZENTHRA] Error de conexión con el servidor:",
+        "[VAELQORIX] Error de conexión con el servidor:",
         error.message
       );
       if (error.code === "ECONNABORTED") {
@@ -182,7 +185,7 @@ nexusApi.interceptors.response.use(
     // 🔐 401 → Token inválido/expirado (excepto en /auth/login)
     // =========================================================
     if (status === 401 && !isAuthLoginPath(requestConfig)) {
-      console.warn("[ZENTHRA] Token inválido o expirado. Cerrando sesión…");
+      console.warn("[VAELQORIX] Token inválido o expirado. Cerrando sesión…");
       setUserToken("");
       localStorage.removeItem("user");
       window.location.href = "/login";
@@ -198,7 +201,7 @@ nexusApi.interceptors.response.use(
     ) {
       const msg =
         "No tienes permisos para realizar esta acción (se requiere rol administrador).";
-      console.warn("[ZENTHRA] 403 en ruta sensible:", url, "→", msg);
+      console.warn("[VAELQORIX] 403 en ruta sensible:", url, "→", msg);
       throw new Error(msg);
     }
 
@@ -211,7 +214,7 @@ nexusApi.interceptors.response.use(
       error.message ||
       "Error desconocido en la comunicación con el servidor";
 
-    console.error("[ZENTHRA] API Error:", detail);
+    console.error("[VAELQORIX] API Error:", detail);
     throw new Error(detail);
   }
 );
@@ -323,7 +326,7 @@ export const deleteThreat = async (id) => {
 
 /**
  * Ejecuta el motor de correlación en backend.
- * Protegido por ZENTHRA_MONITOR_TOKEN (no usa JWT de usuario).
+ * Protegido por VAELQORIX_MONITOR_TOKEN (no usa JWT de usuario).
  *
  * Respuesta:
  *   {
@@ -360,7 +363,7 @@ export const getHealth = async () => {
     const { data } = await nexusApi.get("/health");
     return data;
   } catch (e) {
-    console.error("[ZENTHRA] Error en /health:", e);
+    console.error("[VAELQORIX] Error en /health:", e);
     throw new Error("No se pudo consultar /health del backend.");
   }
 };

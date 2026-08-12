@@ -1,5 +1,5 @@
 // =============================================================
-// 🧱 UI COMPONENT — CARD (ZENTHRA.CORE_SECURITY)
+// 🧱 UI COMPONENT — CARD (VAELQORIX XDR Command)
 // =============================================================
 // Componente base de tarjetas reutilizable para el dashboard.
 // Inspirado en shadcn/ui, pero sin dependencias externas.

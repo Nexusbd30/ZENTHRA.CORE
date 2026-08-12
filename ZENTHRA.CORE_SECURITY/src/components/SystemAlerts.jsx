@@ -1,5 +1,5 @@
 // =============================================================
-// 🔔 SystemAlerts — ZENTHRA.CORE_SECURITY (v3.1 Debug+PromLink)
+// 🔔 SystemAlerts — VAELQORIX XDR Command (v3.1 Debug+PromLink)
 // =============================================================
 // - Consume /monitoring/alerts/realtime (Alertmanager /api/v2/alerts)
 // - Ordena por severidad

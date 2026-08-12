@@ -1,5 +1,5 @@
 // =============================================================
-// 🧠 useAuth — ZENTHRA.CORE_SECURITY (v3.1 Offline-Aware)
+// 🧠 useAuth — VAELQORIX XDR Command (v3.1 Offline-Aware)
 // =============================================================
 // Hook global de autenticación.
 // Proporciona acceso directo al contexto global de Auth.

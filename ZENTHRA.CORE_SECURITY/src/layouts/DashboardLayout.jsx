@@ -154,14 +154,14 @@ export default function DashboardLayout() {
         <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center border border-[#adc6ff]/20 bg-[#0b1020]">
-              <img src={logo} alt="ZENTHRA" className="h-8 w-8 object-contain" />
+              <img src={logo} alt="VAELQORIX" className="h-8 w-8 object-contain" />
             </div>
             <div>
               <div className="font-headline text-sm font-black uppercase text-[#adc6ff]">
-                ZENTHRA
+                VAELQORIX
               </div>
               <div className="font-label text-[10px] uppercase text-[#8c909f]">
-                Core Security
+                XDR Command
               </div>
             </div>
           </div>

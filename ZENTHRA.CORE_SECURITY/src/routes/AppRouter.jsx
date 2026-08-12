@@ -1,5 +1,5 @@
 // =============================================================
-// SISTEMA DE RUTAS PRINCIPAL — ZENTHRA.CORE_SECURITY (v3.7 Clean)
+// SISTEMA DE RUTAS PRINCIPAL — VAELQORIX XDR Command (v3.7 Clean)
 // =============================================================
 
 import { Routes, Route, Navigate } from "react-router-dom";

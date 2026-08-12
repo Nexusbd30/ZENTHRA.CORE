@@ -1,5 +1,5 @@
 // =============================================================
-// 📊 ThreatTable — ZENTHRA.CORE_SECURITY (v4.3 Elite Secure+UX+Filters)
+// 📊 ThreatTable — VAELQORIX XDR Command (v4.3 Elite Secure+UX+Filters)
 // =============================================================
 // Responsabilidades:
 //   - Obtener la lista de amenazas desde el backend (listThreats).

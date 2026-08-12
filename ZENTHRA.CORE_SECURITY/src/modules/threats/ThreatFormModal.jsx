@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 🧩 ThreatFormModal — ZENTHRA.CORE_SECURITY (v4.1 Elite Secure)
+// =============================================================
+// 🧩 ThreatFormModal — VAELQORIX XDR Command (v4.1 Elite Secure)
 // =============================================================
 // Modal para registrar amenazas manuales:
 //

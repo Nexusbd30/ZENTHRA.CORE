@@ -1,7 +1,7 @@
+﻿// =============================================================
+// REGISTER - VAELQORIX XDR Command
 // =============================================================
-// 🧾 REGISTER — ZENTHRA.CORE_SECURITY (v4.0 Blue Team Pro)
-// =============================================================
-// - Crea usuarios vía POST /users/
+// - Crea usuarios via POST /users/
 // - Por defecto: rol "user" y is_active=true
 // - UI alineada con el Login (fondo + card)
 // =============================================================
@@ -13,7 +13,7 @@ import nexusApi from "@/api/nexusApi";
 export default function Register() {
   const navigate = useNavigate();
 
-  // 📋 Estados
+  // Estados
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +21,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // 🎨 Mismo fondo global que el Login
+  // Mismo fondo global que el Login
   useEffect(() => {
     document.body.style.backgroundColor = "#0f172a";
     document.body.style.backgroundImage =
@@ -37,7 +37,7 @@ export default function Register() {
     };
   }, []);
 
-  // 🧩 Registro de usuario
+  // Registro de usuario
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -46,7 +46,7 @@ export default function Register() {
 
     try {
       if (!email.includes("@")) {
-        throw new Error("Ingresa un correo electrónico válido.");
+        throw new Error("Ingresa un correo electronico valido.");
       }
 
       const response = await nexusApi.post("/users/", {
@@ -58,9 +58,9 @@ export default function Register() {
       });
 
       if (response?.data?.id) {
-        setSuccess("✅ Usuario creado correctamente. Redirigiendo al login...");
+        setSuccess("Usuario creado correctamente. Redirigiendo al login...");
       } else {
-        setSuccess("✅ Usuario creado correctamente.");
+        setSuccess("Usuario creado correctamente.");
       }
 
       setTimeout(() => navigate("/login"), 1800);
@@ -69,14 +69,14 @@ export default function Register() {
       const msg =
         err?.response?.data?.detail ||
         err?.message ||
-        "❌ No se pudo crear el usuario. Verifica los datos.";
+        "No se pudo crear el usuario. Verifica los datos.";
       setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // 💅 Vista del formulario (mismo estilo que Login)
+  // Vista del formulario
   return (
     <div className="min-h-screen flex items-center justify-center font-[Inter] text-white relative">
       <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-blue-900/30 pointer-events-none" />
@@ -84,16 +84,16 @@ export default function Register() {
       <div className="relative z-10 w-full max-w-md bg-[#0b1220]/95 rounded-xl shadow-lg border border-blue-500/40 p-8 backdrop-blur-md">
         <h1 className="text-3xl font-extrabold text-center mb-2 tracking-tight">
           Crear cuenta{" "}
-          <span className="text-blue-400 font-black">ZENTHRA</span>
+          <span className="text-blue-400 font-black">VAELQORIX</span>
         </h1>
         <p className="text-center text-blue-200/80 text-sm mb-8">
-          Alta de usuario para ZENTHRA.CORE_SECURITY
+          Alta de usuario para VAELQORIX XDR Command
         </p>
 
         <form onSubmit={handleRegister} className="flex flex-col gap-4 text-sm">
           <div>
             <label className="block text-sm font-medium mb-1 text-blue-50">
-              Correo electrónico
+              Correo electronico
             </label>
             <input
               type="email"
@@ -123,11 +123,11 @@ export default function Register() {
 
           <div>
             <label className="block text-sm font-medium mb-1 text-blue-50">
-              Contraseña
+              Contrasena
             </label>
             <input
               type="password"
-              placeholder="••••••••••"
+              placeholder="**********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full h-11 px-4 bg-[#111827] border border-[#1d3350] text-white rounded-lg
@@ -160,20 +160,21 @@ export default function Register() {
         </form>
 
         <p className="text-center text-sm text-blue-200/80 mt-6">
-          ¿Ya tienes cuenta?{" "}
+          Ya tienes cuenta?{" "}
           <button
             onClick={() => navigate("/login")}
             type="button"
             className="text-blue-400 font-semibold hover:underline"
           >
-            Iniciar sesión
+            Iniciar sesion
           </button>
         </p>
 
         <div className="mt-8 text-center text-xs text-blue-300/70">
-          <p>© 2025 ZENTHRA SECURITY SYSTEM. Todos los derechos reservados.</p>
+          <p>2025 VAELQORIX XDR Command. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>
   );
 }
+

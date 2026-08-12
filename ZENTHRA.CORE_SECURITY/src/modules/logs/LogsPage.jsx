@@ -74,7 +74,7 @@ export default function LogsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "zenthra-runtime-logs.json";
+    link.download = "vaelqorix-runtime-logs.json";
     link.click();
     URL.revokeObjectURL(url);
   };

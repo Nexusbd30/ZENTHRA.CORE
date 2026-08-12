@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotify } from "@/components/NotificationProvider";
 
 // =============================================================
-// 💠 NAVBAR — ZENTHRA.CORE_SECURITY (v2.1)
+// 💠 NAVBAR — VAELQORIX XDR Command (v2.1)
 // =============================================================
 // - Barra superior del Dashboard
 // - Integra cierre de sesión con AuthContext + notificaciones

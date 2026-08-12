@@ -1,11 +1,11 @@
 {
-  "name": "zenthra-core-security",
+  "name": "vaelqorix-xdr-command",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "packageManager": "pnpm@11.1.1",
   "scripts": {
-    "preinstall": "node -e \"const execPath = process.env.npm_execpath || ''; if (!execPath.includes('pnpm')) { console.error('Use corepack pnpm install for ZENTHRA.CORE_SECURITY. npm/yarn lockfiles are intentionally unsupported.'); process.exit(1); }\"",
+    "preinstall": "node -e \"const execPath = process.env.npm_execpath || ''; if (!execPath.includes('pnpm')) { console.error('Use corepack pnpm install for VAELQORIX XDR Command. npm/yarn lockfiles are intentionally unsupported.'); process.exit(1); }\"",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

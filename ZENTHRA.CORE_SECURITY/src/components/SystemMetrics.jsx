@@ -1,5 +1,5 @@
 // =============================================================
-// 💠 SystemMetrics — ZENTHRA.CORE_SECURITY (v5.4 Windows-Exporter Safe)
+// 💠 SystemMetrics — VAELQORIX XDR Command (v5.4 Windows-Exporter Safe)
 // =============================================================
 // - CPU % a partir de windows_cpu_time_total{mode="idle"}
 //   Fórmula (por instancia):

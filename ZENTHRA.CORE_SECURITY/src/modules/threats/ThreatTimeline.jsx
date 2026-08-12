@@ -1,5 +1,5 @@
 // =============================================================
-// 🕒 ThreatTimeline — ZENTHRA.CORE_SECURITY (v1.0 Elite SOC)
+// 🕒 ThreatTimeline — VAELQORIX XDR Command (v1.0 Elite SOC)
 // =============================================================
 // Vista cronológica estilo SIEM:
 //   - Lista amenazas ordenadas por fecha descendente

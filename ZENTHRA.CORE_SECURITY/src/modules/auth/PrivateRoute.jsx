@@ -1,5 +1,5 @@
 // =============================================================
-// 🔒 PrivateRoute — ZENTHRA.CORE_SECURITY (v3.6 Enterprise)
+// 🔒 PrivateRoute — VAELQORIX XDR Command (v3.6 Enterprise)
 // =============================================================
 // Componente de protección de rutas privadas.
 // Garantiza que solo los usuarios autenticados (con JWT válido)
@@ -36,7 +36,7 @@ export default function PrivateRoute({ children, element }) {
   // ⏳ Estado de validación del token
   // -------------------------------------------------------------
   // Mientras se verifica la sesión JWT, se muestra una pantalla
-  // de espera limpia y coherente con el diseño ZENTHRA.
+  // de espera limpia y coherente con el diseño VAELQORIX.
   // =============================================================
   if (loading) {
     return (

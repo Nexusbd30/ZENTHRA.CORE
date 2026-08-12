@@ -1,7 +1,7 @@
 // =============================================================
-// 💠 App — ZENTHRA.CORE_SECURITY (v3.7 Enterprise Stable)
+// 💠 App — VAELQORIX XDR Command (v3.7 Enterprise Stable)
 // =============================================================
-// Punto de entrada principal del frontend ZENTHRA.
+// Punto de entrada principal del frontend VAELQORIX.
 // Integra:
 //  - React Router (BrowserRouter)
 //  - AuthProvider (gestión JWT global)

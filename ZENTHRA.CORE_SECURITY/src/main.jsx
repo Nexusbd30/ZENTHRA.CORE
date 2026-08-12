@@ -1,9 +1,9 @@
 // =============================================================
-// 💠 main.jsx — Punto de entrada de ZENTHRA.CORE_SECURITY
+// 💠 main.jsx — Punto de entrada de VAELQORIX XDR Command
 // =============================================================
 // - Inicializa la aplicación React (Vite).
 // - Activa TailwindCSS globalmente.
-// - Integra el sistema de notificaciones ZENTHRA.
+// - Integra el sistema de notificaciones VAELQORIX.
 // =============================================================
 
 import React, { StrictMode } from "react";
@@ -12,7 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.jsx";
 import "./index.css";
 
-// 🧩 Sistema de notificaciones global (ZENTHRA)
+// 🧩 Sistema de notificaciones global (VAELQORIX)
 import { NotificationProvider } from "@/components/NotificationProvider.jsx";
 
 const queryClient = new QueryClient({

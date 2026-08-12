@@ -1,5 +1,5 @@
 // =============================================================
-// 🧠 useNotification — Hook global de notificaciones ZENTHRA
+// 🧠 useNotification — Hook global de notificaciones VAELQORIX
 // =============================================================
 // Permite mostrar mensajes globales desde cualquier componente.
 // Se usa junto a <NotificationProvider>.

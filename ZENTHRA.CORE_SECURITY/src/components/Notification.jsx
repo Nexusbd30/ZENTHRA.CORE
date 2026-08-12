@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 ZENTHRA Notification System
+// =============================================================
+// 💠 VAELQORIX Notification System
 // =============================================================
 // Inspirado en AWS Console y Cisco SecureX
 // Estilo minimalista, animado y coherente con el diseño del dashboard

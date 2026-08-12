@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 DashboardCard — ZENTHRA.CORE_SECURITY (v2.5 Observability+)
+// =============================================================
+// 💠 DashboardCard — VAELQORIX XDR Command (v2.5 Observability+)
 // =============================================================
 // Tarjeta visual modular para métricas del panel principal.
 // - Basada en tu componente UI/Card personalizado
@@ -21,7 +21,7 @@ export default function DashboardCard({
   subtitle = "",
 }) {
   // ===========================================================
-  // 🎨 Paleta ZENTHRA — Tonos suaves y translúcidos
+  // 🎨 Paleta VAELQORIX — Tonos suaves y translúcidos
   // ===========================================================
   const colorVariants = {
     blue: "from-blue-500/10 to-blue-500/5 border-blue-500/20 text-blue-400",

@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 ZENTHRA ConfirmDialog — v2.4 Final
+// =============================================================
+// 💠 VAELQORIX ConfirmDialog — v2.4 Final
 // =============================================================
 // Modal de confirmación universal
 // - Uso: eliminar usuarios, resetear contraseñas, acciones críticas

@@ -1,5 +1,5 @@
 // =============================================================
-// 💠 AuthContext — ZENTHRA.CORE_SECURITY (v3.8 Enterprise Secure+Offline)
+// 💠 AuthContext — VAELQORIX XDR Command (v3.8 Enterprise Secure+Offline)
 // =============================================================
 // Control central de autenticación JWT.
 // Gestiona el ciclo completo de sesión:

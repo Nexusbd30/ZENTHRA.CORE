@@ -1,7 +1,7 @@
 ﻿// =============================================================
 // 🛡️ SecurityPage — Consola de Seguridad de Sesión (v2.6 SOC-Ready)
 // =============================================================
-// Vista centralizada del estado de seguridad de ZENTHRA:
+// Vista centralizada del estado de seguridad de VAELQORIX:
 //   - Usuario autenticado (identidad + rol)
 //   - Estado del backend (ONLINE / OFFLINE → backendOffline)
 //   - Estado del token JWT (expiración, tiempo restante, payload básico)
@@ -93,7 +93,7 @@ export default function SecurityPage() {
       >
         Panel central de estado de{" "}
         <span className="text-blue-400 font-semibold">
-          ZENTHRA.CORE_SECURITY
+          VAELQORIX XDR Command
         </span>
         . Aquí puedes revisar la sesión activa, el backend, el token JWT y el
         canal de comunicación.
@@ -190,11 +190,12 @@ export default function SecurityPage() {
         </div>
 
         <div className="mt-4 text-right text-[11px] text-blue-300/80">
-          ZENTHRA.CORE_SECURITY · Vista de seguridad de sesión
+          VAELQORIX XDR Command · Vista de seguridad de sesión
         </div>
       </Motion.div>
     </div>
   );
 }
+
 
 

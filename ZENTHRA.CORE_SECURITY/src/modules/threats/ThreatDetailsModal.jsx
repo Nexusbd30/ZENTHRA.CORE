@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 🧠 ThreatDetailsModal — ZENTHRA.CORE_SECURITY (v4.1 Elite+SOC)
+// =============================================================
+// 🧠 ThreatDetailsModal — VAELQORIX XDR Command (v4.1 Elite+SOC)
 // =============================================================
 // - Muestra detalle completo de la amenaza (tabla → modal).
 // - Si el objeto recibido está incompleto, llama a /threats/:id.

@@ -1,5 +1,5 @@
-﻿// =============================================================
-// 💠 ZENTHRA Notification Provider (v3.6 Enterprise)
+// =============================================================
+// 💠 VAELQORIX Notification Provider (v3.6 Enterprise)
 // =============================================================
 // - Contexto global de notificaciones
 // - API uniforme: notify(type, message, duration?)

@@ -88,14 +88,14 @@ export default function Login() {
         <section className="hidden border-r border-white/10 px-10 py-8 lg:flex lg:flex-col">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center border border-[#adc6ff]/20 bg-[#10182b]">
-              <img src={logo} alt="ZENTHRA" className="h-9 w-9 object-contain" />
+              <img src={logo} alt="VAELQORIX" className="h-9 w-9 object-contain" />
             </div>
             <div>
               <div className="font-headline text-lg font-black uppercase text-[#adc6ff]">
-                ZENTHRA
+                VAELQORIX
               </div>
               <div className="font-label text-[10px] uppercase text-[#8c909f]">
-                Core Security Console
+                XDR Command Console
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function Login() {
                 Panel operativo claro para seguridad, alertas y respuesta.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-[#aeb7ca]">
-                Acceso a la consola interna de ZENTHRA. El panel muestra el estado del
+                Acceso a la consola interna de VAELQORIX. El panel muestra el estado del
                 backend, la navegacion principal y los modulos de operacion sin depender
                 de vistas ocultas.
               </p>
@@ -134,14 +134,14 @@ export default function Login() {
           <div className="w-full max-w-md">
             <div className="mb-8 flex items-center gap-3 lg:hidden">
               <div className="flex h-11 w-11 items-center justify-center border border-[#adc6ff]/20 bg-[#10182b]">
-                <img src={logo} alt="ZENTHRA" className="h-8 w-8 object-contain" />
+                <img src={logo} alt="VAELQORIX" className="h-8 w-8 object-contain" />
               </div>
               <div>
                 <div className="font-headline text-base font-black uppercase text-[#adc6ff]">
-                  ZENTHRA
+                  VAELQORIX
                 </div>
                 <div className="font-label text-[10px] uppercase text-[#8c909f]">
-                  Core Security
+                  XDR Command
                 </div>
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function Login() {
                       type="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      placeholder="operator@zenthra.core"
+                      placeholder="operator@vaelqorix.ai"
                       autoComplete="username"
                       className="h-12 w-full border border-white/10 bg-[#0b1020] pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-[#687286] focus:border-[#adc6ff]/60"
                       required
