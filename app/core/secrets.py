@@ -18,14 +18,20 @@ SENSITIVE_SETTING_NAMES = {
 }
 
 
+def _clean_secret_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return value.strip().removeprefix("\ufeff")
+
+
 def get_secret(name: str, default: str | None = None) -> str | None:
     normalized = name.strip()
     backend = str(settings.SECRET_BACKEND or "env").strip().lower()
     if backend == "file":
         candidate = Path(settings.SECRET_FILE_DIR) / normalized
         if candidate.exists() and candidate.is_file():
-            return candidate.read_text(encoding="utf-8").strip()
-    return os.environ.get(normalized, default)
+            return _clean_secret_value(candidate.read_text(encoding="utf-8"))
+    return _clean_secret_value(os.environ.get(normalized, default))
 
 
 def secret_backend_status() -> dict[str, object]:

@@ -35,6 +35,19 @@ def test_file_secret_backend_reads_named_secret(monkeypatch):
     assert secrets.get_secret("GITHUB_TOKEN") == "ghs_test"
 
 
+def test_file_secret_backend_strips_utf8_bom(monkeypatch):
+    secret_dir = Path(".test-data") / f"secrets-{uuid4()}"
+    secret_dir.mkdir(parents=True, exist_ok=True)
+    (secret_dir / "ZENTHRA_MONITOR_TOKEN").write_text(
+        "\ufeffmonitor-token\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "SECRET_BACKEND", "file")
+    monkeypatch.setattr(settings, "SECRET_FILE_DIR", str(secret_dir))
+
+    assert secrets.get_secret("ZENTHRA_MONITOR_TOKEN") == "monitor-token"
+
+
 def test_secret_backend_status_never_exposes_values(monkeypatch):
     secret_dir = Path(".test-data") / f"secrets-{uuid4()}"
     secret_dir.mkdir(parents=True, exist_ok=True)
