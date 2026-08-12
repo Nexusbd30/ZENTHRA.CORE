@@ -16,6 +16,8 @@ htmlcov/
 .env.*
 !.env.example
 secrets/
+aegis-xdr-command-source/
+nuevo logo.jpeg
 
 # Databases and logs
 *.db

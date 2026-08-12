@@ -1,102 +1,85 @@
-// =============================================================
-// 🧭 SIDEBAR — ZENTHRA.CORE_SECURITY (v3.6 Enterprise Revised)
-// =============================================================
-// - Navegación lateral con rutas reales del AppRouter
-// - Alertas (Prometheus) separadas de Amenazas (Threats)
-// - Integrado con AuthContext + NotificationProvider
-// - Estilos activos coherentes con el resto del panel
-// =============================================================
-
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Users as UsersIcon,
+  Activity,
   Bell,
+  HardDrive,
+  LayoutDashboard,
+  LogOut,
   ShieldAlert,
   ShieldCheck,
-  HardDrive,
-  Activity,
   Stethoscope,
-  LogOut,
+  Users as UsersIcon,
 } from "lucide-react";
-import logo from "@/assets/logos/zenthra-logo.png";
+
+import logo from "@/assets/logos/vaelqorix-logo.jpeg";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotification } from "@/hooks/useNotification";
+
+const navItems = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/alerts", label: "Alertas", icon: Bell },
+  { to: "/dashboard/threats", label: "Amenazas", icon: ShieldAlert },
+  { to: "/dashboard/monitoring", label: "Monitoreo", icon: Activity },
+  { to: "/dashboard/diagnostics", label: "Diagnostico", icon: Stethoscope },
+  { to: "/dashboard/datacenter", label: "Infraestructura", icon: HardDrive },
+  { to: "/dashboard/users", label: "Usuarios", icon: UsersIcon },
+  { to: "/dashboard/security", label: "Seguridad", icon: ShieldCheck },
+];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { notify } = useNotification();
 
-  const activeCls =
-    "bg-[#2d3449] text-[#adc6ff] border-l-4 border-[#adc6ff]";
-  const baseCls =
-    "text-[#424754] hover:bg-[#171f33] hover:text-[#adc6ff]";
-
-  const itemCls = (isActive) =>
-    `flex items-center gap-3 px-4 py-3 font-medium text-sm tracking-tight transition-all duration-300 ${
-      isActive ? activeCls : baseCls
-    }`;
-
   const handleLogout = () => {
     logout();
-    notify("warning", "🔒 Sesión cerrada correctamente");
+    notify("warning", "Sesion cerrada correctamente");
     navigate("/login", { replace: true });
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#131b2e] border-r border-[#424754]/20 shadow-[24px_0_48px_-12px_rgba(6,14,32,0.5)] flex flex-col z-40">
-      <div className="px-6 mb-8 mt-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary/10 flex items-center justify-center rounded-sm">
-          <img
-            src={logo}
-            alt="ZENTHRA Logo"
-            className="w-8 h-8 object-contain"
-          />
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-[#424754]/20 bg-[#131b2e] shadow-[24px_0_48px_-12px_rgba(6,14,32,0.5)]">
+      <div className="mb-8 mt-6 flex items-center gap-3 px-6">
+        <div className="flex h-10 w-10 items-center justify-center bg-primary/10">
+          <img src={logo} alt="VAELQORIX" className="h-8 w-8 object-contain" />
         </div>
         <div>
-          <div className="font-['Space_Grotesk'] font-black text-[#adc6ff] leading-none uppercase">
-            COMMAND
+          <div className="font-headline font-black uppercase leading-none text-[#adc6ff]">
+            Command
           </div>
-          <div className="text-[10px] text-[#424754] uppercase tracking-widest">
-            Level 4 Clear
-          </div>
+          <div className="font-label text-[10px] uppercase text-[#424754]">Level 4 Clear</div>
         </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-2">
-        <NavLink to="/dashboard" className={({ isActive }) => itemCls(isActive)}>
-          <LayoutDashboard size={18} /> Dashboard
-        </NavLink>
-        <NavLink to="/dashboard/alerts" className={({ isActive }) => itemCls(isActive)}>
-          <Bell size={18} /> Alertas
-        </NavLink>
-        <NavLink to="/dashboard/threats" className={({ isActive }) => itemCls(isActive)}>
-          <ShieldAlert size={18} /> Amenazas
-        </NavLink>
-        <NavLink to="/dashboard/monitoring" className={({ isActive }) => itemCls(isActive)}>
-          <Activity size={18} /> Monitoreo
-        </NavLink>
-        <NavLink to="/dashboard/diagnostics" className={({ isActive }) => itemCls(isActive)}>
-          <Stethoscope size={18} /> Diagnostico
-        </NavLink>
-        <NavLink to="/dashboard/datacenter" className={({ isActive }) => itemCls(isActive)}>
-          <HardDrive size={18} /> Infraestructura
-        </NavLink>
-        <NavLink to="/dashboard/users" className={({ isActive }) => itemCls(isActive)}>
-          <UsersIcon size={18} /> Usuarios
-        </NavLink>
-        <NavLink to="/dashboard/security" className={({ isActive }) => itemCls(isActive)}>
-          <ShieldCheck size={18} /> Seguridad
-        </NavLink>
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              [
+                "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                isActive
+                  ? "border-l-4 border-[#adc6ff] bg-[#2d3449] text-[#adc6ff]"
+                  : "text-[#8c909f] hover:bg-[#171f33] hover:text-[#adc6ff]",
+              ].join(" ")
+            }
+          >
+            <item.icon size={18} />
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="mt-auto border-t border-[#424754]/20 px-4 py-4">
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full text-left text-[#424754] hover:text-[#adc6ff] hover:bg-[#171f33] px-4 py-3 transition-all rounded-sm"
+          className="flex w-full items-center gap-3 px-4 py-3 text-left text-[#8c909f] transition-colors hover:bg-[#171f33] hover:text-[#adc6ff]"
         >
-          <LogOut size={18} /> Cerrar sesión
+          <LogOut size={18} />
+          Cerrar sesion
         </button>
       </div>
     </aside>

@@ -1,4 +1,4 @@
-import { createElement, Suspense } from "react";
+﻿import { createElement, Suspense } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -23,7 +23,7 @@ import { useState } from "react";
 import Loader from "@/components/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotification } from "@/hooks/useNotification";
-import logo from "@/assets/logos/zenthra-logo.png";
+import logo from "@/assets/logos/vaelqorix-logo.jpeg";
 
 const navSections = [
   {

@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 
 import { getCurrentUser, loginUser } from "@/api/nexusApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotification } from "@/hooks/useNotification";
-import logo from "@/assets/logos/zenthra-logo.png";
+import logo from "@/assets/logos/vaelqorix-logo.jpeg";
 
 const OFFLINE_MSG = "No se puede conectar con el servidor.";
 

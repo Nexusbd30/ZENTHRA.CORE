@@ -13,7 +13,7 @@ import {
   UserCheck,
   RefreshCw,
 } from "lucide-react";
-import logo from "../assets/logos/zenthra-logo.png";
+import logo from "../assets/logos/vaelqorix-logo.jpeg";
 
 export default function Home() {
   const navigate = useNavigate();
