@@ -1,4 +1,4 @@
-# DOC-10 Phase 1 Closure
+﻿# DOC-10 Phase 1 Closure
 
 Fecha de cierre: 2026-05-27
 
@@ -46,8 +46,8 @@ Estado validado:
 ### Microsoft Entra Webhook
 
 - Firma HMAC SHA-256.
-- Header `X-Zenthra-Signature`.
-- Header anti-replay `X-Zenthra-Timestamp`.
+- Header `X-Vaelqorix-Signature`.
+- Header anti-replay `X-Vaelqorix-Timestamp`.
 - Ventana `ENTRA_WEBHOOK_MAX_SKEW_SEC`.
 - Rate limit operacional.
 - Replay guard.
@@ -97,11 +97,11 @@ Estado validado:
 
 - `/metrics` protegido por token interno.
 - Metricas Prometheus:
-  - `zenthra_security_webhook_rejections_total`
-  - `zenthra_security_rate_limit_rejections_total`
-  - `zenthra_security_replay_rejections_total`
-  - `zenthra_soc_materializations_total`
-  - `zenthra_soc_lifecycles_total`
+  - `vaelqorix_security_webhook_rejections_total`
+  - `vaelqorix_security_rate_limit_rejections_total`
+  - `vaelqorix_security_replay_rejections_total`
+  - `vaelqorix_soc_materializations_total`
+  - `vaelqorix_soc_lifecycles_total`
 
 ### Rate Limit / Replay Store
 
@@ -160,8 +160,8 @@ Estado validado:
 - `secops_integration_security_abuse.v1`
 - `soc_case.v1`
 - `redqueen.llm_decision.v1`
-- `zenthra.mcp_context.v1`
-- `zenthra.mcp_tool_policy.v1`
+- `vaelqorix.mcp_context.v1`
+- `vaelqorix.mcp_tool_policy.v1`
 - `threat_event.v1`
 
 ## Runbook Minimo
@@ -313,4 +313,4 @@ Regla: ningun conector real debe saltarse RedQueen, ARES, audit chain, RBAC ente
 
 Fase 1 cerrada.
 
-NEXUS queda como nucleo backend defensivo enterprise listo para piloto controlado y preparado para integraciones reales.
+VAELQORIX queda como nucleo backend defensivo enterprise listo para piloto controlado y preparado para integraciones reales.

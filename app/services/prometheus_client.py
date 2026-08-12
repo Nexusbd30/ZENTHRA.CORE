@@ -1,11 +1,11 @@
+﻿# =============================================================
+# ðŸ“¡ PrometheusClient â€” VAELQORIX (v1.4 SIEM-Ready Stable)
 # =============================================================
-# 📡 PrometheusClient — ZENTHRA (v1.4 SIEM-Ready Stable)
-# =============================================================
-# ✅ Compatibilidad:
+# âœ… Compatibilidad:
 #   - query(expr) -> List[dict]
 #   - has_result(expr) -> bool
 #
-# ✅ SIEM-ready:
+# âœ… SIEM-ready:
 #   - get_alerts(state="firing") -> List[dict] (NORMALIZADO)
 #   - get_firing_alerts() -> List[dict]
 #   - build_fingerprint(labels, target_service=None) -> str
@@ -20,7 +20,7 @@ import requests
 
 from app.core.settings import settings
 
-logger = logging.getLogger("zenthra.prometheus")
+logger = logging.getLogger("vaelqorix.prometheus")
 
 
 class PrometheusClient:
@@ -35,7 +35,7 @@ class PrometheusClient:
         logger.info("[PrometheusClient] Base URL=%s timeout=%ss", self.base_url, self.timeout)
 
     # ---------------------------------------------------------
-    # 🔍 Query instantánea
+    # ðŸ” Query instantÃ¡nea
     # ---------------------------------------------------------
     def query(self, expr: str) -> List[dict]:
         url = f"{self.base_url}/api/v1/query"
@@ -53,7 +53,7 @@ class PrometheusClient:
         return (data.get("data", {}) or {}).get("result", []) or []
 
     # ---------------------------------------------------------
-    # 🧠 Helper booleano
+    # ðŸ§  Helper booleano
     # ---------------------------------------------------------
     def has_result(self, expr: str) -> bool:
         try:
@@ -62,7 +62,7 @@ class PrometheusClient:
             return False
 
     # ---------------------------------------------------------
-    # 🚨 Alertas activas vía Prometheus API (/api/v1/alerts)
+    # ðŸš¨ Alertas activas vÃ­a Prometheus API (/api/v1/alerts)
     # ---------------------------------------------------------
     def get_alerts(self, state: Optional[str] = "firing") -> List[dict]:
         """
@@ -129,7 +129,7 @@ class PrometheusClient:
         return self.get_alerts(state="firing")
 
     # ---------------------------------------------------------
-    # 🧬 Fingerprint helper
+    # ðŸ§¬ Fingerprint helper
     # ---------------------------------------------------------
     @staticmethod
     def build_fingerprint(labels: Dict[str, Any], target_service: str | None = None) -> str:

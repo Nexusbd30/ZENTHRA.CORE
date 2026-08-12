@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -205,8 +205,8 @@ def _enforce_entra_replay_guard(
 async def ingest_entra_event(
     request: Request,
     payload: dict[str, Any],
-    x_zenthra_signature: str | None = Header(default=None),
-    x_zenthra_timestamp: str | None = Header(default=None),
+    x_vaelqorix_signature: str | None = Header(default=None),
+    x_vaelqorix_timestamp: str | None = Header(default=None),
     db: Session = Depends(get_db),
     enterprise_context: dict[str, Any] = Depends(require_enterprise_capability("identity:triage")),
 ):
@@ -220,7 +220,7 @@ async def ingest_entra_event(
         payload=payload,
         enterprise_context=enterprise_context,
     )
-    if not verify_entra_webhook_signature(body, x_zenthra_signature, x_zenthra_timestamp):
+    if not verify_entra_webhook_signature(body, x_vaelqorix_signature, x_vaelqorix_timestamp):
         _audit_entra_security_rejection(
             db,
             request=request,
@@ -239,15 +239,15 @@ async def ingest_entra_event(
         request=request,
         body=body,
         payload=payload,
-        signature=x_zenthra_signature,
-        timestamp=x_zenthra_timestamp,
+        signature=x_vaelqorix_signature,
+        timestamp=x_vaelqorix_timestamp,
         enterprise_context=enterprise_context,
     )
     signal = normalize_entra_risk_event(payload)
     signal.provider_evidence = build_entra_provider_evidence(
         payload=payload,
         body=body,
-        timestamp=x_zenthra_timestamp,
+        timestamp=x_vaelqorix_timestamp,
     )
     event, duplicate = persist_identity_event(db, signal)
     elapsed_ms = (time.perf_counter() - start) * 1000

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -39,8 +39,8 @@ def build_intelligence_status(repository: KnowledgeRepository | None = None) -> 
         "rag": {
             "provider": repository.provider,
             "document_count": len(knowledge_documents),
-            "repository_contract": "zenthra.knowledge_repository.v1",
-            "document_contract": "zenthra.knowledge_document.v1",
+            "repository_contract": "vaelqorix.knowledge_repository.v1",
+            "document_contract": "vaelqorix.knowledge_document.v1",
             "persistent": repository.provider != "in_memory",
             "versioned_documents": True,
             "domains": domains,
@@ -58,8 +58,8 @@ def build_intelligence_status(repository: KnowledgeRepository | None = None) -> 
             ],
         },
         "mcp": {
-            "context_schema": "zenthra.mcp_context.v1",
-            "tool_policy_schema": "zenthra.mcp_tool_policy.v1",
+            "context_schema": "vaelqorix.mcp_context.v1",
+            "tool_policy_schema": "vaelqorix.mcp_tool_policy.v1",
             "tool_registry_mode": "local_registry",
             "supported_fields": list(MCP_CONTEXT_FIELDS),
             "registered_tools": list_mcp_tools(),
@@ -81,7 +81,7 @@ def build_enterprise_intelligence_status(repository: KnowledgeRepository) -> dic
             int(document.get("version") or 1),
         )
     status["mode"] = "enterprise-memory-core"
-    status["rag"]["storage_contract"] = "zenthra.enterprise_memory.v1"
+    status["rag"]["storage_contract"] = "vaelqorix.enterprise_memory.v1"
     status["rag"]["latest_versions"] = latest_versions
     status["rag"]["ready_for_phase3"] = bool(status["rag"]["persistent"])
     return status

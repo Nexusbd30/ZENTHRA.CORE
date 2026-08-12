@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ZENTHRA.CORE_SECURITY
+        working-directory: VAELQORIX.XDR_COMMAND
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -49,7 +49,7 @@ jobs:
       with:
         node-version: "20"
         cache: "pnpm"
-        cache-dependency-path: ZENTHRA.CORE_SECURITY/pnpm-lock.yaml
+        cache-dependency-path: VAELQORIX.XDR_COMMAND/pnpm-lock.yaml
     - name: Install frontend deps
       run: pnpm install --frozen-lockfile
     - name: ESLint

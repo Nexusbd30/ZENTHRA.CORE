@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.audit_store import list_audit_records, verify_audit_chain
 from app.models.execution_result import ExecutionResult
 
-ARES_AI_EVIDENCE_BUNDLE_CONTRACT = "zenthra.ares_ai_evidence_bundle.v1"
+ARES_AI_EVIDENCE_BUNDLE_CONTRACT = "vaelqorix.ares_ai_evidence_bundle.v1"
 
 
 def _json_loads(value: str | None, fallback):
@@ -98,7 +98,7 @@ def build_ares_ai_evidence_bundle(db: Session, *, verdict_id: str) -> dict[str, 
         "trace_count": len(traces),
         "executions": execution_payloads,
         "intelligence": {
-            "trace_schema": "zenthra.llm_decision_trace.v1",
+            "trace_schema": "vaelqorix.llm_decision_trace.v1",
             "latest_trace": latest_trace,
             "llm_contract": latest_trace.get("llm_contract", {}) if latest_trace else {},
             "llm_governance": latest_trace.get("llm_governance", {}) if latest_trace else {},

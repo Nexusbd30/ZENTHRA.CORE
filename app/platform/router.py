@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ from app.platform.service import build_platform_map, build_platform_readiness
 
 router = APIRouter(
     prefix="/api/v1/platform",
-    tags=["nexusops-platform"],
+    tags=["vaelqorix-platform"],
     dependencies=[Depends(require_admin_or_monitor_token)],
 )
 

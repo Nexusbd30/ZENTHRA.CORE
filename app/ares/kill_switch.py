@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from collections.abc import MutableMapping
@@ -98,7 +98,7 @@ class RedisKillSwitchStore:
             socket_connect_timeout=1,
             socket_timeout=1,
         )
-        prefix = key_prefix.strip(":") or "zenthra"
+        prefix = key_prefix.strip(":") or "vaelqorix"
         normalized_key = key.strip(":") or "ares:kill_switch"
         self._key = f"{prefix}:{normalized_key}"
 

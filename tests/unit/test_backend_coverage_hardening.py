@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from types import SimpleNamespace
 
@@ -326,12 +326,12 @@ def test_core_dependency_and_internal_auth_helpers(monkeypatch):
     assert get_request_id(request, x_request_id="req-explicit") == "req-explicit"
     assert get_request_id(SimpleNamespace(headers={}), x_request_id=None) == "n/a"
 
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", None)
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", None)
     with pytest.raises(HTTPException) as missing:
         require_internal_bearer(None)
     assert missing.value.status_code == 503
 
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "token")
     with pytest.raises(HTTPException) as malformed:
         require_internal_bearer("token")
     assert malformed.value.status_code == 401

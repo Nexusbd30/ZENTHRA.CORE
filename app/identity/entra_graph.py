@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
@@ -255,7 +255,7 @@ def dispatch_entra_graph_command(*, command: str, payload: dict[str, Any]) -> di
             )
         response = requests.post(
             settings.ENTRA_REQUIRE_MFA_POLICY_URL,
-            json={"target": target, "provider": "entra", "source": "zenthra"},
+            json={"target": target, "provider": "entra", "source": "vaelqorix"},
             headers=headers,
             timeout=config.timeout_sec,
         )

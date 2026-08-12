@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import timedelta
 from types import SimpleNamespace
@@ -67,7 +67,7 @@ def test_security_token_user_and_role_paths(monkeypatch, db_session):
 
 def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_session):
     monkeypatch.setattr(settings, "SECRET_KEY", "secret-for-test")
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-token")
 
     with pytest.raises(HTTPException) as missing_auth:
         security.require_admin_or_monitor_token("", db_session)
@@ -82,7 +82,7 @@ def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_sessio
         security.require_admin_or_monitor_token("Bearer invalid", db_session)
     assert invalid_monitor_mode.value.status_code == 403
 
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", None)
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", None)
     with pytest.raises(HTTPException) as invalid_jwt_no_monitor:
         security.require_admin_or_monitor_token("Bearer invalid", db_session)
     assert invalid_jwt_no_monitor.value.status_code == 401

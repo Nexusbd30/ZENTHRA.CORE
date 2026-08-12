@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from app.core.settings import settings
 from app.secops.github import dispatch_github_command
@@ -26,10 +26,10 @@ def configure_github(monkeypatch):
 
 def github_payload():
     return {
-        "target": "repository:zenthra/core-security",
+        "target": "repository:vaelqorix/core-security",
         "provider": "github_actions",
         "pipeline": {
-            "repository": "zenthra/core-security",
+            "repository": "vaelqorix/core-security",
             "environment": "production",
             "artifact_id": "12345",
         },
@@ -53,7 +53,7 @@ def test_github_provider_resolves_repository(monkeypatch):
         payload=github_payload(),
     )
 
-    assert calls[0][0] == "https://github.test/repos/zenthra/core-security"
+    assert calls[0][0] == "https://github.test/repos/vaelqorix/core-security"
     assert result["mode"] == "github_api"
     assert result["visibility"] == "private"
     assert result["provider_evidence"]["provider_request_id"] == "gh-req-1"
@@ -76,7 +76,7 @@ def test_github_provider_blocks_deployment_with_environment_gate(monkeypatch):
         payload=github_payload(),
     )
 
-    assert calls[0][0] == "https://github.test/repos/zenthra/core-security/environments/production"
+    assert calls[0][0] == "https://github.test/repos/vaelqorix/core-security/environments/production"
     assert result["operation"] == "environment_protection_gate"
     assert result["provider_evidence"]["http_status"] == 200
 
@@ -96,6 +96,6 @@ def test_github_provider_quarantines_actions_artifact(monkeypatch):
         payload=github_payload(),
     )
 
-    assert calls[0][0] == "https://github.test/repos/zenthra/core-security/actions/artifacts/12345"
+    assert calls[0][0] == "https://github.test/repos/vaelqorix/core-security/actions/artifacts/12345"
     assert result["artifact_id"] == "12345"
     assert result["provider_evidence"]["operation"] == "delete_actions_artifact"

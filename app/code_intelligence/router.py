@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
@@ -17,7 +17,7 @@ router = APIRouter(
 def code_intelligence_status():
     return {
         "module": "code_intelligence",
-        "contract": "zenthra.code_architecture.v1",
+        "contract": "vaelqorix.code_architecture.v1",
         "status": "ready",
         "mode": "static_ast_no_execution",
         "scope": ["app"],

@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redqueen
@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: redqueen
-        image: ghcr.io/your-org/nexus:1.0.0
+        image: ghcr.io/your-org/vaelqorix:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000

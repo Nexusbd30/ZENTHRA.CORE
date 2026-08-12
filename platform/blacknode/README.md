@@ -1,6 +1,6 @@
-# BlackNode
+﻿# BlackNode
 
-BlackNode is the security, governance and risk layer for NexusOps AI.
+BlackNode is the security, governance and risk layer for VAELQORIX AI.
 
 Every agent action must pass through authentication, authorization, risk evaluation, policy checks and audit recording.
 

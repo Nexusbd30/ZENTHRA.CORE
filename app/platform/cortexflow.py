@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -8,7 +8,7 @@ from app.redqueen.decision_engine import ALLOWED_ACTIONS, DOMAIN_ACTIONS
 
 class CortexFlowAgentRuntime:
     name = "CortexFlow"
-    contract = "nexusops.cortexflow.agent_runtime.v1"
+    contract = "vaelqorix.cortexflow.agent_runtime.v1"
 
     def build_status(self) -> dict[str, Any]:
         intelligence = build_intelligence_status()

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
@@ -7,7 +7,7 @@ from app.core.signing import verify_payload_signature
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -72,7 +72,7 @@ async def test_redqueen_ares_contract_preserves_dry_run_evidence_and_audit(
         "redqueen_decides_ares_executes"
     )
     assert controls["llm_contract"]["schema"] == "redqueen.llm_decision.v1"
-    assert controls["llm_governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert controls["llm_governance"]["schema"] == "vaelqorix.llm_governance.v1"
     assert controls["llm_governance"]["approved_for_ares"] is True
     assert controls["mcp_action_policy"]["allowed"] is True
     assert controls["mcp_tool_policy"]["allowed"] is True
@@ -121,7 +121,7 @@ async def test_redqueen_ares_contract_preserves_dry_run_evidence_and_audit(
     )
     assert bundle_response.status_code == 200, bundle_response.text
     bundle = bundle_response.json()
-    assert bundle["contract"] == "zenthra.ares_ai_evidence_bundle.v1"
+    assert bundle["contract"] == "vaelqorix.ares_ai_evidence_bundle.v1"
     assert bundle["status"] == "ok"
     assert bundle["execution_count"] == 1
     assert bundle["trace_count"] == 1

@@ -1,4 +1,4 @@
-# DOC-09 Integration Notes
+﻿# DOC-09 Integration Notes
 
 Este documento describe la fusion del blueprint RedQueen/ARES v2.0 sobre la base actual y actua como registro vivo de integraciones enterprise.
 
@@ -76,8 +76,8 @@ Configuracion:
 Seguridad de webhook:
 
 - Si `ENTRA_WEBHOOK_SECRET` esta configurado, `POST /api/v1/identity/providers/entra/events` exige firma HMAC.
-- Header requerido: `X-Zenthra-Signature`.
-- Header anti-replay requerido: `X-Zenthra-Timestamp` con Unix timestamp en segundos.
+- Header requerido: `X-Vaelqorix-Signature`.
+- Header anti-replay requerido: `X-Vaelqorix-Timestamp` con Unix timestamp en segundos.
 - Formato recomendado: `sha256=<hex_digest>`.
 - El digest se calcula con HMAC-SHA256 sobre `timestamp + "." + body_json_exacto`.
 - Si no hay firma, falta timestamp, el timestamp esta fuera de ventana o la firma no coincide, la API devuelve `401 Invalid Entra webhook signature`.
@@ -132,11 +132,11 @@ Observabilidad y export SOC:
 
 - `/metrics` expone contadores Prometheus para rechazos webhook, rate limit, replay, materializaciones SOC y lifecycles SOC.
 - Metricas principales:
-  - `zenthra_security_webhook_rejections_total`
-  - `zenthra_security_rate_limit_rejections_total`
-  - `zenthra_security_replay_rejections_total`
-  - `zenthra_soc_materializations_total`
-  - `zenthra_soc_lifecycles_total`
+  - `vaelqorix_security_webhook_rejections_total`
+  - `vaelqorix_security_rate_limit_rejections_total`
+  - `vaelqorix_security_replay_rejections_total`
+  - `vaelqorix_soc_materializations_total`
+  - `vaelqorix_soc_lifecycles_total`
 - `POST /api/v1/secops/security/events/export` genera payload `soc_case.v1` para SIEM/case management.
 - El export queda `ready_to_send=false` hasta conectar un destino real; el contrato evita secretos y payloads completos.
 - RBAC enterprise separa capacidades SOC: `soc:read`, `soc:materialize`, `soc:execute`.

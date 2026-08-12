@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from collections import Counter, defaultdict
@@ -87,7 +87,7 @@ def _build_ai_governance_report(
         recommendations.append("collect_more_execution_feedback")
 
     return {
-        "schema": "zenthra.ai_evaluation.v1",
+        "schema": "vaelqorix.ai_evaluation.v1",
         "llm_governance_schema": LLM_GOVERNANCE_SCHEMA,
         "decision_trace_schema": LLM_DECISION_TRACE_SCHEMA,
         "sample_count": total,

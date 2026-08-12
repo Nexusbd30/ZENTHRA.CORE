@@ -1,12 +1,12 @@
-# RedQueen / ARES DevSecOps Core
+﻿# RedQueen / ARES DevSecOps Core
 
-Este documento fija el estado actual del nucleo defensivo de NEXUS y la ruta tecnica para convertirlo en una plataforma de ciberdefensa integrable en identidades, pipelines, SIEM/SOC y herramientas de seguridad.
+Este documento fija el estado actual del nucleo defensivo de VAELQORIX y la ruta tecnica para convertirlo en una plataforma de ciberdefensa integrable en identidades, pipelines, SIEM/SOC y herramientas de seguridad.
 
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 
 ## Objetivo
 
-NEXUS queda orientado como un sistema de ciberdefensa hibrido:
+VAELQORIX queda orientado como un sistema de ciberdefensa hibrido:
 
 - RedQueen: motor de percepcion, correlacion, razonamiento y decision.
 - ARES: motor de validacion, planificacion, ejecucion controlada, rollback y evidencia.

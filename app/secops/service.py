@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import hmac
@@ -875,10 +875,10 @@ def send_security_event_export_webhook(payload: dict[str, Any]) -> dict[str, Any
     timestamp = str(int(time.time()))
     headers = {
         "Content-Type": "application/json",
-        "X-Zenthra-Contract": str(payload.get("contract") or "soc_case.v1"),
-        "X-Zenthra-Idempotency-Key": idempotency_key,
-        "X-Zenthra-Timestamp": timestamp,
-        "X-Zenthra-Payload-SHA256": payload_sha256,
+        "X-Vaelqorix-Contract": str(payload.get("contract") or "soc_case.v1"),
+        "X-Vaelqorix-Idempotency-Key": idempotency_key,
+        "X-Vaelqorix-Timestamp": timestamp,
+        "X-Vaelqorix-Payload-SHA256": payload_sha256,
     }
     webhook_token = get_secret("SOC_WEBHOOK_TOKEN", settings.SOC_WEBHOOK_TOKEN)
     webhook_hmac_secret = get_secret("SOC_WEBHOOK_HMAC_SECRET", settings.SOC_WEBHOOK_HMAC_SECRET)
@@ -890,7 +890,7 @@ def send_security_event_export_webhook(payload: dict[str, Any]) -> dict[str, Any
             f"{timestamp}.".encode("utf-8") + body,
             hashlib.sha256,
         ).hexdigest()
-        headers["X-Zenthra-Signature"] = f"sha256={digest}"
+        headers["X-Vaelqorix-Signature"] = f"sha256={digest}"
 
     try:
         outbound = requests.post(

@@ -1,6 +1,6 @@
-# CortexFlow
+﻿# CortexFlow
 
-CortexFlow is the enterprise agent runtime for NexusOps AI.
+CortexFlow is the enterprise agent runtime for VAELQORIX AI.
 
 It owns reasoning, planning, memory coordination, tool routing and agent lifecycle.
 

@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
 from app.intelligence.repository import KnowledgeRepository
 from app.intelligence.status import build_enterprise_intelligence_status
 
-ENTERPRISE_AI_READINESS_CONTRACT = "zenthra.enterprise_ai_readiness.v1"
+ENTERPRISE_AI_READINESS_CONTRACT = "vaelqorix.enterprise_ai_readiness.v1"
 
 
 def _check(name: str, passed: bool, detail: str) -> dict[str, Any]:
@@ -27,7 +27,7 @@ def build_enterprise_ai_readiness(
     llm = status["llm"]
     mcp = status["mcp"]
     evaluation = ai_evaluation or {}
-    evaluation_contract = evaluation.get("schema") == "zenthra.ai_evaluation.v1"
+    evaluation_contract = evaluation.get("schema") == "vaelqorix.ai_evaluation.v1"
     sample_count = int(evaluation.get("sample_count") or 0)
     approved_rate = float(evaluation.get("approved_for_ares_rate") or 0.0)
     traceable_rate = float(evaluation.get("traceable_result_rate") or 0.0)
@@ -45,7 +45,7 @@ def build_enterprise_ai_readiness(
         ),
         _check(
             "llm_governance",
-            llm.get("governance", {}).get("schema") == "zenthra.llm_governance.v1"
+            llm.get("governance", {}).get("schema") == "vaelqorix.llm_governance.v1"
             and llm.get("governance", {}).get("ares_execution_requires_approved_contract") is True,
             "LLM decisions require governance evidence before ARES execution.",
         ),

@@ -1,2 +1,2 @@
-"""Product domains built on top of the NexusOps AI platform."""
+﻿"""Product domains built on top of the VAELQORIX AI platform."""
 

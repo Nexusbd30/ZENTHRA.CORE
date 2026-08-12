@@ -1,14 +1,14 @@
+﻿# =============================================================
+# ðŸ”¥ VAELQORIX â€” Correlation Engine (v3.0 SIEM Incident Mode + DEDUPE Hardened)
 # =============================================================
-# 🔥 ZENTHRA — Correlation Engine (v3.0 SIEM Incident Mode + DEDUPE Hardened)
-# =============================================================
-# ✅ SIEM Behavior:
+# âœ… SIEM Behavior:
 #   - 1 fingerprint = 1 incidente OPEN mientras la alerta siga firing
 #   - Si existen OPEN duplicados del pasado, se cierran como DEDUPED (auditable)
 #   - Touch del incidente OPEN: updated_at, last_seen_at, occurrences, evidence
 #   - Auto-resolve cuando deja de firing (con gracia)
 #   - Reopen: si vuelve a firing en <24h, reabre un resolved reciente (evita spam)
 #
-# 📌 Nota:
+# ðŸ“Œ Nota:
 #   - Para que /threats/?active=true devuelva 1 por fingerprint, ese endpoint
 #     debe filtrar EXACTO por siem_metadata.status == "open".
 # =============================================================
@@ -26,7 +26,7 @@ from app.models.threat_model import ThreatCategory, ThreatLevel, ThreatModel
 from app.services.prometheus_client import PrometheusClient
 
 # =============================================================
-# ⚙️ Lifecycle / SIEM tuning
+# âš™ï¸ Lifecycle / SIEM tuning
 # =============================================================
 AUTO_RESOLVE_ENABLED = True
 AUTO_RESOLVE_GRACE_MINUTES = 2
@@ -35,18 +35,18 @@ REOPEN_WINDOW_HOURS = 24
 
 
 # =============================================================
-# ⚙️ RULESET — Reglas simples
+# âš™ï¸ RULESET â€” Reglas simples
 # =============================================================
 BASE_RULES = [
     {
         "rule_id": "BackendDown",
-        "title": "Backend caído (BackendDown)",
-        "description": "Prometheus detectó que zenthra-core no responde a /metrics (BackendDown firing).",
+        "title": "Backend caÃ­do (BackendDown)",
+        "description": "Prometheus detectÃ³ que vaelqorix-core no responde a /metrics (BackendDown firing).",
         "alert": "BackendDown",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 95,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,  # legacy/compat (ya no controla dedupe)
     },
     {
@@ -57,7 +57,7 @@ BASE_RULES = [
         "level": ThreatLevel.high,
         "category": ThreatCategory.performance,
         "score": 80,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
@@ -68,13 +68,13 @@ BASE_RULES = [
         "level": ThreatLevel.high,
         "category": ThreatCategory.availability,
         "score": 75,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
         "rule_id": "NetworkDDoS",
-        "title": "Posible ataque DDoS / saturación de red (NetworkDDoS)",
-        "description": "Patrón de tráfico compatible con DDoS (NetworkDDoS firing).",
+        "title": "Posible ataque DDoS / saturaciÃ³n de red (NetworkDDoS)",
+        "description": "PatrÃ³n de trÃ¡fico compatible con DDoS (NetworkDDoS firing).",
         "alert": "NetworkDDoS",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.network,
@@ -85,7 +85,7 @@ BASE_RULES = [
     {
         "rule_id": "NetworkRecon",
         "title": "Actividad de reconocimiento en red (NetworkRecon)",
-        "description": "Patrón consistente con reconocimiento/escaneo (NetworkRecon firing).",
+        "description": "PatrÃ³n consistente con reconocimiento/escaneo (NetworkRecon firing).",
         "alert": "NetworkRecon",
         "level": ThreatLevel.high,
         "category": ThreatCategory.network,
@@ -96,7 +96,7 @@ BASE_RULES = [
     {
         "rule_id": "NetworkLateralMovement",
         "title": "Posible movimiento lateral (NetworkLateralMovement)",
-        "description": "Tráfico compatible con movimiento lateral (NetworkLateralMovement firing).",
+        "description": "TrÃ¡fico compatible con movimiento lateral (NetworkLateralMovement firing).",
         "alert": "NetworkLateralMovement",
         "level": ThreatLevel.high,
         "category": ThreatCategory.network,
@@ -106,8 +106,8 @@ BASE_RULES = [
     },
     {
         "rule_id": "VPNUnstable",
-        "title": "Inestabilidad en túneles VPN (VPNUnstable)",
-        "description": "Caídas/reconexiones anómalas VPN (VPNUnstable firing).",
+        "title": "Inestabilidad en tÃºneles VPN (VPNUnstable)",
+        "description": "CaÃ­das/reconexiones anÃ³malas VPN (VPNUnstable firing).",
         "alert": "VPNUnstable",
         "level": ThreatLevel.medium,
         "category": ThreatCategory.network,
@@ -117,7 +117,7 @@ BASE_RULES = [
     },
     {
         "rule_id": "DNSFailures",
-        "title": "Fallos recurrentes de resolución DNS (DNSFailures)",
+        "title": "Fallos recurrentes de resoluciÃ³n DNS (DNSFailures)",
         "description": "Fallos recurrentes DNS (DNSFailures firing).",
         "alert": "DNSFailures",
         "level": ThreatLevel.medium,
@@ -126,7 +126,7 @@ BASE_RULES = [
         "target_service": "dns/core",
         "window": 30,
     },
-    # 🧪 LAB (se ignora por env)
+    # ðŸ§ª LAB (se ignora por env)
     {
         "rule_id": "TestAlwaysFiring",
         "title": "Alerta de prueba Prometheus (TestAlwaysFiring)",
@@ -135,10 +135,10 @@ BASE_RULES = [
         "level": ThreatLevel.low,
         "category": ThreatCategory.availability,
         "score": 10,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 5,
     },
-    # 🖥️ Windows
+    # ðŸ–¥ï¸ Windows
     {
         "rule_id": "WindowsHighCPU",
         "title": "CPU alta en host Windows (WindowsHighCPU)",
@@ -161,10 +161,10 @@ BASE_RULES = [
         "target_service": "windows-host/diskC",
         "window": 30,
     },
-    # 🌐 Blackbox
+    # ðŸŒ Blackbox
     {
         "rule_id": "EndpointDownBlackbox",
-        "title": "Endpoint externo caído (EndpointDownBlackbox)",
+        "title": "Endpoint externo caÃ­do (EndpointDownBlackbox)",
         "description": "Blackbox detecta endpoint no 2xx/no alcanzable (EndpointDownBlackbox firing).",
         "alert": "EndpointDownBlackbox",
         "level": ThreatLevel.medium,
@@ -177,26 +177,26 @@ BASE_RULES = [
 
 
 # =============================================================
-# 🔥 RULESET — Reglas compuestas
+# ðŸ”¥ RULESET â€” Reglas compuestas
 #   - Fingerprint compuesto estable: "composite|<rule_id>|<requires_sorted>"
 # =============================================================
 COMPOSITE_RULES = [
     {
         "rule_id": "BackendDegradation",
         "requires": ["HighLatencyP95", "HighErrorRate"],
-        "title": "Degradación grave del backend (latencia + 5xx)",
-        "description": "Latencia p95 + ratio 5xx simultáneo.",
+        "title": "DegradaciÃ³n grave del backend (latencia + 5xx)",
+        "description": "Latencia p95 + ratio 5xx simultÃ¡neo.",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 92,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 15,
     },
     {
         "rule_id": "NetworkAttackActive",
         "requires": ["NetworkRecon", "NetworkLateralMovement"],
         "title": "Ataque de red activo (recon + movimiento lateral)",
-        "description": "Recon + movimiento lateral simultáneo.",
+        "description": "Recon + movimiento lateral simultÃ¡neo.",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.network,
         "score": 95,
@@ -206,19 +206,19 @@ COMPOSITE_RULES = [
     {
         "rule_id": "AvailabilityCriticalIncident",
         "requires": ["BackendDown", "DNSFailures"],
-        "title": "Incidente crítico de disponibilidad (BackendDown + DNS)",
-        "description": "Backend caído + fallos DNS.",
+        "title": "Incidente crÃ­tico de disponibilidad (BackendDown + DNS)",
+        "description": "Backend caÃ­do + fallos DNS.",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 100,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
         "rule_id": "WindowsUnderPossibleDDoS",
         "requires": ["WindowsHighCPU", "NetworkDDoS"],
-        "title": "Host Windows bajo posible DDoS (CPU alta + tráfico)",
-        "description": "CPU alta en Windows + señales DDoS.",
+        "title": "Host Windows bajo posible DDoS (CPU alta + trÃ¡fico)",
+        "description": "CPU alta en Windows + seÃ±ales DDoS.",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.network,
         "score": 96,
@@ -233,14 +233,14 @@ class CorrelationEngine:
         self.prom = prom_client or PrometheusClient()
 
     # ---------------------------------------------------------
-    # 🧬 fingerprint estable por alerta (vía PrometheusClient)
+    # ðŸ§¬ fingerprint estable por alerta (vÃ­a PrometheusClient)
     # ---------------------------------------------------------
     def _fingerprint_from_alert(self, alert: dict, target_service: str | None = None) -> str:
         labels = alert.get("labels", {}) or {}
         return self.prom.build_fingerprint(labels, target_service=target_service)
 
     # ---------------------------------------------------------
-    # 🧾 Evidencia SIEM segura (JSON portable)
+    # ðŸ§¾ Evidencia SIEM segura (JSON portable)
     # ---------------------------------------------------------
     @staticmethod
     def _siem_meta_from_alert(alert_obj: Optional[dict]) -> dict:
@@ -258,8 +258,8 @@ class CorrelationEngine:
         }
 
     # ---------------------------------------------------------
-    # ✅ Buscar incidente OPEN por fingerprint
-    # (devuelve el OPEN más reciente)
+    # âœ… Buscar incidente OPEN por fingerprint
+    # (devuelve el OPEN mÃ¡s reciente)
     # ---------------------------------------------------------
     def _get_open_by_fingerprint(self, db: Session, fingerprint: str) -> Optional[ThreatModel]:
         rows = (
@@ -279,16 +279,16 @@ class CorrelationEngine:
         return None
 
     # ---------------------------------------------------------
-    # 🧹 DEDUPE: cerrar OPEN duplicados dejando 1 solo OPEN
+    # ðŸ§¹ DEDUPE: cerrar OPEN duplicados dejando 1 solo OPEN
     # ---------------------------------------------------------
     def _dedupe_open_incidents(self, db: Session, fingerprint: str, *, keep_id: str, now: datetime) -> int:
         """
-        Si existen múltiples incidentes OPEN con el mismo fingerprint (legacy),
+        Si existen mÃºltiples incidentes OPEN con el mismo fingerprint (legacy),
         deja solo 1 OPEN (keep_id) y marca el resto como DEDUPED.
 
-        ✅ Ventaja:
+        âœ… Ventaja:
           - /threats?active=true puede devolver 1
-          - se conserva histórico (audit trail) sin borrar nada
+          - se conserva histÃ³rico (audit trail) sin borrar nada
         """
         rows = (
             db.query(ThreatModel)
@@ -326,7 +326,7 @@ class CorrelationEngine:
         return deduped
 
     # ---------------------------------------------------------
-    # ♻️ Reopen: si existe un resolved reciente, reabrirlo
+    # â™»ï¸ Reopen: si existe un resolved reciente, reabrirlo
     # ---------------------------------------------------------
     def _reopen_recent_resolved(
         self,
@@ -367,7 +367,7 @@ class CorrelationEngine:
         return None
 
     # ---------------------------------------------------------
-    # 🔁 Touch: actualizar incidente existente
+    # ðŸ” Touch: actualizar incidente existente
     # ---------------------------------------------------------
     @staticmethod
     def _touch_existing(db: Session, t: ThreatModel, *, now: datetime, extra_meta: dict) -> ThreatModel:
@@ -398,7 +398,7 @@ class CorrelationEngine:
         return t
 
     # ---------------------------------------------------------
-    # ✅ Crear incidente nuevo (OPEN)
+    # âœ… Crear incidente nuevo (OPEN)
     # ---------------------------------------------------------
     @staticmethod
     def _create_new(
@@ -415,7 +415,7 @@ class CorrelationEngine:
         now: datetime,
     ) -> ThreatModel:
         """
-        Crea un incidente OPEN nuevo con siem_metadata mínimo.
+        Crea un incidente OPEN nuevo con siem_metadata mÃ­nimo.
         """
         meta = dict(base_meta or {})
         meta["status"] = "open"
@@ -440,12 +440,12 @@ class CorrelationEngine:
         return t
 
     # ---------------------------------------------------------
-    # ✅ Auto-resolve: si ya no está firing → status=resolved
+    # âœ… Auto-resolve: si ya no estÃ¡ firing â†’ status=resolved
     # ---------------------------------------------------------
     def _auto_resolve(self, db: Session, *, active_fingerprints: set[str], now: datetime) -> int:
         """
-        Resuelve incidentes OPEN que ya no están firing.
-        Solo mira lookback reciente para no tocar histórico.
+        Resuelve incidentes OPEN que ya no estÃ¡n firing.
+        Solo mira lookback reciente para no tocar histÃ³rico.
         """
         if not AUTO_RESOLVE_ENABLED:
             return 0
@@ -470,7 +470,7 @@ class CorrelationEngine:
             if meta.get("status") != "open":
                 continue
 
-            # Si está activo, NO resolvemos (lo gestiona el touch)
+            # Si estÃ¡ activo, NO resolvemos (lo gestiona el touch)
             if fp in active_fingerprints:
                 continue
 
@@ -501,7 +501,7 @@ class CorrelationEngine:
         return resolved_count
 
     # ---------------------------------------------------------
-    # 🎯 Correlación principal
+    # ðŸŽ¯ CorrelaciÃ³n principal
     # ---------------------------------------------------------
     def run_correlation(self, db: Session) -> dict:
         created: List[ThreatModel] = []
@@ -509,7 +509,7 @@ class CorrelationEngine:
         rules_triggered: List[str] = []
 
         now = datetime.utcnow()
-        enable_lab = str(getattr(settings, "ZENTHRA_ENABLE_LAB_ALERTS", "false")).lower() == "true"
+        enable_lab = str(getattr(settings, "VAELQORIX_ENABLE_LAB_ALERTS", "false")).lower() == "true"
 
         # 1) Leer firing desde Prometheus
         firing = self.prom.get_firing_alerts()
@@ -530,10 +530,10 @@ class CorrelationEngine:
         fired_names = sorted(by_name.keys())
         fired_set = set(fired_names)
 
-        # fingerprints activos en esta ejecución (para auto-resolve)
+        # fingerprints activos en esta ejecuciÃ³n (para auto-resolve)
         active_fps: set[str] = set()
 
-        # métricas SIEM útiles
+        # mÃ©tricas SIEM Ãºtiles
         deduped_count = 0
 
         # -----------------------------------------------------
@@ -567,7 +567,7 @@ class CorrelationEngine:
                     )
                     updated.append(touched)
 
-                    # 3.3) Limpieza: si había OPEN duplicados legacy, ciérralos
+                    # 3.3) Limpieza: si habÃ­a OPEN duplicados legacy, ciÃ©rralos
                     deduped_count += self._dedupe_open_incidents(db, fp, keep_id=str(touched.id), now=now)
 
                     if rule["rule_id"] not in rules_triggered:
@@ -589,7 +589,7 @@ class CorrelationEngine:
                 )
                 created.append(t)
 
-                # 3.5) Por seguridad, dedupe también cuando el keeper es nuevo
+                # 3.5) Por seguridad, dedupe tambiÃ©n cuando el keeper es nuevo
                 deduped_count += self._dedupe_open_incidents(db, fp, keep_id=str(t.id), now=now)
 
                 if rule["rule_id"] not in rules_triggered:
@@ -650,7 +650,7 @@ class CorrelationEngine:
                 rules_triggered.append(rule["rule_id"])
 
         # -----------------------------------------------------
-        # 5) Auto-resolve: lo que ya no está firing
+        # 5) Auto-resolve: lo que ya no estÃ¡ firing
         # -----------------------------------------------------
         resolved_count = self._auto_resolve(db, active_fingerprints=active_fps, now=now)
 
@@ -660,7 +660,7 @@ class CorrelationEngine:
             "fired_alerts": fired_names,
             "created_threats": created,  # el router lo serializa
 
-            # métricas SIEM
+            # mÃ©tricas SIEM
             "updated_count": len(updated),
             "resolved_count": int(resolved_count),
             "deduped_count": int(deduped_count),
@@ -670,6 +670,6 @@ class CorrelationEngine:
 
 
 # =============================================================
-# 🧩 Instancia global
+# ðŸ§© Instancia global
 # =============================================================
 correlation_engine = CorrelationEngine()

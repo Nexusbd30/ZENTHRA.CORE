@@ -1,15 +1,15 @@
-# =============================================================
-# 🧠 ThreatService — ZENTHRA.CORE_SECURITY
+﻿# =============================================================
+# ðŸ§  ThreatService â€” VAELQORIX.XDR_COMMAND
 # =============================================================
 # Servicio de dominio para gestionar amenazas (Threats).
 #
 # Responsabilidades:
 # - Orquestar llamadas al ThreatRepository
-# - Convertir modelos ORM → dict → Pydantic (ThreatResponse)
+# - Convertir modelos ORM â†’ dict â†’ Pydantic (ThreatResponse)
 # - Aplicar validaciones de dominio (existencia, errores 404)
 #
 # NOTA:
-# - La lógica de filtrado/orden/paginación vive en el Repository
+# - La lÃ³gica de filtrado/orden/paginaciÃ³n vive en el Repository
 # - Este servicio NO conoce SQLAlchemy queries directamente
 # =============================================================
 
@@ -24,36 +24,36 @@ from sqlalchemy.orm import Session
 from app.repositories.threat_repository import ThreatRepository
 from app.schemas.threat_schema import ThreatCreate, ThreatResponse, ThreatUpdate
 
-LOG = logging.getLogger("zenthra.threats_service")
+LOG = logging.getLogger("vaelqorix.threats_service")
 
 
 class ThreatService:
     """
     Capa de servicio para Threats.
-    Encapsula la lógica de aplicación entre Router y Repository.
+    Encapsula la lÃ³gica de aplicaciÃ³n entre Router y Repository.
     """
 
     def __init__(self, db: Session):
-        # Inyectamos la sesión de DB en el repository
+        # Inyectamos la sesiÃ³n de DB en el repository
         self.repo = ThreatRepository(db)
 
     # ---------------------------------------------------------
-    # 🟢 Crear amenaza
+    # ðŸŸ¢ Crear amenaza
     # ---------------------------------------------------------
     def create_threat(self, threat_data: ThreatCreate) -> ThreatResponse:
         """
         Crea una nueva amenaza en la base de datos.
 
         - Usado por amenazas manuales (admin)
-        - Amenazas automáticas se crean desde el correlation engine
+        - Amenazas automÃ¡ticas se crean desde el correlation engine
         """
         threat = self.repo.create(threat_data)
 
-        # Convertimos ORM → dict → Pydantic
+        # Convertimos ORM â†’ dict â†’ Pydantic
         return ThreatResponse.model_validate(threat.to_dict())
 
     # ---------------------------------------------------------
-    # 📘 Obtener amenazas (con filtros SIEM)
+    # ðŸ“˜ Obtener amenazas (con filtros SIEM)
     # ---------------------------------------------------------
     def get_all_threats(
         self,
@@ -73,7 +73,7 @@ class ThreatService:
         - source: ej. "prometheus/correlation"
         - active=True: solo amenazas activas (siem_metadata.status == "open")
         - fingerprint: coincidencia exacta
-        - title: búsqueda parcial (case-insensitive)
+        - title: bÃºsqueda parcial (case-insensitive)
         - sort: updated_at | created_at
         - order: asc | desc
         """
@@ -92,7 +92,7 @@ class ThreatService:
 
         results: List[ThreatResponse] = []
 
-        # Serialización segura: ORM → dict → Pydantic
+        # SerializaciÃ³n segura: ORM â†’ dict â†’ Pydantic
         for t in threats:
             try:
                 results.append(
@@ -101,14 +101,14 @@ class ThreatService:
             except ValidationError as e:
                 # Si un registro rompe el schema, lo logueamos y seguimos
                 LOG.error(
-                    "❌ ValidationError serializando Threat id=%s: %s",
+                    "âŒ ValidationError serializando Threat id=%s: %s",
                     getattr(t, "id", "unknown"),
                     e,
                 )
             except Exception as e:
                 # Error inesperado (no rompe la respuesta completa)
                 LOG.exception(
-                    "❌ Error inesperado serializando Threat id=%s: %s",
+                    "âŒ Error inesperado serializando Threat id=%s: %s",
                     getattr(t, "id", "unknown"),
                     e,
                 )
@@ -116,7 +116,7 @@ class ThreatService:
         return results
 
     # ---------------------------------------------------------
-    # 🔍 Obtener amenaza por ID
+    # ðŸ” Obtener amenaza por ID
     # ---------------------------------------------------------
     def get_threat_by_id(self, threat_id: UUID) -> ThreatResponse:
         """
@@ -132,7 +132,7 @@ class ThreatService:
         return ThreatResponse.model_validate(threat.to_dict())
 
     # ---------------------------------------------------------
-    # ✏️ Actualizar amenaza existente
+    # âœï¸ Actualizar amenaza existente
     # ---------------------------------------------------------
     def update_threat(
         self,
@@ -152,7 +152,7 @@ class ThreatService:
         return ThreatResponse.model_validate(updated.to_dict())
 
     # ---------------------------------------------------------
-    # ❌ Eliminar amenaza
+    # âŒ Eliminar amenaza
     # ---------------------------------------------------------
     def delete_threat(self, threat_id: UUID) -> bool:
         """

@@ -58,7 +58,7 @@ except PermissionError:
     log_handler = logging.StreamHandler()
 log_handler.setFormatter(log_formatter)
 
-logger = logging.getLogger("zenthra")
+logger = logging.getLogger("vaelqorix")
 logger.setLevel(getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 if not logger.handlers:
     logger.addHandler(log_handler)
@@ -67,7 +67,7 @@ logger.propagate = False
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
-    description="ZENTHRA.CORE_SECURITY API",
+    description="VAELQORIX.XDR_COMMAND API",
 )
 register_error_handlers(app)
 
@@ -115,8 +115,8 @@ correlation_lock = asyncio.Lock()
 
 
 async def correlation_worker():
-    await asyncio.sleep(int(settings.ZENTHRA_CORRELATION_STARTUP_DELAY_SEC))
-    interval = int(settings.ZENTHRA_CORRELATION_INTERVAL_SEC)
+    await asyncio.sleep(int(settings.VAELQORIX_CORRELATION_STARTUP_DELAY_SEC))
+    interval = int(settings.VAELQORIX_CORRELATION_INTERVAL_SEC)
     logger.info("Correlation worker ON (interval=%ss)", interval)
 
     while True:
@@ -144,7 +144,7 @@ async def correlation_worker():
 
 @app.on_event("startup")
 async def startup():
-    logger.info("ZENTHRA iniciado")
+    logger.info("VAELQORIX iniciado")
     db_url = urlparse(settings.SQLALCHEMY_DATABASE_URI)
     logger.info(
         "ENV=%s DB=%s://%s:%s/%s",
@@ -155,7 +155,7 @@ async def startup():
         db_url.path.lstrip("/"),
     )
 
-    if settings.ZENTHRA_CORRELATION_ENABLED:
+    if settings.VAELQORIX_CORRELATION_ENABLED:
         global correlation_task
         correlation_task = asyncio.create_task(correlation_worker())
         logger.info("Correlation scheduler started")
@@ -172,7 +172,7 @@ def create_default_admin_dev():
             if db.query(User).first():
                 return
 
-            bootstrap_email = getattr(settings, "BOOTSTRAP_ADMIN_EMAIL", "admin@zenthra.dev")
+            bootstrap_email = getattr(settings, "BOOTSTRAP_ADMIN_EMAIL", "admin@vaelqorix.dev")
             bootstrap_password = getattr(settings, "BOOTSTRAP_ADMIN_PASSWORD", None)
             if not bootstrap_password:
                 logger.warning(
@@ -181,7 +181,7 @@ def create_default_admin_dev():
                 return
 
             admin = User(
-                full_name="ZENTHRA SuperAdmin",
+                full_name="VAELQORIX SuperAdmin",
                 email=bootstrap_email,
                 hashed_password=get_password_hash(bootstrap_password),
                 role="admin",
@@ -272,8 +272,8 @@ def debug_config(current_admin=Depends(get_current_admin)):
     return {
         "ENV": settings.ENV,
         "DB_DRIVER": settings.SQLALCHEMY_DATABASE_URI.split(":", 1)[0],
-        "CORRELATION_ENABLED": settings.ZENTHRA_CORRELATION_ENABLED,
-        "CORRELATION_INTERVAL_SEC": settings.ZENTHRA_CORRELATION_INTERVAL_SEC,
+        "CORRELATION_ENABLED": settings.VAELQORIX_CORRELATION_ENABLED,
+        "CORRELATION_INTERVAL_SEC": settings.VAELQORIX_CORRELATION_INTERVAL_SEC,
     }
 
 

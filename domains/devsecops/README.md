@@ -1,6 +1,6 @@
-# DevSecOps Domain
+﻿# DevSecOps Domain
 
-This is the first focused product vertical for NexusOps AI.
+This is the first focused product vertical for VAELQORIX AI.
 
 Domain-specific logic belongs here, not inside platform core modules.
 

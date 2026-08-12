@@ -28,11 +28,11 @@ nuevo logo.jpeg
 
 # Node
 node_modules/
-ZENTHRA.CORE_SECURITY/node_modules/
-ZENTHRA.CORE_SECURITY/dist/
-ZENTHRA.CORE_SECURITY/.vite/
-ZENTHRA.CORE_SECURITY/.agents/
-ZENTHRA.CORE_SECURITY/skills-lock.json
+VAELQORIX.XDR_COMMAND/node_modules/
+VAELQORIX.XDR_COMMAND/dist/
+VAELQORIX.XDR_COMMAND/.vite/
+VAELQORIX.XDR_COMMAND/.agents/
+VAELQORIX.XDR_COMMAND/skills-lock.json
 
 # IDE
 .idea/

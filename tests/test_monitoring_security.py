@@ -5,7 +5,7 @@ from app.core.settings import settings
 
 @pytest.mark.asyncio
 async def test_monitoring_health_full_requires_bearer(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
 
     resp = await test_client.get("/monitoring/health/full")
     assert resp.status_code == 401
@@ -13,7 +13,7 @@ async def test_monitoring_health_full_requires_bearer(test_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_monitoring_health_full_rejects_invalid_token(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
 
     resp = await test_client.get(
         "/monitoring/health/full",
@@ -24,7 +24,7 @@ async def test_monitoring_health_full_rejects_invalid_token(test_client, monkeyp
 
 @pytest.mark.asyncio
 async def test_monitoring_health_full_with_valid_token(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
 
     resp = await test_client.get(
         "/monitoring/health/full",

@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
 from app.core.settings import settings
 
-LLM_GOVERNANCE_SCHEMA = "zenthra.llm_governance.v1"
-LLM_DECISION_TRACE_SCHEMA = "zenthra.llm_decision_trace.v1"
+LLM_GOVERNANCE_SCHEMA = "vaelqorix.llm_governance.v1"
+LLM_DECISION_TRACE_SCHEMA = "vaelqorix.llm_decision_trace.v1"
 
 REQUIRED_LLM_CONTRACT_FIELDS: tuple[str, ...] = (
     "schema",

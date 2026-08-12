@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+﻿from datetime import UTC, datetime, timedelta
 
 from app.ares.reporter import build_execution_result
 from app.models.threat_model import ThreatCategory, ThreatLevel, ThreatModel
@@ -118,7 +118,7 @@ def test_verdict_records_mcp_tool_policy_for_declared_tools(monkeypatch):
     )
 
     assert verdict["execution_controls"]["mcp_tool_policy"]["schema"] == (
-        "zenthra.mcp_tool_policy.v1"
+        "vaelqorix.mcp_tool_policy.v1"
     )
     assert verdict["execution_controls"]["mcp_tool_policy"]["allowed"] is True
     assert verdict["execution_controls"]["mcp_tool_policy"]["requested_tools"] == [
@@ -137,7 +137,7 @@ def test_redqueen_adjusts_devsecops_action_to_provider_capability(monkeypatch):
     )
 
     verdict = generate_verdict(
-        target="repository:zenthra/core-security",
+        target="repository:vaelqorix/core-security",
         risk_score=95,
         factors=["secret_exposure"],
         execution_controls={

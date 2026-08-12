@@ -1,5 +1,5 @@
-# ==============================================================
-# 🔐 AUTH ROUTER — ZENTHRA.CORE_SECURITY (v4.1 RBAC JWT)
+﻿# ==============================================================
+# ðŸ” AUTH ROUTER â€” VAELQORIX.XDR_COMMAND (v4.1 RBAC JWT)
 # ==============================================================
 # Modo JSON completo:
 #   POST /auth/login
@@ -25,7 +25,7 @@ from app.services.user_service import UserService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # ==============================================================
-# 🛡️ ANTI BRUTE-FORCE / RATE LIMIT POR IP
+# ðŸ›¡ï¸ ANTI BRUTE-FORCE / RATE LIMIT POR IP
 # ==============================================================
 
 _FAILED_LOGINS: Dict[str, List[float]] = {}
@@ -51,7 +51,7 @@ def _is_ip_blocked(ip: str) -> bool:
 
 
 # ==============================================================
-# 🔑 LOGIN — JSON + JWT + RBAC
+# ðŸ”‘ LOGIN â€” JSON + JWT + RBAC
 # ==============================================================
 
 @router.post("/login", response_model=TokenResponse)
@@ -61,49 +61,49 @@ def login(
     db: Session = Depends(get_db),
 ):
     """
-    Autenticación de usuario.
+    AutenticaciÃ³n de usuario.
 
     - Verifica credenciales
     - Aplica rate-limit por IP
     - Devuelve JWT con:
-        · sub  (email)
-        · role (admin | analyst | viewer)
+        Â· sub  (email)
+        Â· role (admin | analyst | viewer)
     """
 
     client_ip = request.client.host if request.client else "unknown"
 
-    # 1️⃣ Anti brute-force
+    # 1ï¸âƒ£ Anti brute-force
     if _is_ip_blocked(client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Demasiados intentos fallidos. Intenta de nuevo más tarde.",
+            detail="Demasiados intentos fallidos. Intenta de nuevo mÃ¡s tarde.",
         )
 
-    # 2️⃣ Buscar usuario
+    # 2ï¸âƒ£ Buscar usuario
     db_user = UserService.get_user_by_email(db, user.username)
 
-    # 3️⃣ Verificar contraseña
+    # 3ï¸âƒ£ Verificar contraseÃ±a
     if not db_user or not UserService.verify_password(
         user.password, db_user.hashed_password
     ):
         _register_failed_attempt(client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas",
+            detail="Credenciales invÃ¡lidas",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 4️⃣ Limpiar contador si login OK
+    # 4ï¸âƒ£ Limpiar contador si login OK
     _FAILED_LOGINS.pop(client_ip, None)
 
-    # 5️⃣ Expiración
+    # 5ï¸âƒ£ ExpiraciÃ³n
     expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    # 6️⃣ JWT CON ROL (CAMBIO CLAVE)
+    # 6ï¸âƒ£ JWT CON ROL (CAMBIO CLAVE)
     token = create_access_token(
         data={
             "sub": db_user.email,
-            "role": db_user.role,  # 👈 RBAC
+            "role": db_user.role,  # ðŸ‘ˆ RBAC
         },
         expires_delta=expires,
     )

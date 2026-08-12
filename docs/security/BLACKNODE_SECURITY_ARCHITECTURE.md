@@ -1,6 +1,6 @@
-# BlackNode Security Architecture
+﻿# BlackNode Security Architecture
 
-Product: NexusOps AI  
+Product: VAELQORIX AI  
 Security Layer: BlackNode  
 Classification: Internal Confidential  
 Status: Architecture Baseline v1.0

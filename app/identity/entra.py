@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import hmac
@@ -165,8 +165,8 @@ def build_entra_provider_evidence(
             "verified": bool(get_secret("ENTRA_WEBHOOK_SECRET", settings.ENTRA_WEBHOOK_SECRET)),
             "algorithm": "hmac-sha256",
             "timestamp": _compact(timestamp),
-            "timestamp_header": "X-Zenthra-Timestamp",
-            "signature_header": "X-Zenthra-Signature",
+            "timestamp_header": "X-Vaelqorix-Timestamp",
+            "signature_header": "X-Vaelqorix-Signature",
             "signed_payload": "timestamp.body",
             "max_skew_seconds": settings.ENTRA_WEBHOOK_MAX_SKEW_SEC,
         },
@@ -244,8 +244,8 @@ def build_entra_readiness() -> dict[str, Any]:
         "signature": {
             "required": has_webhook_secret,
             "algorithm": "hmac-sha256",
-            "header": "X-Zenthra-Signature",
-            "timestamp_header": "X-Zenthra-Timestamp",
+            "header": "X-Vaelqorix-Signature",
+            "timestamp_header": "X-Vaelqorix-Timestamp",
             "max_skew_seconds": settings.ENTRA_WEBHOOK_MAX_SKEW_SEC,
         },
         "secrets_exposed": False,

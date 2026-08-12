@@ -1,2 +1,2 @@
-"""NexusOps AI platform integration layer."""
+﻿"""VAELQORIX AI platform integration layer."""
 

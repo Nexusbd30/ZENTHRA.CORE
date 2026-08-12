@@ -1,6 +1,6 @@
 ﻿# app/scripts/fix_invalid_user_emails.py
 # ==========================================================
-# 🔧 Fix invalid user emails (SQL-only) — ZENTHRA
+# 🔧 Fix invalid user emails (SQL-only) — VAELQORIX
 # ==========================================================
 # Por qué SQL-only:
 # - Tu modelo User tiene una relationship("ThreatModel")

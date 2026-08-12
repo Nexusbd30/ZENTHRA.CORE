@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 from pathlib import Path
@@ -7,7 +7,7 @@ from app.core.settings import settings
 
 SENSITIVE_SETTING_NAMES = {
     "SECRET_KEY",
-    "ZENTHRA_MONITOR_TOKEN",
+    "VAELQORIX_MONITOR_TOKEN",
     "POSTGRES_PASSWORD",
     "ENTRA_CLIENT_SECRET",
     "ENTRA_WEBHOOK_SECRET",

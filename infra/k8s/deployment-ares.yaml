@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ares
@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: ares
-        image: ghcr.io/your-org/nexus:1.0.0
+        image: ghcr.io/your-org/vaelqorix:1.0.0
         imagePullPolicy: IfNotPresent
         command: ["uvicorn"]
         args: ["app.entrypoints.ares:app", "--host", "0.0.0.0", "--port", "8000"]

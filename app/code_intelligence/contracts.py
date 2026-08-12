@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Literal
 
@@ -33,7 +33,7 @@ class CodeRiskFinding(BaseModel):
 
 
 class CodeArchitectureReport(BaseModel):
-    contract: str = "zenthra.code_architecture.v1"
+    contract: str = "vaelqorix.code_architecture.v1"
     scope: str
     analysis_mode: str = "static_ast_no_execution"
     component_count: int

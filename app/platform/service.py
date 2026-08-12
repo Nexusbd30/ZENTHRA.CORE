@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -9,9 +9,9 @@ from app.intelligence.repository import get_persistent_knowledge_repository
 from app.intelligence.status import build_enterprise_intelligence_status
 from app.platform.blacknode import blacknode_gateway
 from app.platform.cortexflow import cortexflow_runtime
-from app.platform.nexusapi import nexusapi_registry
-from app.platform.nexusflow import nexusflow_engine
-from app.platform.nexusvault import nexusvault_retriever
+from app.platform.vaelqorixapi import vaelqorixapi_registry
+from app.platform.vaelqorixflow import vaelqorixflow_engine
+from app.platform.vaelqorixvault import vaelqorixvault_retriever
 from app.platform.registry import (
     CURRENT_CORE,
     CURRENT_RUNTIME,
@@ -66,10 +66,10 @@ def build_platform_readiness(db: Session, *, tenant_id: str | None = None) -> di
     repository = get_persistent_knowledge_repository(db)
     intelligence_status = build_enterprise_intelligence_status(repository)
     blacknode_status = blacknode_gateway.build_status()
-    nexusapi_status = nexusapi_registry.build_status()
-    nexusvault_status = nexusvault_retriever.build_status(db)
+    vaelqorixapi_status = vaelqorixapi_registry.build_status()
+    vaelqorixvault_status = vaelqorixvault_retriever.build_status(db)
     cortexflow_status = cortexflow_runtime.build_status()
-    nexusflow_status = nexusflow_engine.build_status()
+    vaelqorixflow_status = vaelqorixflow_engine.build_status()
 
     rbac_roles = enterprise_security.get("rbac", {}).get("roles", {})
     audit = enterprise_security.get("audit", {})
@@ -85,7 +85,7 @@ def build_platform_readiness(db: Session, *, tenant_id: str | None = None) -> di
                 _check("admin_role_present", "admin" in rbac_roles, "Admin role is registered."),
                 _check("audit_chain", audit.get("hash_chain") == "enabled", "Audit hash-chain evidence is enabled."),
                 _check("capability_gate", bool(audit.get("capability_gate")), "Capability gates protect enterprise actions."),
-                _check("security_gateway_active", blacknode_status["contract"] == "nexusops.blacknode.security_gateway.v1", "BlackNode SecurityGateway is active."),
+                _check("security_gateway_active", blacknode_status["contract"] == "vaelqorix.blacknode.security_gateway.v1", "BlackNode SecurityGateway is active."),
             ],
             evidence={
                 "gateway": blacknode_status,
@@ -93,8 +93,8 @@ def build_platform_readiness(db: Session, *, tenant_id: str | None = None) -> di
                 "security_runtime": enterprise_security.get("security_runtime", {}),
             },
         ),
-        "nexusvault": _domain_readiness(
-            key="nexusvault",
+        "vaelqorixvault": _domain_readiness(
+            key="vaelqorixvault",
             checks=[
                 _check("repository_available", bool(rag.get("provider")), "Knowledge repository is available."),
                 _check("documents_indexed", int(rag.get("document_count") or 0) >= 0, "Knowledge document index can be queried."),
@@ -102,34 +102,34 @@ def build_platform_readiness(db: Session, *, tenant_id: str | None = None) -> di
                 _check("citation_rule_declared", True, "Private knowledge responses require citations by platform rule."),
             ],
             evidence={
-                "retriever": nexusvault_status,
+                "retriever": vaelqorixvault_status,
                 "provider": rag.get("provider"),
                 "document_count": rag.get("document_count"),
                 "persistent": rag.get("persistent"),
                 "domains": intelligence_status.get("domains", []),
             },
         ),
-        "nexusapi": _domain_readiness(
-            key="nexusapi",
+        "vaelqorixapi": _domain_readiness(
+            key="vaelqorixapi",
             checks=[
-                _check("tool_registry_available", nexusapi_status["mcp_tool_count"] > 0, "MCP/local tool registry exposes tools."),
-                _check("action_tools_available", nexusapi_status["action_tool_count"] > 0, "Operational action tools are registered."),
-                _check("devsecops_providers_available", nexusapi_status["devsecops_provider_count"] > 0, "DevSecOps integration providers are registered."),
+                _check("tool_registry_available", vaelqorixapi_status["mcp_tool_count"] > 0, "MCP/local tool registry exposes tools."),
+                _check("action_tools_available", vaelqorixapi_status["action_tool_count"] > 0, "Operational action tools are registered."),
+                _check("devsecops_providers_available", vaelqorixapi_status["devsecops_provider_count"] > 0, "DevSecOps integration providers are registered."),
                 _check("governed_execution", bool(mcp.get("governed_execution")), "Tool execution policy is part of the contract."),
-                _check("blacknode_enforced", bool(nexusapi_status["blacknode_enforced"]), "NexusAPI requires BlackNode enforcement."),
+                _check("blacknode_enforced", bool(vaelqorixapi_status["blacknode_enforced"]), "VaelqorixAPI requires BlackNode enforcement."),
             ],
             evidence={
-                "registry": nexusapi_status,
-                "registered_tools": nexusapi_status["mcp_tools"],
-                "action_tools": nexusapi_status["action_tools"],
-                "devsecops_providers": nexusapi_status["devsecops_providers"],
+                "registry": vaelqorixapi_status,
+                "registered_tools": vaelqorixapi_status["mcp_tools"],
+                "action_tools": vaelqorixapi_status["action_tools"],
+                "devsecops_providers": vaelqorixapi_status["devsecops_providers"],
             },
         ),
         "cortexflow": _domain_readiness(
             key="cortexflow",
             checks=[
                 _check("agent_runtime_mapped", True, "RedQueen, ARES and intelligence modules map to CortexFlow."),
-                _check("agent_runtime_contract", cortexflow_status["contract"] == "nexusops.cortexflow.agent_runtime.v1", "CortexFlow AgentRuntime adapter is active."),
+                _check("agent_runtime_contract", cortexflow_status["contract"] == "vaelqorix.cortexflow.agent_runtime.v1", "CortexFlow AgentRuntime adapter is active."),
                 _check("llm_contract_enforced", bool(llm.get("contract_enforced")), "LLM decisions use an enforced contract."),
                 _check("fallback_guardrails", bool(llm.get("fallback_guardrails")), "Agent fallback guardrails are configured."),
                 _check("tool_router_policy", bool(mcp.get("tool_policy_schema")), "Tool-routing policy schema is available."),
@@ -140,17 +140,17 @@ def build_platform_readiness(db: Session, *, tenant_id: str | None = None) -> di
                 "governance": llm.get("governance", {}),
             },
         ),
-        "nexusflow": _domain_readiness(
-            key="nexusflow",
+        "vaelqorixflow": _domain_readiness(
+            key="vaelqorixflow",
             checks=[
-                _check("workflow_engine_mapped", True, "ARES lifecycle maps to NexusFlow orchestration."),
-                _check("workflow_engine_contract", nexusflow_status["contract"] == "nexusops.nexusflow.workflow_engine.v1", "NexusFlow WorkflowEngine adapter is active."),
-                _check("approval_records_mapped", True, "Approval records map to NexusFlow approval workflows."),
+                _check("workflow_engine_mapped", True, "ARES lifecycle maps to VaelqorixFlow orchestration."),
+                _check("workflow_engine_contract", vaelqorixflow_status["contract"] == "vaelqorix.vaelqorixflow.workflow_engine.v1", "VaelqorixFlow WorkflowEngine adapter is active."),
+                _check("approval_records_mapped", True, "Approval records map to VaelqorixFlow approval workflows."),
                 _check("human_control_rule_declared", True, "Sensitive operations require human control by platform rule."),
             ],
             evidence={
-                "engine": nexusflow_status,
-                "current_mapping": PLATFORM_DOMAINS["nexusflow"]["current_backend_mapping"],
+                "engine": vaelqorixflow_status,
+                "current_mapping": PLATFORM_DOMAINS["vaelqorixflow"]["current_backend_mapping"],
             },
         ),
     }

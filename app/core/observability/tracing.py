@@ -1,4 +1,4 @@
-# app/core/observability/tracing.py
+﻿# app/core/observability/tracing.py
 import os
 
 from opentelemetry import trace
@@ -8,7 +8,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
-def init_tracing(service_name="zenthra-python-api"):
+def init_tracing(service_name="vaelqorix-python-api"):
     provider = TracerProvider(
         resource=Resource.create({"service.name": service_name})
     )

@@ -1,11 +1,11 @@
+﻿# ==========================================================
+# Alembic env.py â€” VAELQORIX.XDR_COMMAND (v3.3 Postgres Safe)
+# UbicaciÃ³n: VAELQORIX/alembic/env.py
 # ==========================================================
-# Alembic env.py — ZENTHRA.CORE_SECURITY (v3.3 Postgres Safe)
-# Ubicación: NEXUS/alembic/env.py
-# ==========================================================
-# ✅ Fuente de verdad de DB URL: app.core.settings (.env)
-# ✅ Autogenerate: Base.metadata + import de modelos (side-effect)
-# ✅ Postgres-ready: engine_from_config + NullPool (migraciones limpias)
-# ✅ Windows-safe: sin hardcodear credenciales en alembic.ini
+# âœ… Fuente de verdad de DB URL: app.core.settings (.env)
+# âœ… Autogenerate: Base.metadata + import de modelos (side-effect)
+# âœ… Postgres-ready: engine_from_config + NullPool (migraciones limpias)
+# âœ… Windows-safe: sin hardcodear credenciales en alembic.ini
 # ==========================================================
 
 from __future__ import annotations
@@ -22,22 +22,22 @@ from alembic import context
 # ----------------------------------------------------------
 config = context.config
 
-# Logging según alembic.ini
+# Logging segÃºn alembic.ini
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # ----------------------------------------------------------
-# ✅ Fuente de verdad: settings del proyecto
+# âœ… Fuente de verdad: settings del proyecto
 # ----------------------------------------------------------
 # ----------------------------------------------------------
-# ✅ Importar modelos para que Alembic los detecte en autogenerate
+# âœ… Importar modelos para que Alembic los detecte en autogenerate
 # (NO borrar aunque parezca unused)
 # ----------------------------------------------------------
 import app.models  # noqa: F401, E402
 from app.core.config import settings  # noqa: E402
 
 # ----------------------------------------------------------
-# ✅ Metadata real
+# âœ… Metadata real
 # ----------------------------------------------------------
 from app.models.base import Base  # noqa: E402
 
@@ -60,8 +60,8 @@ def _is_sqlite(url: str) -> bool:
 def run_migrations_offline() -> None:
     """
     OFFLINE:
-      - No abre conexión real
-      - Genera SQL (útil para revisar)
+      - No abre conexiÃ³n real
+      - Genera SQL (Ãºtil para revisar)
     """
     url = get_url()
 
@@ -83,14 +83,14 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """
     ONLINE:
-      - Abre conexión real contra la DB
+      - Abre conexiÃ³n real contra la DB
       - Ejecuta migraciones
     """
-    # ✅ Inyectamos la URL del settings en runtime (NO dependemos de alembic.ini)
+    # âœ… Inyectamos la URL del settings en runtime (NO dependemos de alembic.ini)
     ini_section = config.get_section(config.config_ini_section) or {}
     ini_section["sqlalchemy.url"] = get_url()
 
-    # ✅ NullPool: para migraciones es preferible no mantener pool abierto
+    # âœ… NullPool: para migraciones es preferible no mantener pool abierto
     connectable = engine_from_config(
         ini_section,
         prefix="sqlalchemy.",

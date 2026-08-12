@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import json
@@ -85,7 +85,7 @@ def document_to_payload(document: KnowledgeDocument) -> dict[str, Any]:
     return {
         **_canonical_document_payload(document),
         "content_hash": document_content_hash(document),
-        "contract": "zenthra.knowledge_document.v1",
+        "contract": "vaelqorix.knowledge_document.v1",
     }
 
 

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
@@ -17,7 +17,7 @@ def devsecops_controls():
                 "pipeline": {
                     "provider": "github_actions",
                     "pipeline_id": "release-prod",
-                    "repository": "zenthra/core-security",
+                    "repository": "vaelqorix/core-security",
                     "environment": "production",
                 },
                 "actor": {"identity_id": "devops@corp.com", "privileged": True},
@@ -33,7 +33,7 @@ def test_devsecops_action_translates_block_deployment_to_command(monkeypatch):
     action = DevSecOpsAction()
 
     result = action.execute_step(
-        {"step": "block_deployment", "payload": {"target": "repository:zenthra/core-security"}},
+        {"step": "block_deployment", "payload": {"target": "repository:vaelqorix/core-security"}},
         devsecops_controls(),
     )
 
@@ -42,7 +42,7 @@ def test_devsecops_action_translates_block_deployment_to_command(monkeypatch):
         "mode": "mock",
         "command": "devsecops.block_deployment",
         "payload": {
-            "target": "repository:zenthra/core-security",
+            "target": "repository:vaelqorix/core-security",
             "action_domain": "devsecops",
             "provider": "github_actions",
             "change_ticket": "DEVSECOPS-001",
@@ -50,7 +50,7 @@ def test_devsecops_action_translates_block_deployment_to_command(monkeypatch):
             "pipeline": {
                 "provider": "github_actions",
                 "pipeline_id": "release-prod",
-                "repository": "zenthra/core-security",
+                "repository": "vaelqorix/core-security",
                 "environment": "production",
             },
             "actor": {"identity_id": "devops@corp.com", "privileged": True},
@@ -61,13 +61,13 @@ def test_devsecops_action_translates_block_deployment_to_command(monkeypatch):
     }
     assert result.rollback_payload == {
         "step": "block_deployment",
-        "target": "repository:zenthra/core-security",
+        "target": "repository:vaelqorix/core-security",
         "provider": "github_actions",
         "change_ticket": "DEVSECOPS-001",
         "pipeline": {
             "provider": "github_actions",
             "pipeline_id": "release-prod",
-            "repository": "zenthra/core-security",
+            "repository": "vaelqorix/core-security",
             "environment": "production",
         },
     }
@@ -94,6 +94,6 @@ def test_devsecops_action_rejects_unsupported_provider_action(monkeypatch):
 
     with pytest.raises(ValueError, match="does not support command"):
         action.execute_step(
-            {"step": "block_deployment", "payload": {"target": "repository:zenthra/core-security"}},
+            {"step": "block_deployment", "payload": {"target": "repository:vaelqorix/core-security"}},
             controls,
         )

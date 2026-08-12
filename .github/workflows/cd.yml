@@ -1,4 +1,4 @@
-name: CD
+﻿name: CD
 
 on:
   workflow_dispatch:
@@ -30,8 +30,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/nexus:${{ github.sha }}
-          ghcr.io/${{ github.repository_owner }}/nexus:stable
+          ghcr.io/${{ github.repository_owner }}/vaelqorix:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/vaelqorix:stable
 
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
@@ -52,5 +52,5 @@ jobs:
         kubectl apply -f infra/k8s/hpa.yaml
         kubectl apply -f infra/k8s/pdb.yaml
         kubectl apply -f infra/k8s/networkpolicy.yaml
-        kubectl set image deployment/redqueen redqueen=ghcr.io/${{ github.repository_owner }}/nexus:${{ github.sha }}
+        kubectl set image deployment/redqueen redqueen=ghcr.io/${{ github.repository_owner }}/vaelqorix:${{ github.sha }}
         kubectl rollout status deployment/redqueen --timeout=180s

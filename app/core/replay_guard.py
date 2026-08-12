@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import time
 from dataclasses import dataclass
@@ -65,7 +65,7 @@ class RedisReplayGuardStore:
         if redis is None:
             raise RuntimeError("redis package is required for REPLAY_GUARD_BACKEND=redis")
         self._client = redis.Redis.from_url(url, decode_responses=True)
-        self._key_prefix = key_prefix.strip(":") or "zenthra"
+        self._key_prefix = key_prefix.strip(":") or "vaelqorix"
 
     def _key(self, key: str) -> str:
         return f"{self._key_prefix}:replay:{key}"

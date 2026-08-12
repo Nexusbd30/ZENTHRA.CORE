@@ -1,18 +1,18 @@
-# app/core/bootstrap_admin.py
+﻿# app/core/bootstrap_admin.py
 # ==========================================================
-# 👑 Bootstrap Admin — ZENTHRA.CORE_SECURITY
+# ðŸ‘‘ Bootstrap Admin â€” VAELQORIX.XDR_COMMAND
 # ==========================================================
 # Responsabilidad:
 #   - Crear un usuario administrador inicial de forma SEGURA
 #   - Comportamiento IDEMPOTENTE (no duplica usuarios)
 #   - Controlado 100% por variables de entorno (.env)
 #
-# Cuándo se ejecuta:
-#   - En el startup de la aplicación (desde main.py)
+# CuÃ¡ndo se ejecuta:
+#   - En el startup de la aplicaciÃ³n (desde main.py)
 #
-# Por qué existe:
+# Por quÃ© existe:
 #   - Evitar seeds hardcodeados en main.py
-#   - Evitar errores de validación (EmailStr, etc.)
+#   - Evitar errores de validaciÃ³n (EmailStr, etc.)
 #   - Permitir despliegues limpios en DEV / PROD
 # ==========================================================
 
@@ -23,28 +23,28 @@ import logging
 from sqlalchemy.orm import Session
 
 # ----------------------------------------------------------
-# 🔐 Utilidad de seguridad para hashear contraseñas
+# ðŸ” Utilidad de seguridad para hashear contraseÃ±as
 # ----------------------------------------------------------
 from app.core.security import get_password_hash
 
 # ----------------------------------------------------------
-# ⚙️ Settings globales de la aplicación
+# âš™ï¸ Settings globales de la aplicaciÃ³n
 # ----------------------------------------------------------
-# Aquí se leen las variables:
+# AquÃ­ se leen las variables:
 #   - BOOTSTRAP_ADMIN_ENABLED
 #   - BOOTSTRAP_ADMIN_EMAIL
 #   - BOOTSTRAP_ADMIN_PASSWORD
 from app.core.settings import settings
 
 # ----------------------------------------------------------
-# 🧱 Modelo de usuario (SQLAlchemy)
+# ðŸ§± Modelo de usuario (SQLAlchemy)
 # ----------------------------------------------------------
 from app.models.user import User
 
 # ----------------------------------------------------------
-# 📝 Logger de la aplicación
+# ðŸ“ Logger de la aplicaciÃ³n
 # ----------------------------------------------------------
-logger = logging.getLogger("zenthra")
+logger = logging.getLogger("vaelqorix")
 
 
 def bootstrap_admin(db: Session) -> None:
@@ -61,70 +61,70 @@ def bootstrap_admin(db: Session) -> None:
        - BOOTSTRAP_ADMIN_PASSWORD
 
     3) Es IDEMPOTENTE:
-       - Si el usuario ya existe → NO se crea otro
-       - Si existe pero no es admin → se promociona a admin
+       - Si el usuario ya existe â†’ NO se crea otro
+       - Si existe pero no es admin â†’ se promociona a admin
 
     4) Nunca lanza excepciones hacia fuera:
        - Si algo falta, lo deja en logs y sale
     """
 
     # ------------------------------------------------------
-    # 🔒 Feature flag de seguridad
+    # ðŸ”’ Feature flag de seguridad
     # ------------------------------------------------------
-    # Si el bootstrap no está habilitado explícitamente,
+    # Si el bootstrap no estÃ¡ habilitado explÃ­citamente,
     # salimos sin hacer absolutamente nada.
     if not getattr(settings, "BOOTSTRAP_ADMIN_ENABLED", False):
         return
 
     # ------------------------------------------------------
-    # 📥 Leer variables de entorno
+    # ðŸ“¥ Leer variables de entorno
     # ------------------------------------------------------
     # Normalizamos el email:
-    #   - strip() → elimina espacios
-    #   - lower() → evita duplicados por mayúsculas
+    #   - strip() â†’ elimina espacios
+    #   - lower() â†’ evita duplicados por mayÃºsculas
     email = (getattr(settings, "BOOTSTRAP_ADMIN_EMAIL", "") or "").strip().lower()
 
-    # La contraseña se usa SOLO para generar el hash
+    # La contraseÃ±a se usa SOLO para generar el hash
     password = getattr(settings, "BOOTSTRAP_ADMIN_PASSWORD", None)
 
     # ------------------------------------------------------
-    # ⚠️ Validación mínima de configuración
+    # âš ï¸ ValidaciÃ³n mÃ­nima de configuraciÃ³n
     # ------------------------------------------------------
     if not email or not password:
         logger.warning(
-            "⚠️ Bootstrap admin habilitado pero faltan "
+            "âš ï¸ Bootstrap admin habilitado pero faltan "
             "BOOTSTRAP_ADMIN_EMAIL o BOOTSTRAP_ADMIN_PASSWORD"
         )
         return
 
     # ------------------------------------------------------
-    # 🔍 Buscar si el usuario ya existe
+    # ðŸ” Buscar si el usuario ya existe
     # ------------------------------------------------------
     existing = db.query(User).filter(User.email == email).first()
 
     if existing:
         # --------------------------------------------------
-        # 🛠️ Caso: el usuario ya existe
+        # ðŸ› ï¸ Caso: el usuario ya existe
         # --------------------------------------------------
         # No duplicamos usuarios.
         # Si por cualquier motivo no tiene rol admin,
-        # lo promocionamos (útil tras migraciones).
+        # lo promocionamos (Ãºtil tras migraciones).
         if getattr(existing, "role", None) != "admin":
             existing.role = "admin"
             db.add(existing)
             db.commit()
 
             logger.info(
-                "✅ Bootstrap admin: usuario existente promovido a admin (%s)",
+                "âœ… Bootstrap admin: usuario existente promovido a admin (%s)",
                 email,
             )
         return
 
     # ------------------------------------------------------
-    # 🆕 Crear usuario administrador nuevo
+    # ðŸ†• Crear usuario administrador nuevo
     # ------------------------------------------------------
     admin = User(
-        full_name="ZENTHRA SuperAdmin",
+        full_name="VAELQORIX SuperAdmin",
         email=email,
         hashed_password=get_password_hash(password),
         role="admin",
@@ -135,4 +135,4 @@ def bootstrap_admin(db: Session) -> None:
     db.add(admin)
     db.commit()
 
-    logger.info("🟢 Bootstrap admin creado (%s)", email)
+    logger.info("ðŸŸ¢ Bootstrap admin creado (%s)", email)

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
@@ -12,7 +12,7 @@ from app.redqueen.trainer import build_training_report
 
 
 def autonomy_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -89,7 +89,7 @@ def test_redqueen_trainer_builds_feedback_report(db_session):
     assert "ueba:privileged_account" in {
         item["factor"] for item in report["failure_factors"]
     }
-    assert report["ai_governance"]["schema"] == "zenthra.ai_evaluation.v1"
+    assert report["ai_governance"]["schema"] == "vaelqorix.ai_evaluation.v1"
     assert report["ai_governance"]["sample_count"] >= 3
 
 
@@ -127,7 +127,7 @@ def test_redqueen_trainer_reports_enterprise_ai_governance(db_session):
             "final_action_source": "guardrail",
         },
         "llm_governance": {
-            "schema": "zenthra.llm_governance.v1",
+            "schema": "vaelqorix.llm_governance.v1",
             "approved_for_ares": True,
             "present_guardrails": [
                 "domain_action_validation",
@@ -153,9 +153,9 @@ def test_redqueen_trainer_reports_enterprise_ai_governance(db_session):
     report = build_training_report(db_session, limit=2)
     ai_governance = report["ai_governance"]
 
-    assert ai_governance["schema"] == "zenthra.ai_evaluation.v1"
-    assert ai_governance["llm_governance_schema"] == "zenthra.llm_governance.v1"
-    assert ai_governance["decision_trace_schema"] == "zenthra.llm_decision_trace.v1"
+    assert ai_governance["schema"] == "vaelqorix.ai_evaluation.v1"
+    assert ai_governance["llm_governance_schema"] == "vaelqorix.llm_governance.v1"
+    assert ai_governance["decision_trace_schema"] == "vaelqorix.llm_decision_trace.v1"
     assert ai_governance["sample_count"] == 2
     assert ai_governance["contract_presence_rate"] == 0.5
     assert ai_governance["approved_for_ares_rate"] == 0.5

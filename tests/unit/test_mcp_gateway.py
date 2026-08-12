@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from app.core.mcp_context import normalize_mcp_context
 from app.core.mcp_gateway import evaluate_mcp_tool_policy, list_mcp_tools
@@ -14,7 +14,7 @@ def test_mcp_tool_policy_allows_registered_tools():
 
     result = evaluate_mcp_tool_policy(context)
 
-    assert result["schema"] == "zenthra.mcp_tool_policy.v1"
+    assert result["schema"] == "vaelqorix.mcp_tool_policy.v1"
     assert result["allowed"] is True
     assert result["code"] == "ok"
 

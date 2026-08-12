@@ -1,13 +1,13 @@
 ﻿# =============================================================
-# 🛰️ MONITORING — ZENTHRA.CORE v4.2 (Elite-Hardening)
+# 🛰️ MONITORING — VAELQORIX.CORE v4.2 (Elite-Hardening)
 # =============================================================
 # Responsabilidades:
-#   - /monitoring/* protegido por Bearer interno (ZENTHRA_MONITOR_TOKEN)
+#   - /monitoring/* protegido por Bearer interno (VAELQORIX_MONITOR_TOKEN)
 #   - /hooks/alertmanager protegido por IP Whitelist (red Docker)
 #   - Config dinámica via app.core.settings (lee .env)
 #
 # Notas:
-#   - El frontend usa VITE_ZENTHRA_MONITOR_TOKEN para llamar aquí.
+#   - El frontend usa VITE_VAELQORIX_MONITOR_TOKEN para llamar aquí.
 #   - Ningún JWT de usuario da acceso a /monitoring/*.
 #   - El webhook de Alertmanager SOLO acepta tráfico de la red Docker.
 # =============================================================
@@ -271,7 +271,7 @@ async def get_alerts():
 @router.get("/health")
 async def monitoring_health():
     """
-    Healthcheck de Prometheus visto desde ZENTHRA.
+    Healthcheck de Prometheus visto desde VAELQORIX.
     """
     try:
         async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
@@ -711,12 +711,12 @@ async def get_alerts_realtime():
             r.raise_for_status()
             return r.json()
     except httpx.RequestError as e:
-        logging.getLogger("zenthra").warning(
+        logging.getLogger("vaelqorix").warning(
             "Alertmanager no disponible en /alerts/realtime: %s", e
         )
         return []
     except httpx.HTTPStatusError as e:
-        logging.getLogger("zenthra").warning(
+        logging.getLogger("vaelqorix").warning(
             "Alertmanager devolvio error en /alerts/realtime: %s - %s",
             e.response.status_code,
             e.response.text[:200],

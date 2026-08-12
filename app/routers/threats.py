@@ -1,8 +1,8 @@
+﻿# =============================================================
+# ðŸš¨ ThreatsRouter â€” VAELQORIX.XDR_COMMAND (v2.5 Filters+Paging SIEM)
 # =============================================================
-# 🚨 ThreatsRouter — ZENTHRA.CORE_SECURITY (v2.5 Filters+Paging SIEM)
-# =============================================================
-# ✅ Mejoras:
-#   - Compatibilidad con paginación por page/limit (además de skip/limit)
+# âœ… Mejoras:
+#   - Compatibilidad con paginaciÃ³n por page/limit (ademÃ¡s de skip/limit)
 #   - Filtros SIEM: source, active(open), fingerprint, title
 #   - Orden: updated_at/created_at + asc/desc
 #   - No rompe endpoints existentes
@@ -16,15 +16,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.security import (
-    get_current_admin,  # 🔐 solo admin (escritura)
-    get_current_user,  # 🔓 usuario autenticado (lectura)
+    get_current_admin,  # ðŸ” solo admin (escritura)
+    get_current_user,  # ðŸ”“ usuario autenticado (lectura)
 )
 from app.db.session import get_db
 from app.models.user import User  # para tipar current_user / current_admin
 from app.schemas.threat_schema import ThreatCreate, ThreatResponse, ThreatUpdate
 from app.services.threat_service import ThreatService
 
-AUDIT_LOG = logging.getLogger("zenthra.threats_audit")
+AUDIT_LOG = logging.getLogger("vaelqorix.threats_audit")
 
 router = APIRouter(
     prefix="/threats",
@@ -64,7 +64,7 @@ def create_threat(
 
 
 # =============================================================
-# 📘 LISTAR AMENAZAS (cualquier usuario autenticado)
+# ðŸ“˜ LISTAR AMENAZAS (cualquier usuario autenticado)
 # =============================================================
 @router.get(
     "/",
@@ -73,12 +73,12 @@ def create_threat(
 )
 def list_threats(
     # --- Compatibilidad ---
-    # Si viene page/limit → calculamos skip = (page-1)*limit
+    # Si viene page/limit â†’ calculamos skip = (page-1)*limit
     page: Optional[int] = Query(
-        None, ge=1, description="Página (opcional). Si se usa, ignora skip."
+        None, ge=1, description="PÃ¡gina (opcional). Si se usa, ignora skip."
     ),
-    skip: int = Query(0, ge=0, description="Número de amenazas a omitir (offset)"),
-    limit: int = Query(20, ge=1, le=100, description="Máx. resultados (1..100)"),
+    skip: int = Query(0, ge=0, description="NÃºmero de amenazas a omitir (offset)"),
+    limit: int = Query(20, ge=1, le=100, description="MÃ¡x. resultados (1..100)"),
 
     # --- Filtros SIEM ---
     source: Optional[str] = Query(None, description="Filtrar por source (ej: prometheus/correlation)"),
@@ -87,17 +87,17 @@ def list_threats(
         description="Si true: solo amenazas activas (siem_metadata.status=='open')",
     ),
     fingerprint: Optional[str] = Query(None, description="Filtrar por fingerprint exacto"),
-    title: Optional[str] = Query(None, description="Filtrar por título (contiene)"),
+    title: Optional[str] = Query(None, description="Filtrar por tÃ­tulo (contiene)"),
 
     # --- Orden ---
     sort: str = Query("updated_at", pattern="^(updated_at|created_at)$", description="Campo de orden"),
-    order: str = Query("desc", pattern="^(asc|desc)$", description="Dirección de orden"),
+    order: str = Query("desc", pattern="^(asc|desc)$", description="DirecciÃ³n de orden"),
 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    📊 Lista amenazas con filtros SIEM.
+    ðŸ“Š Lista amenazas con filtros SIEM.
     - Requiere JWT usuario activo.
     - Compatibilidad: acepta page/limit o skip/limit.
     """
@@ -107,7 +107,7 @@ def list_threats(
 
     service = ThreatService(db)
 
-    # Si tu ThreatService aún no soporta filtros, aquí hacemos fallback
+    # Si tu ThreatService aÃºn no soporta filtros, aquÃ­ hacemos fallback
     # implementando el filtrado en el Service en el siguiente paso si hace falta.
     return service.get_all_threats(
         skip=skip,

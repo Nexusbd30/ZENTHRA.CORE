@@ -1,4 +1,4 @@
-# Phase 4 Backend Hardening and Code Intelligence
+﻿# Phase 4 Backend Hardening and Code Intelligence
 
 Phase 4 remains backend-only. It closes the current hardening increment and
 introduces static code intelligence before any frontend implementation.
@@ -43,7 +43,7 @@ Validation command:
 
 Phase 4 closes the backend-only platform hardening baseline:
 
-- NexusOps platform map and readiness contracts.
+- VaelqorixOps platform map and readiness contracts.
 - BlackNode security gateway as the ARES validation boundary.
 - Static code intelligence contract for backend architecture analysis.
 - Restricted RedQueen, ARES, and ingestion ASGI entrypoints.
@@ -117,7 +117,7 @@ Exit criteria:
 
 ## Code Intelligence Contract
 
-Contract: `zenthra.code_architecture.v1`
+Contract: `vaelqorix.code_architecture.v1`
 
 Endpoints:
 

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 from uuid import uuid4
@@ -38,14 +38,14 @@ def test_file_secret_backend_reads_named_secret(monkeypatch):
 def test_file_secret_backend_strips_utf8_bom(monkeypatch):
     secret_dir = Path(".test-data") / f"secrets-{uuid4()}"
     secret_dir.mkdir(parents=True, exist_ok=True)
-    (secret_dir / "ZENTHRA_MONITOR_TOKEN").write_text(
+    (secret_dir / "VAELQORIX_MONITOR_TOKEN").write_text(
         "\ufeffmonitor-token\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(settings, "SECRET_BACKEND", "file")
     monkeypatch.setattr(settings, "SECRET_FILE_DIR", str(secret_dir))
 
-    assert secrets.get_secret("ZENTHRA_MONITOR_TOKEN") == "monitor-token"
+    assert secrets.get_secret("VAELQORIX_MONITOR_TOKEN") == "monitor-token"
 
 
 def test_secret_backend_status_never_exposes_values(monkeypatch):
@@ -68,12 +68,12 @@ def test_core_auth_and_signing_read_file_backed_secrets(monkeypatch):
     secret_dir = Path(".test-data") / f"secrets-{uuid4()}"
     secret_dir.mkdir(parents=True, exist_ok=True)
     (secret_dir / "SECRET_KEY").write_text("file-secret-key", encoding="utf-8")
-    (secret_dir / "ZENTHRA_MONITOR_TOKEN").write_text("file-monitor-token", encoding="utf-8")
+    (secret_dir / "VAELQORIX_MONITOR_TOKEN").write_text("file-monitor-token", encoding="utf-8")
 
     monkeypatch.setattr(settings, "SECRET_BACKEND", "file")
     monkeypatch.setattr(settings, "SECRET_FILE_DIR", str(secret_dir))
     monkeypatch.setattr(settings, "SECRET_KEY", "settings-secret-key")
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "")
 
     require_internal_bearer(authorization="Bearer file-monitor-token")
     token = create_access_token({"sub": "admin@example.com"})
@@ -217,5 +217,5 @@ def test_soc_webhook_export_reads_file_backed_secrets(monkeypatch):
     assert result["status"] == "sent"
     assert captured["url"] == "https://soc.example/hook"
     assert captured["headers"]["Authorization"] == "Bearer soc-file-token"
-    assert captured["headers"]["X-Zenthra-Signature"].startswith("sha256=")
+    assert captured["headers"]["X-Vaelqorix-Signature"].startswith("sha256=")
     assert result["signature"]["enabled"] is True

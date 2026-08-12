@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 import logging
@@ -12,7 +12,7 @@ from app.core.security import require_admin_or_monitor_token
 from app.core.settings import settings
 from app.db.session import get_db
 
-logger = logging.getLogger("zenthra.health")
+logger = logging.getLogger("vaelqorix.health")
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])
 
 

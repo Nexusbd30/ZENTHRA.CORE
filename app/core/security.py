@@ -1,5 +1,5 @@
 ﻿# =============================================================
-# 🧠 ZENTHRA.CORE_SECURITY — Security Module (v2.8 RBAC Hardened)
+# 🧠 VAELQORIX.XDR_COMMAND — Security Module (v2.8 RBAC Hardened)
 # =============================================================
 # Módulo central de seguridad JWT en modo JSON.
 #
@@ -213,7 +213,7 @@ def require_admin_or_monitor_token(
         )
 
     token = authorization.split(" ", 1)[1].strip()
-    monitor_token = get_secret("ZENTHRA_MONITOR_TOKEN", settings.ZENTHRA_MONITOR_TOKEN)
+    monitor_token = get_secret("VAELQORIX_MONITOR_TOKEN", settings.VAELQORIX_MONITOR_TOKEN)
     if monitor_token and secrets.compare_digest(token, monitor_token):
         return {"auth_type": "monitor_token", "role": "internal"}
 

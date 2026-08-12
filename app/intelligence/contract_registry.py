@@ -1,15 +1,15 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
-ENTERPRISE_AI_CONTRACT_REGISTRY = "zenthra.enterprise_ai_contract_registry.v1"
+ENTERPRISE_AI_CONTRACT_REGISTRY = "vaelqorix.enterprise_ai_contract_registry.v1"
 
 
 def build_enterprise_ai_contract_registry() -> dict[str, Any]:
     contracts = [
         {
             "name": "knowledge_document",
-            "schema": "zenthra.knowledge_document.v1",
+            "schema": "vaelqorix.knowledge_document.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/secops/intelligence/documents"],
             "consumer_endpoints": ["/api/v1/secops/intelligence/enterprise/status"],
@@ -25,7 +25,7 @@ def build_enterprise_ai_contract_registry() -> dict[str, Any]:
         },
         {
             "name": "enterprise_memory",
-            "schema": "zenthra.enterprise_memory.v1",
+            "schema": "vaelqorix.enterprise_memory.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/secops/intelligence/documents"],
             "consumer_endpoints": [
@@ -37,7 +37,7 @@ def build_enterprise_ai_contract_registry() -> dict[str, Any]:
         },
         {
             "name": "llm_governance",
-            "schema": "zenthra.llm_governance.v1",
+            "schema": "vaelqorix.llm_governance.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/redqueen/verdict"],
             "consumer_endpoints": [
@@ -72,7 +72,7 @@ def build_enterprise_ai_contract_registry() -> dict[str, Any]:
         },
         {
             "name": "ai_evaluation",
-            "schema": "zenthra.ai_evaluation.v1",
+            "schema": "vaelqorix.ai_evaluation.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/redqueen/training/report"],
             "consumer_endpoints": ["/api/v1/secops/intelligence/enterprise/readiness"],
@@ -86,7 +86,7 @@ def build_enterprise_ai_contract_registry() -> dict[str, Any]:
         },
         {
             "name": "ares_ai_evidence_bundle",
-            "schema": "zenthra.ares_ai_evidence_bundle.v1",
+            "schema": "vaelqorix.ares_ai_evidence_bundle.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/ares/evidence/{verdict_id}"],
             "consumer_endpoints": ["frontend", "soc_export", "audit_review"],
@@ -101,7 +101,7 @@ def build_enterprise_ai_contract_registry() -> dict[str, Any]:
         },
         {
             "name": "enterprise_ai_readiness",
-            "schema": "zenthra.enterprise_ai_readiness.v1",
+            "schema": "vaelqorix.enterprise_ai_readiness.v1",
             "status": "active",
             "producer_endpoints": ["/api/v1/secops/intelligence/enterprise/readiness"],
             "consumer_endpoints": ["frontend", "release_gate", "operator_runbook"],

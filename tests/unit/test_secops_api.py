@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
@@ -8,7 +8,7 @@ from app.models.threat_event import ThreatEvent
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -33,7 +33,7 @@ def devsecops_payload(event_id: str = "devsecops-event-1"):
         "event_type": "secret_leak",
         "pipeline_id": "release-prod",
         "run_id": "run-42",
-        "repository": "zenthra/core-security",
+        "repository": "vaelqorix/core-security",
         "branch": "main",
         "commit_sha": "abc123",
         "environment": "production",
@@ -79,18 +79,18 @@ async def test_secops_intelligence_status_exposes_rag_llm_mcp_core(test_client, 
     assert body["module"] == "intelligence"
     assert body["mode"] == "local-defensive-core"
     assert body["rag"]["provider"] == "in_memory"
-    assert body["rag"]["repository_contract"] == "zenthra.knowledge_repository.v1"
+    assert body["rag"]["repository_contract"] == "vaelqorix.knowledge_repository.v1"
     assert body["rag"]["document_count"] >= 1
     assert "identity" in body["domains"]
     assert "devsecops" in body["domains"]
     assert body["llm"]["decision_schema"] == "redqueen.llm_decision.v1"
     assert body["llm"]["contract_enforced"] is True
-    assert body["llm"]["governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert body["llm"]["governance"]["schema"] == "vaelqorix.llm_governance.v1"
     assert body["llm"]["governance"]["ares_execution_requires_approved_contract"] is True
     assert "llm_governance" in body["llm"]["governance"]["evidence_required"]
     assert "allowed_action_validation" in body["llm"]["fallback_guardrails"]
-    assert body["mcp"]["context_schema"] == "zenthra.mcp_context.v1"
-    assert body["mcp"]["tool_policy_schema"] == "zenthra.mcp_tool_policy.v1"
+    assert body["mcp"]["context_schema"] == "vaelqorix.mcp_context.v1"
+    assert body["mcp"]["tool_policy_schema"] == "vaelqorix.mcp_tool_policy.v1"
     assert "tool_results" in body["mcp"]["supported_fields"]
     assert "allowed_tools" in body["mcp"]["supported_fields"]
     registered_tools = {tool["name"]: tool for tool in body["mcp"]["registered_tools"]}
@@ -288,8 +288,8 @@ async def test_secops_security_events_export_sends_signed_webhook(
     assert calls[0][0] == "https://soc.example/webhook"
     headers = calls[0][1]["headers"]
     assert headers["Authorization"] == "Bearer soc-token"
-    assert headers["X-Zenthra-Signature"].startswith("sha256=")
-    assert headers["X-Zenthra-Idempotency-Key"]
+    assert headers["X-Vaelqorix-Signature"].startswith("sha256=")
+    assert headers["X-Vaelqorix-Idempotency-Key"]
 
 
 @pytest.mark.asyncio
@@ -532,7 +532,7 @@ async def test_secops_security_metrics_expose_soc_activity(
 
     assert metrics.status_code == 200
     text = metrics.text
-    assert "zenthra_soc_materializations_total" in text
+    assert "vaelqorix_soc_materializations_total" in text
     assert 'event_type="integration_security_abuse"' in text
     assert 'status="materialized"' in text or 'status="duplicate"' in text
 
@@ -653,7 +653,7 @@ async def test_secops_ingests_devsecops_signal_and_deduplicates(test_client, mon
     assert body["status"] == "accepted"
     assert body["source"] == "devsecops:github_actions"
     assert body["event_type"] == "secret_leak"
-    assert body["entity_id"] == "repository:zenthra/core-security"
+    assert body["entity_id"] == "repository:vaelqorix/core-security"
     assert body["entity_type"] == "repository"
     assert body["risk_score"] >= 90
     assert "secret_exposure" in body["signals"]
@@ -683,7 +683,7 @@ async def test_secops_signal_summary_and_posture_include_pipeline_telemetry(
     assert summary_body["count"] >= 1
     assert summary_body["risk_level"] == "critical"
     assert "github_actions" in summary_body["providers"]
-    assert "zenthra/core-security" in summary_body["repositories"]
+    assert "vaelqorix/core-security" in summary_body["repositories"]
     assert "production" in summary_body["environments"]
     assert "production_target" in summary_body["signals"]
 
@@ -734,7 +734,7 @@ async def test_secops_lifecycle_routes_pipeline_signal_through_redqueen_and_ares
     assert "devsecops-secret-exposure" in body["verdict"]["execution_controls"]["rag_references"]
     assert "identity.lookup" in body["verdict"]["execution_controls"]["mcp_context"]["tools"]
     assert body["verdict"]["execution_controls"]["mcp_tool_policy"]["schema"] == (
-        "zenthra.mcp_tool_policy.v1"
+        "vaelqorix.mcp_tool_policy.v1"
     )
     assert body["verdict"]["execution_controls"]["mcp_tool_policy"]["allowed"] is True
     assert body["verdict"]["execution_controls"]["llm_contract"]["schema"] == (
@@ -754,7 +754,7 @@ async def test_secops_lifecycle_routes_pipeline_signal_through_redqueen_and_ares
     assert traces[0]["action_domain"] == "devsecops"
     assert "devsecops-secret-exposure" in traces[0]["rag_references"]
     assert traces[0]["mcp_context"]["evidence_refs"] == ["case-devsecops-1"]
-    assert traces[0]["mcp_tool_policy"]["schema"] == "zenthra.mcp_tool_policy.v1"
+    assert traces[0]["mcp_tool_policy"]["schema"] == "vaelqorix.mcp_tool_policy.v1"
     assert traces[0]["llm_contract"]["schema"] == "redqueen.llm_decision.v1"
     assert traces[0]["llm_guardrail_decisions"]
 
@@ -854,7 +854,7 @@ async def test_secops_correlation_lifecycle_materializes_event_for_redqueen_ares
     assert body["correlation"]["correlated"] is True
     assert body["correlation_event"]["source"] == "secops:identity_pipeline_correlation"
     assert body["correlation_event"]["event_type"] == "identity_pipeline_correlation"
-    assert body["correlation_event"]["entity_id"] == "repository:zenthra/core-security"
+    assert body["correlation_event"]["entity_id"] == "repository:vaelqorix/core-security"
     assert body["verdict"]["action_type"] == "block_deployment"
     assert body["verdict"]["execution_controls"]["action_domain"] == "devsecops"
     assert "devsecops_signal:identity_pipeline_correlation" in body["verdict"]["factors"]

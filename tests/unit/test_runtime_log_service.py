@@ -1,4 +1,4 @@
-import shutil
+﻿import shutil
 import uuid
 from pathlib import Path
 
@@ -20,8 +20,8 @@ def test_runtime_logs_parse_request_lines_and_filter_by_search(monkeypatch):
         (log_dir / "app.log").write_text(
             "\n".join(
                 [
-                    "2026-05-09 10:00:00,100 - INFO - zenthra - GET /monitoring/health -> 200 (12.5ms)",
-                    "2026-05-09 10:01:00,200 - ERROR - zenthra - POST /auth/login -> 401 (3.2ms)",
+                    "2026-05-09 10:00:00,100 - INFO - vaelqorix - GET /monitoring/health -> 200 (12.5ms)",
+                    "2026-05-09 10:01:00,200 - ERROR - vaelqorix - POST /auth/login -> 401 (3.2ms)",
                     "not a structured log line",
                 ]
             ),
@@ -52,7 +52,7 @@ def test_runtime_logs_filter_severity_and_include_alert_audit(monkeypatch):
     log_dir.mkdir()
     try:
         (log_dir / "app.log").write_text(
-            "2026-05-09 10:00:00,100 - INFO - zenthra - GET /health -> 200 (1.0ms)\n",
+            "2026-05-09 10:00:00,100 - INFO - vaelqorix - GET /health -> 200 (1.0ms)\n",
             encoding="utf-8",
         )
         (log_dir / "alerts_audit.log").write_text(
@@ -82,8 +82,8 @@ def test_runtime_logs_reads_rotated_files_and_respects_limit(monkeypatch):
         (log_dir / "app.log.1").write_text(
             "\n".join(
                 [
-                    "2026-05-09 10:00:00,100 - WARNING - zenthra - GET /threats/ -> 403 (1.0ms)",
-                    "2026-05-09 10:01:00,100 - INFO - zenthra - GET /users/me -> 200 (1.0ms)",
+                    "2026-05-09 10:00:00,100 - WARNING - vaelqorix - GET /threats/ -> 403 (1.0ms)",
+                    "2026-05-09 10:01:00,100 - INFO - vaelqorix - GET /users/me -> 200 (1.0ms)",
                 ]
             ),
             encoding="utf-8",

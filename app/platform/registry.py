@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
-PLATFORM_UMBRELLA = "NEXUSBIGDATA"
-PRODUCT_NAME = "NexusOps AI"
-CURRENT_CORE = "ZENTHRA.CORE_SECURITY"
+PLATFORM_UMBRELLA = "VAELQORIX"
+PRODUCT_NAME = "VAELQORIX AI"
+CURRENT_CORE = "VAELQORIX.XDR_COMMAND"
 CURRENT_RUNTIME = "app.main:app"
 MIGRATION_STRATEGY = "incremental_modular_monolith"
 
@@ -15,7 +15,7 @@ PLATFORM_RULES = [
     "No private-document answer without citations.",
     "No secret ever reaches the LLM.",
     "DevSecOps vertical logic lives outside the core platform.",
-    "CortexFlow reasons. NexusFlow orchestrates. BlackNode governs.",
+    "CortexFlow reasons. VaelqorixFlow orchestrates. BlackNode governs.",
 ]
 
 PLATFORM_DOMAINS: dict[str, dict[str, Any]] = {
@@ -41,9 +41,9 @@ PLATFORM_DOMAINS: dict[str, dict[str, Any]] = {
         "contracts": ["AgentRuntime"],
         "notes": ["Runtime migration is intentionally deferred."],
     },
-    "nexusflow": {
-        "key": "nexusflow",
-        "name": "NexusFlow",
+    "vaelqorixflow": {
+        "key": "vaelqorixflow",
+        "name": "VaelqorixFlow",
         "layer": "orchestration",
         "status": "mapped_to_existing_backend",
         "responsibilities": [
@@ -89,9 +89,9 @@ PLATFORM_DOMAINS: dict[str, dict[str, Any]] = {
         "contracts": ["SecurityGateway"],
         "notes": ["BlackNode remains the first domain to harden before deeper agent migration."],
     },
-    "nexusvault": {
-        "key": "nexusvault",
-        "name": "NexusVault",
+    "vaelqorixvault": {
+        "key": "vaelqorixvault",
+        "name": "VaelqorixVault",
         "layer": "knowledge_memory",
         "status": "mapped_to_existing_backend",
         "responsibilities": [
@@ -112,9 +112,9 @@ PLATFORM_DOMAINS: dict[str, dict[str, Any]] = {
         "contracts": ["KnowledgeRetriever"],
         "notes": ["Private knowledge answers must remain citation-ready."],
     },
-    "nexusapi": {
-        "key": "nexusapi",
-        "name": "NexusAPI",
+    "vaelqorixapi": {
+        "key": "vaelqorixapi",
+        "name": "VaelqorixAPI",
         "layer": "integrations_tools",
         "status": "mapped_to_existing_backend",
         "responsibilities": [

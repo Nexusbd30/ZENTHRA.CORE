@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
@@ -55,7 +55,7 @@ def classify_action_risk(action_type: str, risk_score: float = 0.0) -> str:
 
 class BlackNodeSecurityGateway:
     name = "BlackNode"
-    contract = "nexusops.blacknode.security_gateway.v1"
+    contract = "vaelqorix.blacknode.security_gateway.v1"
 
     def build_status(self) -> dict[str, Any]:
         return {

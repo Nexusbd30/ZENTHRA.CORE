@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
@@ -69,7 +69,7 @@ def evaluate_mcp_tool_policy(context: dict[str, Any] | None) -> dict[str, Any]:
         detail = "MCP context references tools outside the allowlist"
 
     return {
-        "schema": "zenthra.mcp_tool_policy.v1",
+        "schema": "vaelqorix.mcp_tool_policy.v1",
         "mode": "local_registry",
         "allowed": allowed,
         "code": code,

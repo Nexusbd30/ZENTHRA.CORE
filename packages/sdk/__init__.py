@@ -1,2 +1,2 @@
-"""Future NexusOps AI SDK package."""
+﻿"""Future VAELQORIX AI SDK package."""
 

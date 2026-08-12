@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from types import SimpleNamespace
@@ -74,10 +74,10 @@ def test_ai_provider_parsing_fallback_and_ollama(monkeypatch):
 
 def test_kafka_status_helpers_and_consumer(monkeypatch):
     monkeypatch.setattr(settings, "KAFKA_INGESTION_ENABLED", False)
-    monkeypatch.setattr(settings, "KAFKA_INGESTION_TOPICS", "zenthra.wazuh, zenthra.iam")
+    monkeypatch.setattr(settings, "KAFKA_INGESTION_TOPICS", "vaelqorix.wazuh, vaelqorix.iam")
     disabled = kafka_consumer.run_kafka_consumer(on_event=lambda event: event, max_messages=1)
     assert disabled["status"] == "disabled"
-    assert disabled["topics"] == ["zenthra.wazuh", "zenthra.iam"]
+    assert disabled["topics"] == ["vaelqorix.wazuh", "vaelqorix.iam"]
 
     monkeypatch.setattr(settings, "KAFKA_INGESTION_ENABLED", True)
     monkeypatch.setattr(
@@ -94,7 +94,7 @@ def test_kafka_status_helpers_and_consumer(monkeypatch):
     with pytest.raises(ValueError):
         kafka_consumer._decode_payload("[1,2,3]")
     assert kafka_consumer._adapter_from_payload({"adapter": "wazuh"}, "topic") == "wazuh"
-    assert kafka_consumer._adapter_from_payload({}, "zenthra.wazuh") == "wazuh"
+    assert kafka_consumer._adapter_from_payload({}, "vaelqorix.wazuh") == "wazuh"
     assert kafka_consumer._adapter_from_payload({}, "unknown") == "raw"
 
     delivered = []
@@ -102,9 +102,9 @@ def test_kafka_status_helpers_and_consumer(monkeypatch):
         [
             SimpleNamespace(
                 value=lambda: b'{"adapter":"iam","event_id":"e1","user":"alice","source_ip":"10.0.0.1"}',
-                topic=lambda: "zenthra.iam",
+                topic=lambda: "vaelqorix.iam",
             ),
-            SimpleNamespace(value=lambda: b"[bad", topic=lambda: "zenthra.bad"),
+            SimpleNamespace(value=lambda: b"[bad", topic=lambda: "vaelqorix.bad"),
         ],
         on_event=delivered.append,
     )
@@ -122,7 +122,7 @@ def test_kafka_status_helpers_and_consumer(monkeypatch):
             return self.payload
 
         def topic(self):
-            return "zenthra.iam"
+            return "vaelqorix.iam"
 
         def error(self):
             return self._error

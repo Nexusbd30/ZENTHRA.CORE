@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import time
 
@@ -34,34 +34,34 @@ def http_metrics_middleware():
 
 
 THREATS_CREATED = Counter(
-    "zenthra_threats_created_total",
+    "vaelqorix_threats_created_total",
     "Threats created",
     ["source", "level"],
 )
-THREATS_DELETED = Counter("zenthra_threats_deleted_total", "Threats deleted")
-SCANNER_RUNNING = Gauge("zenthra_scanner_running", "Scanner running flag")
+THREATS_DELETED = Counter("vaelqorix_threats_deleted_total", "Threats deleted")
+SCANNER_RUNNING = Gauge("vaelqorix_scanner_running", "Scanner running flag")
 SECURITY_WEBHOOK_REJECTIONS = Counter(
-    "zenthra_security_webhook_rejections_total",
+    "vaelqorix_security_webhook_rejections_total",
     "Security webhook rejections",
     ["provider", "reason", "status_code"],
 )
 SECURITY_RATE_LIMIT_REJECTIONS = Counter(
-    "zenthra_security_rate_limit_rejections_total",
+    "vaelqorix_security_rate_limit_rejections_total",
     "Security webhook rate limit rejections",
     ["provider"],
 )
 SECURITY_REPLAY_REJECTIONS = Counter(
-    "zenthra_security_replay_rejections_total",
+    "vaelqorix_security_replay_rejections_total",
     "Security webhook replay rejections",
     ["provider"],
 )
 SOC_MATERIALIZATIONS = Counter(
-    "zenthra_soc_materializations_total",
+    "vaelqorix_soc_materializations_total",
     "SOC security events materialized as threat events",
     ["event_type", "status"],
 )
 SOC_LIFECYCLES = Counter(
-    "zenthra_soc_lifecycles_total",
+    "vaelqorix_soc_lifecycles_total",
     "SOC security event lifecycles routed through RedQueen and ARES",
     ["event_type", "status"],
 )

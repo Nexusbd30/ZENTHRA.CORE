@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from app.intelligence.governance import assess_llm_contract
 from app.intelligence.llm_contract import normalize_llm_decision
@@ -37,7 +37,7 @@ def test_llm_contract_normalizes_action_outside_domain_to_minimum_action():
     }
     assert result["confidence"] == 0.99
     assert result["contract"]["domain"] == "devsecops"
-    assert result["governance"]["schema"] == "zenthra.llm_governance.v1"
+    assert result["governance"]["schema"] == "vaelqorix.llm_governance.v1"
     assert result["governance"]["approved_for_ares"] is True
     assert "domain_action_validation" in result["governance"]["present_guardrails"]
     assert "secret_exposure" in result["factors"]

@@ -1,4 +1,4 @@
-# Production Readiness Checklist
+﻿# Production Readiness Checklist
 
 Fase 1 queda cerrada formalmente en `docs/DOC-10_PHASE1_CLOSURE.md`.
 Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
@@ -94,7 +94,7 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
   - `BOOTSTRAP_ADMIN_ENABLED=false`
 - Production must configure:
   - `SECRET_KEY`
-  - `ZENTHRA_MONITOR_TOKEN`
+  - `VAELQORIX_MONITOR_TOKEN`
   - Provider secrets through a secret manager, not plain env files.
 - K8s secret templates include placeholders for `ACTION_SHARED_TOKEN`, `ENTRA_CLIENT_SECRET`, `ENTRA_WEBHOOK_SECRET`, `GITHUB_TOKEN`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET`.
 

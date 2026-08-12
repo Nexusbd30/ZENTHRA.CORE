@@ -1,10 +1,10 @@
+﻿# =============================================================
+# ðŸ’  VAELQORIX â€” SETTINGS dinÃ¡micos (Pydantic v2) Â· v3.9 Postgres-Ready SAFE
 # =============================================================
-# 💠 ZENTHRA — SETTINGS dinámicos (Pydantic v2) · v3.9 Postgres-Ready SAFE
-# =============================================================
-# - Lee .env en la raíz del repo backend
+# - Lee .env en la raÃ­z del repo backend
 # - Ignora variables extra (extra="ignore")
 #
-# ✅ Mejora clave:
+# âœ… Mejora clave:
 #   - Si construye Postgres URI con POSTGRES_*, ESCAPA user/password con quote_plus
 #     (evita UnicodeDecodeError y problemas con caracteres especiales)
 #
@@ -24,9 +24,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # ---------------------------------------------------------
-    # Identidad / ejecución
+    # Identidad / ejecuciÃ³n
     # ---------------------------------------------------------
-    PROJECT_NAME: str = "ZENTHRA.CORE_SECURITY"
+    PROJECT_NAME: str = "VAELQORIX.XDR_COMMAND"
     ENV: str = "development"
     LOG_LEVEL: str = "INFO"
 
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     SECRET_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    BOOTSTRAP_ADMIN_EMAIL: str = "admin@zenthra.dev"
+    BOOTSTRAP_ADMIN_EMAIL: str = "admin@vaelqorix.dev"
     BOOTSTRAP_ADMIN_PASSWORD: str | None = None
     ENTERPRISE_TENANT_MODE: str = "single_tenant"  # single_tenant | header_scoped | strict
     DEFAULT_TENANT_ID: str = "default"
@@ -43,20 +43,20 @@ class Settings(BaseSettings):
     RATE_LIMIT_BACKEND: str = "in_memory"  # in_memory | redis
     REPLAY_GUARD_BACKEND: str = "in_memory"  # in_memory | redis
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
-    REDIS_KEY_PREFIX: str = "zenthra"
+    REDIS_KEY_PREFIX: str = "vaelqorix"
     SECRET_BACKEND: str = "env"  # env | file
     SECRET_FILE_DIR: str = "/run/secrets"
 
     # ---------------------------------------------------------
     # Base de datos
     # ---------------------------------------------------------
-    # Opción A (simple): define SQLALCHEMY_DATABASE_URI en .env
+    # OpciÃ³n A (simple): define SQLALCHEMY_DATABASE_URI en .env
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///./app.db"
 
-    # Opción B (pro): define POSTGRES_* y se construye el URI
+    # OpciÃ³n B (pro): define POSTGRES_* y se construye el URI
     POSTGRES_HOST: str | None = None
     POSTGRES_PORT: int = 5432
-    ZENTHRA_POSTGRES_PORT: int | None = None
+    VAELQORIX_POSTGRES_PORT: int | None = None
     POSTGRES_DB: str | None = None
     POSTGRES_USER: str | None = None
     POSTGRES_PASSWORD: str | None = None
@@ -84,15 +84,15 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     # Token interno (para /metrics y /monitoring/*)
     # ---------------------------------------------------------
-    ZENTHRA_MONITOR_TOKEN: str | None = None
+    VAELQORIX_MONITOR_TOKEN: str | None = None
 
     # ---------------------------------------------------------
-    # 🧠 Correlation Engine — Scheduler (PROD)
+    # ðŸ§  Correlation Engine â€” Scheduler (PROD)
     # ---------------------------------------------------------
-    ZENTHRA_CORRELATION_ENABLED: bool = True
-    ZENTHRA_CORRELATION_INTERVAL_SEC: int = 60
-    ZENTHRA_CORRELATION_STARTUP_DELAY_SEC: int = 5
-    ZENTHRA_ENABLE_LAB_ALERTS: bool = False
+    VAELQORIX_CORRELATION_ENABLED: bool = True
+    VAELQORIX_CORRELATION_INTERVAL_SEC: int = 60
+    VAELQORIX_CORRELATION_STARTUP_DELAY_SEC: int = 5
+    VAELQORIX_ENABLE_LAB_ALERTS: bool = False
 
     # ---------------------------------------------------------
     # AI / LLM control plane (RedQueen)
@@ -112,13 +112,13 @@ class Settings(BaseSettings):
     VECTOR_STORE_ENABLED: bool = True
     VECTOR_STORE_PROVIDER: str = "local"  # local | qdrant | milvus
     VECTOR_DIMENSIONS: int = 64
-    VECTOR_COLLECTION_PREFIX: str = "zenthra"
+    VECTOR_COLLECTION_PREFIX: str = "vaelqorix"
 
     # Streaming ingestion
     KAFKA_INGESTION_ENABLED: bool = False
     KAFKA_BOOTSTRAP_SERVERS: str = "127.0.0.1:9092"
-    KAFKA_INGESTION_TOPICS: str = "zenthra.siem,zenthra.edr,zenthra.iam,zenthra.netflow"
-    KAFKA_CONSUMER_GROUP_ID: str = "zenthra-core-ingestion"
+    KAFKA_INGESTION_TOPICS: str = "vaelqorix.siem,vaelqorix.edr,vaelqorix.iam,vaelqorix.netflow"
+    KAFKA_CONSUMER_GROUP_ID: str = "vaelqorix-core-ingestion"
     KAFKA_AUTO_OFFSET_RESET: str = "latest"
     KAFKA_POLL_TIMEOUT_SEC: float = 1.0
 
@@ -188,8 +188,8 @@ class Settings(BaseSettings):
         if env in {"production", "prod"}:
             if weak_secret:
                 raise ValueError("SECRET_KEY seguro requerido en produccion")
-            if not self.ZENTHRA_MONITOR_TOKEN:
-                raise ValueError("ZENTHRA_MONITOR_TOKEN requerido en produccion")
+            if not self.VAELQORIX_MONITOR_TOKEN:
+                raise ValueError("VAELQORIX_MONITOR_TOKEN requerido en produccion")
         return self
 
 
@@ -214,9 +214,9 @@ settings.ALERTMANAGER_BASE = (
 )
 
 # -------------------------------------------------------------
-# 🧠 Post-procesado: construir URI Postgres si POSTGRES_* existe
+# ðŸ§  Post-procesado: construir URI Postgres si POSTGRES_* existe
 # -------------------------------------------------------------
-# ✅ CLAVE: escapamos user/password para evitar UnicodeDecodeError y caracteres especiales
+# âœ… CLAVE: escapamos user/password para evitar UnicodeDecodeError y caracteres especiales
 postgres_config_complete = all(
     [
         settings.POSTGRES_HOST,
@@ -236,8 +236,8 @@ if postgres_config_complete and (not explicit_database_uri or explicit_postgres_
     pg_pass = quote_plus(str(settings.POSTGRES_PASSWORD))
     pg_port = (
         int(settings.POSTGRES_PORT)
-        if explicit_postgres_config or settings.ZENTHRA_POSTGRES_PORT is None
-        else int(settings.ZENTHRA_POSTGRES_PORT)
+        if explicit_postgres_config or settings.VAELQORIX_POSTGRES_PORT is None
+        else int(settings.VAELQORIX_POSTGRES_PORT)
     )
 
     settings.SQLALCHEMY_DATABASE_URI = (
@@ -259,8 +259,8 @@ else:
     settings.ALERTMANAGER_BASE_URL = _prefer_ipv4_loopback(settings.ALERTMANAGER_BASE_URL)
 
 # Hardening suave
-if settings.ZENTHRA_CORRELATION_INTERVAL_SEC < 5:
-    settings.ZENTHRA_CORRELATION_INTERVAL_SEC = 5
+if settings.VAELQORIX_CORRELATION_INTERVAL_SEC < 5:
+    settings.VAELQORIX_CORRELATION_INTERVAL_SEC = 5
 
-if settings.ZENTHRA_CORRELATION_STARTUP_DELAY_SEC < 0:
-    settings.ZENTHRA_CORRELATION_STARTUP_DELAY_SEC = 0
+if settings.VAELQORIX_CORRELATION_STARTUP_DELAY_SEC < 0:
+    settings.VAELQORIX_CORRELATION_STARTUP_DELAY_SEC = 0

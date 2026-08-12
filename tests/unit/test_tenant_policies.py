@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
@@ -32,7 +32,7 @@ def test_tenant_policy_service_persists_provider_assignments(db_session):
 
 @pytest.mark.asyncio
 async def test_tenant_policy_api_updates_and_readiness(test_client, db_session, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     headers = {"Authorization": "Bearer monitor-test-token"}
 
     created = await test_client.post(
@@ -90,7 +90,7 @@ async def test_tenant_policy_api_rejects_missing_or_mismatched_strict_tenant(
     test_client,
     monkeypatch,
 ):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "strict")
     headers = {"Authorization": "Bearer monitor-test-token"}
 

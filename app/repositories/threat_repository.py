@@ -1,7 +1,7 @@
+﻿# =============================================================
+# ðŸ§± ThreatRepository â€” VAELQORIX.XDR_COMMAND (v1.2 Filters+Sort SIEM)
 # =============================================================
-# 🧱 ThreatRepository — ZENTHRA.CORE_SECURITY (v1.2 Filters+Sort SIEM)
-# =============================================================
-# ✅ Añade:
+# âœ… AÃ±ade:
 #   - get_all_filtered(...): source / active / fingerprint / title
 #   - sort: updated_at|created_at + order asc|desc
 #   - active portable: siem_metadata.status en Python (no depende de JSON ops DB)
@@ -24,7 +24,7 @@ class ThreatRepository:
         self.db = db
 
     # ---------------------------------------------------------
-    # 🧩 Utilidad interna: normalizar IDs
+    # ðŸ§© Utilidad interna: normalizar IDs
     # ---------------------------------------------------------
     def _normalize_id(self, threat_id: Union[str, UUID]) -> Optional[str]:
         if isinstance(threat_id, UUID):
@@ -35,7 +35,7 @@ class ThreatRepository:
             return None
 
     # ---------------------------------------------------------
-    # 🟢 Crear una amenaza
+    # ðŸŸ¢ Crear una amenaza
     # ---------------------------------------------------------
     def create(self, threat_data: ThreatCreate) -> ThreatModel:
         payload = threat_data.model_dump()
@@ -46,14 +46,14 @@ class ThreatRepository:
         return threat
 
     # ---------------------------------------------------------
-    # 📘 Obtener todas las amenazas (paginadas) — legacy
+    # ðŸ“˜ Obtener todas las amenazas (paginadas) â€” legacy
     # ---------------------------------------------------------
     def get_all(self, skip: int = 0, limit: int = 20) -> List[ThreatModel]:
         query = select(ThreatModel).offset(skip).limit(limit)
         return list(self.db.scalars(query).all())
 
     # ---------------------------------------------------------
-    # 📘 Obtener amenazas (paginadas) con filtros SIEM
+    # ðŸ“˜ Obtener amenazas (paginadas) con filtros SIEM
     # ---------------------------------------------------------
     def get_all_filtered(
         self,
@@ -118,7 +118,7 @@ class ThreatRepository:
         return list(self.db.scalars(q.offset(skip).limit(limit)).all())
 
     # ---------------------------------------------------------
-    # 🔍 Obtener amenaza por ID
+    # ðŸ” Obtener amenaza por ID
     # ---------------------------------------------------------
     def get_by_id(self, threat_id: Union[str, UUID]) -> Optional[ThreatModel]:
         uid = self._normalize_id(threat_id)
@@ -127,7 +127,7 @@ class ThreatRepository:
         return self.db.get(ThreatModel, uid)
 
     # ---------------------------------------------------------
-    # ✏️ Actualizar amenaza existente
+    # âœï¸ Actualizar amenaza existente
     # ---------------------------------------------------------
     def update(
         self,
@@ -151,7 +151,7 @@ class ThreatRepository:
         return threat
 
     # ---------------------------------------------------------
-    # ❌ Eliminar amenaza
+    # âŒ Eliminar amenaza
     # ---------------------------------------------------------
     def delete(self, threat_id: Union[str, UUID]) -> bool:
         uid = self._normalize_id(threat_id)

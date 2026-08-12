@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime
 
@@ -19,7 +19,7 @@ from app.models.verdict import Verdict
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -57,7 +57,7 @@ def test_persistent_knowledge_repository_versions_and_search(db_session):
     assert first.version == 1
     assert second.version == 2
     assert document_content_hash(first) != document_content_hash(second)
-    assert document_to_payload(second)["contract"] == "zenthra.knowledge_document.v1"
+    assert document_to_payload(second)["contract"] == "vaelqorix.knowledge_document.v1"
 
     versions = repository.list_versions("identity-lockdown-playbook")
     assert [doc.version for doc in versions] == [2, 1]
@@ -108,7 +108,7 @@ async def test_enterprise_intelligence_api_exposes_status_and_documents(
     assert body["doc_id"] == "devsecops-release-gate"
     assert body["version"] == 1
     assert body["content_hash"]
-    assert body["contract"] == "zenthra.knowledge_document.v1"
+    assert body["contract"] == "vaelqorix.knowledge_document.v1"
 
     listed = await test_client.get(
         "/api/v1/secops/intelligence/documents",
@@ -125,7 +125,7 @@ async def test_enterprise_intelligence_api_exposes_status_and_documents(
     status_body = status.json()
     assert status_body["module"] == "intelligence"
     assert status_body["mode"] == "enterprise-memory-core"
-    assert status_body["rag"]["storage_contract"] == "zenthra.enterprise_memory.v1"
+    assert status_body["rag"]["storage_contract"] == "vaelqorix.enterprise_memory.v1"
     assert status_body["rag"]["persistent"] is True
     assert status_body["rag"]["latest_versions"]["devsecops-release-gate"] == 1
 
@@ -149,7 +149,7 @@ def test_enterprise_ai_readiness_combines_memory_governance_and_evaluation(db_se
     readiness = build_enterprise_ai_readiness(
         repository,
         ai_evaluation={
-            "schema": "zenthra.ai_evaluation.v1",
+            "schema": "vaelqorix.ai_evaluation.v1",
             "sample_count": 2,
             "approved_for_ares_rate": 1.0,
             "traceable_result_rate": 1.0,
@@ -157,27 +157,27 @@ def test_enterprise_ai_readiness_combines_memory_governance_and_evaluation(db_se
         },
     )
 
-    assert readiness["contract"] == "zenthra.enterprise_ai_readiness.v1"
+    assert readiness["contract"] == "vaelqorix.enterprise_ai_readiness.v1"
     assert readiness["overall"] == "ready_for_controlled_pilot"
-    assert readiness["memory"]["storage_contract"] == "zenthra.enterprise_memory.v1"
-    assert readiness["llm"]["governance_schema"] == "zenthra.llm_governance.v1"
-    assert readiness["evaluation"]["schema"] == "zenthra.ai_evaluation.v1"
+    assert readiness["memory"]["storage_contract"] == "vaelqorix.enterprise_memory.v1"
+    assert readiness["llm"]["governance_schema"] == "vaelqorix.llm_governance.v1"
+    assert readiness["evaluation"]["schema"] == "vaelqorix.ai_evaluation.v1"
     assert all(check["passed"] for check in readiness["checks"])
 
 
 def test_enterprise_ai_contract_registry_exposes_frontend_entrypoints():
     registry = build_enterprise_ai_contract_registry()
 
-    assert registry["contract"] == "zenthra.enterprise_ai_contract_registry.v1"
+    assert registry["contract"] == "vaelqorix.enterprise_ai_contract_registry.v1"
     assert registry["secrets_exposed"] is False
     schemas = {item["schema"] for item in registry["contracts"]}
     assert {
-        "zenthra.knowledge_document.v1",
-        "zenthra.enterprise_memory.v1",
-        "zenthra.llm_governance.v1",
-        "zenthra.ai_evaluation.v1",
-        "zenthra.ares_ai_evidence_bundle.v1",
-        "zenthra.enterprise_ai_readiness.v1",
+        "vaelqorix.knowledge_document.v1",
+        "vaelqorix.enterprise_memory.v1",
+        "vaelqorix.llm_governance.v1",
+        "vaelqorix.ai_evaluation.v1",
+        "vaelqorix.ares_ai_evidence_bundle.v1",
+        "vaelqorix.enterprise_ai_readiness.v1",
     } <= schemas
     assert registry["frontend_entrypoints"]["evidence_bundle"] == (
         "/api/v1/ares/evidence/{verdict_id}"
@@ -220,7 +220,7 @@ async def test_enterprise_ai_readiness_api_exposes_operational_gate(
             execution_controls=(
                 '{"llm_contract":{"schema":"redqueen.llm_decision.v1",'
                 '"final_action_source":"llm"},"llm_governance":'
-                '{"schema":"zenthra.llm_governance.v1","approved_for_ares":true,'
+                '{"schema":"vaelqorix.llm_governance.v1","approved_for_ares":true,'
                 '"present_guardrails":["action_validation","minimum_action_enforcement"]}}'
             ),
             signature="sig",
@@ -249,7 +249,7 @@ async def test_enterprise_ai_readiness_api_exposes_operational_gate(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["module"] == "enterprise_ai"
-    assert body["contract"] == "zenthra.enterprise_ai_readiness.v1"
+    assert body["contract"] == "vaelqorix.enterprise_ai_readiness.v1"
     assert body["overall"] in {
         "ready_for_controlled_pilot",
         "attention_required",
@@ -275,9 +275,9 @@ async def test_enterprise_ai_contract_registry_api(test_client, monkeypatch):
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["module"] == "enterprise_ai"
-    assert body["contract"] == "zenthra.enterprise_ai_contract_registry.v1"
+    assert body["contract"] == "vaelqorix.enterprise_ai_contract_registry.v1"
     assert body["count"] == len(body["contracts"])
     assert any(
-        item["schema"] == "zenthra.ares_ai_evidence_bundle.v1"
+        item["schema"] == "vaelqorix.ares_ai_evidence_bundle.v1"
         for item in body["contracts"]
     )

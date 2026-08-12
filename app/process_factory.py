@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 import time
@@ -21,7 +21,7 @@ from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
 
 ProcessProfile = Literal["redqueen", "ares", "ingestion"]
-LOG = logging.getLogger("zenthra.process")
+LOG = logging.getLogger("vaelqorix.process")
 
 
 def _include_router_routes(app: FastAPI, router: APIRouter) -> None:
@@ -36,7 +36,7 @@ def create_restricted_application(
     profile_app = FastAPI(
         title=f"{settings.PROJECT_NAME} - {profile}",
         version="1.0.0",
-        description=f"Restricted ZENTHRA {profile} process API",
+        description=f"Restricted VAELQORIX {profile} process API",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,

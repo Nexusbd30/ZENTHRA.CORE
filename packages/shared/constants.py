@@ -1,14 +1,14 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-PLATFORM_UMBRELLA = "NEXUSBIGDATA"
-PRODUCT_NAME = "NexusOps AI"
-CURRENT_CORE = "ZENTHRA.CORE_SECURITY"
+PLATFORM_UMBRELLA = "VAELQORIX"
+PRODUCT_NAME = "VAELQORIX AI"
+CURRENT_CORE = "VAELQORIX.XDR_COMMAND"
 
 PLATFORM_DOMAINS = (
     "cortexflow",
-    "nexusflow",
+    "vaelqorixflow",
     "blacknode",
-    "nexusvault",
-    "nexusapi",
+    "vaelqorixvault",
+    "vaelqorixapi",
 )
 

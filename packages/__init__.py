@@ -1,2 +1,2 @@
-"""Shared packages for future NexusOps AI SDK and schemas."""
+﻿"""Shared packages for future VAELQORIX AI SDK and schemas."""
 

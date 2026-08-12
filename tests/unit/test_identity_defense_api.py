@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import hmac
@@ -15,7 +15,7 @@ from app.models.threat_event import ThreatEvent
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -47,8 +47,8 @@ def signed_json_headers(
     timestamp = timestamp or str(int(time.time()))
     signed_payload = f"{timestamp}.".encode("utf-8") + body
     digest = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
-    headers["X-Zenthra-Signature"] = f"sha256={digest}"
-    headers["X-Zenthra-Timestamp"] = timestamp
+    headers["X-Vaelqorix-Signature"] = f"sha256={digest}"
+    headers["X-Vaelqorix-Timestamp"] = timestamp
     headers["Content-Type"] = "application/json"
     return headers, body
 
@@ -209,7 +209,7 @@ async def test_entra_readiness_and_event_normalization(test_client, db_session, 
     assert readiness_body["replay_guard"]["scope"] == "timestamp + signature + payload_sha256"
     assert readiness_body["signature"]["required"] is True
     assert readiness_body["signature"]["algorithm"] == "hmac-sha256"
-    assert readiness_body["signature"]["timestamp_header"] == "X-Zenthra-Timestamp"
+    assert readiness_body["signature"]["timestamp_header"] == "X-Vaelqorix-Timestamp"
     assert readiness_body["signature"]["max_skew_seconds"] == 300
     assert readiness_body["secrets_exposed"] is False
 
@@ -362,9 +362,9 @@ async def test_entra_event_rate_limit_rejects_excess_requests(test_client, db_se
 
     metrics = await test_client.get("/metrics", headers=monitor_headers(monkeypatch))
     assert metrics.status_code == 200
-    assert "zenthra_security_webhook_rejections_total" in metrics.text
+    assert "vaelqorix_security_webhook_rejections_total" in metrics.text
     assert 'reason="rate_limit_exceeded"' in metrics.text
-    assert "zenthra_security_rate_limit_rejections_total" in metrics.text
+    assert "vaelqorix_security_rate_limit_rejections_total" in metrics.text
 
 
 @pytest.mark.asyncio
@@ -415,7 +415,7 @@ async def test_entra_event_replay_guard_rejects_same_signed_payload(
 
     metrics = await test_client.get("/metrics", headers=monitor_headers(monkeypatch))
     assert metrics.status_code == 200
-    assert "zenthra_security_replay_rejections_total" in metrics.text
+    assert "vaelqorix_security_replay_rejections_total" in metrics.text
     assert 'reason="replay_detected"' in metrics.text
 
 

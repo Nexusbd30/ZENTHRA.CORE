@@ -1,4 +1,4 @@
-# Phase 3 Closure
+﻿# Phase 3 Closure
 
 Phase 3 closes the Enterprise AI hardening work for the backend. The system now exposes persistent AI memory, versioned knowledge contracts, LLM governance, RedQueen/ARES AI evidence bundles, enterprise readiness, and contract registry endpoints suitable for frontend and SOC consumers.
 
@@ -45,15 +45,15 @@ Evidence:
 
 ## Stable Contracts
 
-- `zenthra.knowledge_document.v1`
-- `zenthra.enterprise_memory.v1`
-- `zenthra.llm_governance.v1`
-- `zenthra.llm_decision_trace.v1`
+- `vaelqorix.knowledge_document.v1`
+- `vaelqorix.enterprise_memory.v1`
+- `vaelqorix.llm_governance.v1`
+- `vaelqorix.llm_decision_trace.v1`
 - `redqueen.llm_decision.v1`
-- `zenthra.ai_evaluation.v1`
-- `zenthra.ares_ai_evidence_bundle.v1`
-- `zenthra.enterprise_ai_readiness.v1`
-- `zenthra.enterprise_ai_contract_registry.v1`
+- `vaelqorix.ai_evaluation.v1`
+- `vaelqorix.ares_ai_evidence_bundle.v1`
+- `vaelqorix.enterprise_ai_readiness.v1`
+- `vaelqorix.enterprise_ai_contract_registry.v1`
 
 ## Governance Rules
 
@@ -62,7 +62,7 @@ Real or dry-run AI-assisted execution must preserve these rules:
 - RedQueen decides.
 - ARES executes.
 - LLM output is normalized through `redqueen.llm_decision.v1`.
-- LLM output carries `zenthra.llm_governance.v1`.
+- LLM output carries `vaelqorix.llm_governance.v1`.
 - ARES evidence includes `intelligence_trace`.
 - MCP action and tool policy remain part of the execution trace.
 - ARES evidence bundle is the preferred frontend/SOC evidence source.

@@ -1,14 +1,14 @@
-# Phase 3 Enterprise AI Runbook
+﻿# Phase 3 Enterprise AI Runbook
 
 Phase 3 hardens the backend AI layer into an enterprise control plane. The goal is not model novelty; the goal is persistent memory, governed LLM decisions, RedQueen/ARES traceability, evidence bundles, and readiness gates that frontend and SOC workflows can consume safely.
 
 ## Implemented Scope
 
 1. Persistent AI memory through SQLAlchemy-backed knowledge documents.
-2. Versioned knowledge document contract: `zenthra.knowledge_document.v1`.
-3. Enterprise memory status contract: `zenthra.enterprise_memory.v1`.
-4. LLM governance contract: `zenthra.llm_governance.v1`.
-5. LLM decision trace contract: `zenthra.llm_decision_trace.v1`.
+2. Versioned knowledge document contract: `vaelqorix.knowledge_document.v1`.
+3. Enterprise memory status contract: `vaelqorix.enterprise_memory.v1`.
+4. LLM governance contract: `vaelqorix.llm_governance.v1`.
+5. LLM decision trace contract: `vaelqorix.llm_decision_trace.v1`.
 6. RedQueen/ARES contract tests to prevent current execution flow regressions.
 7. Enterprise AI evaluation report over RedQueen/ARES feedback.
 8. Enterprise AI readiness gate for controlled pilot decisions.
@@ -47,13 +47,13 @@ GET /api/v1/secops/intelligence/enterprise/contracts
 
 Current schemas:
 
-- `zenthra.knowledge_document.v1`
-- `zenthra.enterprise_memory.v1`
-- `zenthra.llm_governance.v1`
+- `vaelqorix.knowledge_document.v1`
+- `vaelqorix.enterprise_memory.v1`
+- `vaelqorix.llm_governance.v1`
 - `redqueen.llm_decision.v1`
-- `zenthra.ai_evaluation.v1`
-- `zenthra.ares_ai_evidence_bundle.v1`
-- `zenthra.enterprise_ai_readiness.v1`
+- `vaelqorix.ai_evaluation.v1`
+- `vaelqorix.ares_ai_evidence_bundle.v1`
+- `vaelqorix.enterprise_ai_readiness.v1`
 
 The registry includes producer endpoints, consumer endpoints, required fields, evidence requirements, and frontend entrypoints. Frontend should treat this registry as the stable map for Enterprise AI surfaces.
 
@@ -93,7 +93,7 @@ GET /api/v1/ares/evidence/{verdict_id}
 The bundle contract is:
 
 ```text
-zenthra.ares_ai_evidence_bundle.v1
+vaelqorix.ares_ai_evidence_bundle.v1
 ```
 
 The bundle includes:

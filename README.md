@@ -1,4 +1,4 @@
-# NEXUSOPS AI / ZENTHRA.CORE_SECURITY - powered by NEXUSBIGDATA
+﻿# VAELQORIX AI / VAELQORIX.XDR_COMMAND - powered by VAELQORIX
 
 Plataforma de ciberseguridad/SOC con:
 - Backend `FastAPI` + `SQLAlchemy` + `Alembic`
@@ -8,29 +8,29 @@ Plataforma de ciberseguridad/SOC con:
 
 ## Direccion estrategica
 
-Este repositorio mantiene el backend operativo de `ZENTHRA.CORE_SECURITY` y empieza su evolucion hacia `NexusOps AI`, el sistema operativo seguro para agentes empresariales bajo el paraguas `NEXUSBIGDATA`.
+Este repositorio mantiene el backend operativo de `VAELQORIX.XDR_COMMAND` y empieza su evolucion hacia `VAELQORIX AI`, el sistema operativo seguro para agentes empresariales bajo el paraguas `VAELQORIX`.
 
 Los nuevos dominios estrategicos quedan definidos como:
 
 - `CortexFlow`: runtime de agentes, razonamiento, planificacion y memoria.
-- `NexusFlow`: workflows, triggers, eventos, aprobaciones y orquestacion.
+- `VaelqorixFlow`: workflows, triggers, eventos, aprobaciones y orquestacion.
 - `BlackNode`: seguridad, RBAC, auditoria, guardrails y motor de riesgo.
-- `NexusVault`: conocimiento, memoria, RAG, embeddings, retrieval y citas.
-- `NexusAPI`: integraciones, registry de tools, conectores y webhooks.
+- `VaelqorixVault`: conocimiento, memoria, RAG, embeddings, retrieval y citas.
+- `VaelqorixAPI`: integraciones, registry de tools, conectores y webhooks.
 
 La migracion sera incremental: el runtime actual sigue siendo `app.main:app`, mientras `platform/`, `domains/`, `security/`, `observability/` y `docs/architecture/` fijan la estructura enterprise final.
 
 Documentos base:
 
-- [NexusOps AI Enterprise Blueprint](docs/NEXUSOPS_AI_ENTERPRISE_BLUEPRINT.md)
-- [Platform Architecture](docs/architecture/NEXUSOPS_PLATFORM_ARCHITECTURE.md)
-- [Domain Map](docs/architecture/NEXUSOPS_DOMAIN_MAP.json)
+- [VAELQORIX AI Enterprise Blueprint](docs/VAELQORIX_AI_ENTERPRISE_BLUEPRINT.md)
+- [Platform Architecture](docs/architecture/VAELQORIX_PLATFORM_ARCHITECTURE.md)
+- [Domain Map](docs/architecture/VAELQORIX_DOMAIN_MAP.json)
 - [BlackNode Security Architecture](docs/security/BLACKNODE_SECURITY_ARCHITECTURE.md)
 
 ## Estructura del proyecto
 
 ```text
-NEXUS/
+VAELQORIX/
 |- app/                        # Backend FastAPI
 |  |- core/                    # Configuracion, seguridad JWT, observabilidad
 |  |- db/                      # Engine, sesiones, dependencias de DB
@@ -41,7 +41,7 @@ NEXUS/
 |  `- main.py                  # Punto de entrada FastAPI
 |- alembic/                    # Migraciones de base de datos
 |- tests/                      # Suite de tests
-|- ZENTHRA.CORE_SECURITY/      # Frontend React/Vite/ tailwind
+|- VAELQORIX.XDR_COMMAND/      # Frontend React/Vite/ tailwind
 |- docker-compose.yml          # Stack de observabilidad + PostgreSQL
 |- requirements.txt            # Dependencias Python del backend
 `- .env.example                # Variables de entorno base
@@ -55,7 +55,7 @@ NEXUS/
 - **Correlation Engine**: servicio programado + endpoint manual para correlacionar alertas de Prometheus y abrir/cerrar incidentes.
 - **Observabilidad interna**:
   - `/metrics` para Prometheus
-  - `/monitoring/*` protegido con token interno (`ZENTHRA_MONITOR_TOKEN`)
+  - `/monitoring/*` protegido con token interno (`VAELQORIX_MONITOR_TOKEN`)
   - webhook `/hooks/alertmanager` con whitelist IP
 
 ## Requisitos
@@ -85,7 +85,7 @@ Variables clave:
 - `SECRET_KEY`
 - `ACCESS_TOKEN_EXPIRE_MINUTES`
 - `SQLALCHEMY_DATABASE_URI` **o** bloque `POSTGRES_*`
-- `ZENTHRA_MONITOR_TOKEN`
+- `VAELQORIX_MONITOR_TOKEN`
 - `PROMETHEUS_BASE`
 - `ALERTMANAGER_BASE`
 
@@ -103,16 +103,16 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
 
 ## Configuracion frontend
 
-Desde `ZENTHRA.CORE_SECURITY/`:
+Desde `VAELQORIX.XDR_COMMAND/`:
 
 ```powershell
 corepack enable
 corepack pnpm install
 ```
 
-Variables frontend (`ZENTHRA.CORE_SECURITY/.env`):
+Variables frontend (`VAELQORIX.XDR_COMMAND/.env`):
 - `VITE_API_URL=http://127.0.0.1:8010` para desarrollo local cuando Docker ya ocupa `8000`
-- `VITE_ZENTHRA_MONITOR_TOKEN=` en produccion; solo usarlo en desarrollo local controlado
+- `VITE_VAELQORIX_MONITOR_TOKEN=` en produccion; solo usarlo en desarrollo local controlado
 - `VITE_USE_MOCKS=false`
 
 ## Observabilidad (Docker)
@@ -148,7 +148,7 @@ El backend expone:
 - `GET /monitoring/host/summary`
 - `GET /monitoring/health/full`
 
-Las rutas `/monitoring/*` aceptan `ZENTHRA_MONITOR_TOKEN` para automatizacion interna o JWT de usuario admin para la UI. `/metrics` sigue aceptando solo `ZENTHRA_MONITOR_TOKEN`.
+Las rutas `/monitoring/*` aceptan `VAELQORIX_MONITOR_TOKEN` para automatizacion interna o JWT de usuario admin para la UI. `/metrics` sigue aceptando solo `VAELQORIX_MONITOR_TOKEN`.
 
 ## Endpoints principales
 
@@ -218,7 +218,7 @@ Definir licencia del proyecto (actualmente no se detecta archivo `LICENSE`).
 
 ## ARESX Integration (RedQueen/ARES Blueprint v2.0)
 
-Este repositorio ahora incluye una fusion de arquitectura **ARESX Fase 1** sobre la base existente de ZENTHRA:
+Este repositorio ahora incluye una fusion de arquitectura **ARESX Fase 1** sobre la base existente de VAELQORIX:
 
 - `app/core`: `logging.py`, `errors.py`, `signing.py`, `dependencies.py`
 - `app/db`: `base.py`, `vector.py` (stub), `audit_store.py` (stub), `migrations/` (stub)
