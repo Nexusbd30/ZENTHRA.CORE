@@ -1,10 +1,10 @@
-﻿// =============================================================
-// ðŸ”” SystemAlerts â€” VAELQORIX XDR Command (v3.1 Debug+PromLink)
+// =============================================================
+// 🔔 SystemAlerts — VAELQORIX XDR Command (v3.1 Debug+PromLink)
 // =============================================================
 // - Consume /monitoring/alerts/realtime (Alertmanager /api/v2/alerts)
 // - Ordena por severidad
 // - Reconstruye generatorURL con VITE_PROMETHEUS_PUBLIC_URL
-// - Incluye DEBUG para ver en consola quÃ© alertas llegan realmente
+// - Incluye DEBUG para ver en consola qué alertas llegan realmente
 // =============================================================
 
 import { useEffect, useState, useMemo } from "react";
@@ -16,7 +16,7 @@ const PROM_PUBLIC_URL = (import.meta.env.VITE_PROMETHEUS_PUBLIC_URL || "").repla
   ""
 );
 
-// ðŸ”¢ Orden de severidad
+// 🔢 Orden de severidad
 const SEVERITY_ORDER = {
   critical: 0,
   high: 1,
@@ -27,7 +27,7 @@ const SEVERITY_ORDER = {
   none: 6,
 };
 
-// ðŸŽ¨ Pills de severidad
+// 🎨 Pills de severidad
 function pill(sev) {
   const base =
     "px-2 py-0.5 rounded-full text-xs font-semibold border capitalize";
@@ -43,7 +43,7 @@ function pill(sev) {
   return map[sev] || map.none;
 }
 
-// ðŸ”— Construir URL de Prometheus estable
+// 🔗 Construir URL de Prometheus estable
 function buildPrometheusURL(rawGeneratorURL, alertname) {
   if (!PROM_PUBLIC_URL) return null;
 
@@ -53,7 +53,7 @@ function buildPrometheusURL(rawGeneratorURL, alertname) {
       const u = new URL(rawGeneratorURL, PROM_PUBLIC_URL);
       return u.toString();
     } catch (err) {
-      console.warn("[SystemAlerts] generatorURL invÃ¡lida:", rawGeneratorURL, err);
+      console.warn("[SystemAlerts] generatorURL inválida:", rawGeneratorURL, err);
     }
   }
 
@@ -75,14 +75,14 @@ function buildPrometheusURL(rawGeneratorURL, alertname) {
 
 export default function SystemAlerts({
   autoRefreshMs = 10000,
-  // ðŸ‘‡ Aumentamos el lÃ­mite para no perder HighLatencyP95
+  // 👇 Aumentamos el límite para no perder HighLatencyP95
   limit = 50,
 }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ðŸ” Fetch desde backend
+  // 🔁 Fetch desde backend
   const fetchAlerts = async () => {
     try {
       setError(null);
@@ -93,14 +93,14 @@ export default function SystemAlerts({
         setAlerts([]);
       }
     } catch (e) {
-      console.error("âŒ Error obteniendo alertas:", e);
+      console.error("❌ Error obteniendo alertas:", e);
       setError(e?.message || "Error al obtener alertas");
     } finally {
       setLoading(false);
     }
   };
 
-  // â±ï¸ Refresco
+  // ⏱️ Refresco
   useEffect(() => {
     fetchAlerts();
     if (autoRefreshMs > 0) {
@@ -109,7 +109,7 @@ export default function SystemAlerts({
     }
   }, [autoRefreshMs]);
 
-  // ðŸ§© NormalizaciÃ³n + generatorURL
+  // 🧩 Normalización + generatorURL
   const normalizedAlerts = useMemo(() => {
     const normalize = (a) => {
       const alertname = a?.labels?.alertname || "Alert";
@@ -151,11 +151,11 @@ export default function SystemAlerts({
       .slice(0, limit);
   }, [alerts, limit]);
 
-  // ðŸ§± Render
+  // 🧱 Render
   if (loading)
     return (
       <div className="text-sm text-slate-400 animate-pulse">
-        Cargando alertasâ€¦
+        Cargando alertas…
       </div>
     );
 
@@ -165,7 +165,7 @@ export default function SystemAlerts({
       <div className="text-sm">
         {isOffline ? (
           <span className="text-slate-400">
-            Backend offline â€” no se pueden obtener alertas ahora mismo.
+            Backend offline — no se pueden obtener alertas ahora mismo.
           </span>
         ) : (
           <span className="text-red-400">
@@ -213,7 +213,7 @@ export default function SystemAlerts({
             </div>
           </div>
 
-          {/* Resumen y descripciÃ³n */}
+          {/* Resumen y descripción */}
           {a.summary && (
             <div className="text-sm mt-1 text-slate-200">{a.summary}</div>
           )}

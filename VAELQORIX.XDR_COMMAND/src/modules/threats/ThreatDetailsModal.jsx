@@ -1,11 +1,11 @@
-﻿// =============================================================
-// ðŸ§  ThreatDetailsModal â€” VAELQORIX XDR Command (v4.1 Elite+SOC)
 // =============================================================
-// - Muestra detalle completo de la amenaza (tabla â†’ modal).
-// - Si el objeto recibido estÃ¡ incompleto, llama a /threats/:id.
-// - Offline-aware: si no hay backend, usa los datos que ya venÃ­an.
-// - BotÃ³n para copiar el JSON completo (modo SOC).
-// - Chips avanzados: nivel, categorÃ­a, score y origen (correlaciÃ³n/manual).
+// 🧠 ThreatDetailsModal — VAELQORIX XDR Command (v4.1 Elite+SOC)
+// =============================================================
+// - Muestra detalle completo de la amenaza (tabla → modal).
+// - Si el objeto recibido está incompleto, llama a /threats/:id.
+// - Offline-aware: si no hay backend, usa los datos que ya venían.
+// - Botón para copiar el JSON completo (modo SOC).
+// - Chips avanzados: nivel, categoría, score y origen (correlación/manual).
 // =============================================================
 
 import { useEffect, useRef, useState } from "react";
@@ -72,11 +72,11 @@ export default function ThreatDetailsModal({ threat, onClose }) {
 
         let msg =
           err?.message ||
-          "âš ï¸ No se pudieron ampliar los detalles de la amenaza.";
+          "⚠️ No se pudieron ampliar los detalles de la amenaza.";
 
         if (msg.includes(OFFLINE_MSG)) {
           msg =
-            "Backend offline â€” se muestran solo los datos ya cargados en la tabla.";
+            "Backend offline — se muestran solo los datos ya cargados en la tabla.";
         }
 
         notify("warning", msg);
@@ -184,7 +184,7 @@ export default function ThreatDetailsModal({ threat, onClose }) {
       ? ts.toLocaleString?.() ?? String(ts)
       : typeof tsSource === "string"
       ? tsSource
-      : "â€”";
+      : "—";
 
   const updatedSource = d.updated_at || d.updatedAt || null;
   const updated =
@@ -199,15 +199,15 @@ export default function ThreatDetailsModal({ threat, onClose }) {
       ? updated.toLocaleString?.() ?? String(updated)
       : updatedSource
       ? String(updatedSource)
-      : "â€”";
+      : "—";
 
   const copyJson = async () => {
     try {
       const payload = JSON.stringify(d, null, 2);
       await navigator.clipboard.writeText(payload);
-      notify("success", "ðŸ“‹ Detalle copiado al portapapeles");
+      notify("success", "📋 Detalle copiado al portapapeles");
     } catch {
-      notify("error", "âŒ No se pudo copiar el detalle");
+      notify("error", "❌ No se pudo copiar el detalle");
     }
   };
 
@@ -256,10 +256,10 @@ export default function ThreatDetailsModal({ threat, onClose }) {
                 </h2>
               </div>
               <p className="text-sm text-gray-300 font-semibold">
-                {d.title || "Sin tÃ­tulo"}
+                {d.title || "Sin título"}
               </p>
               <p className="text-[11px] text-gray-500 font-mono break-all mt-1">
-                ID: {d.id ?? d._id ?? "â€”"}
+                ID: {d.id ?? d._id ?? "—"}
               </p>
             </header>
 
@@ -283,7 +283,7 @@ export default function ThreatDetailsModal({ threat, onClose }) {
                 }
               >
                 <catCfg.icon size={13} className="mr-1" />
-                CategorÃ­a: {catCfg.label}
+                Categoría: {catCfg.label}
               </span>
 
               <span
@@ -304,7 +304,7 @@ export default function ThreatDetailsModal({ threat, onClose }) {
               )}
             </div>
 
-            {/* Info tÃ©cnica */}
+            {/* Info técnica */}
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between border-b border-gray-700 pb-2">
                 <span className="text-gray-400 flex items-center gap-2">
@@ -342,13 +342,13 @@ export default function ThreatDetailsModal({ threat, onClose }) {
                   <Clock size={16} /> Detectado:
                 </span>
                 <span className="font-semibold text-gray-100">
-                  {timestamp || "â€”"}
+                  {timestamp || "—"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between border-b border-gray-700 pb-2">
                 <span className="text-gray-400 flex items-center gap-2">
-                  <Clock size={16} /> Ãšltima actualizaciÃ³n:
+                  <Clock size={16} /> Última actualización:
                 </span>
                 <span className="font-semibold text-gray-100">
                   {updatedStr}
@@ -385,17 +385,17 @@ export default function ThreatDetailsModal({ threat, onClose }) {
               )}
 
               <div className="pt-2">
-                <p className="text-gray-400 mb-1">DescripciÃ³n:</p>
+                <p className="text-gray-400 mb-1">Descripción:</p>
                 <p className="text-gray-200 leading-relaxed whitespace-pre-line text-sm">
                   {d.description ||
-                    "No se ha registrado una descripciÃ³n detallada para este evento."}
+                    "No se ha registrado una descripción detallada para este evento."}
                 </p>
               </div>
 
               {/* Acciones SOC */}
               <div className="pt-3 flex items-center justify-between gap-3">
                 {loading && (
-                  <p className="text-xs text-gray-400">Ampliando detallesâ€¦</p>
+                  <p className="text-xs text-gray-400">Ampliando detalles…</p>
                 )}
 
                 <div className="ml-auto flex gap-2">

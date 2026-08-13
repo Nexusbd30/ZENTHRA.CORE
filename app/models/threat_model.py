@@ -1,15 +1,15 @@
-﻿# =============================================================
-# ðŸš¨ ThreatModel â€” VAELQORIX.XDR_COMMAND (v3.3 SIEM Stable)
 # =============================================================
-# âœ… Incluye:
+# 🚨 ThreatModel — VAELQORIX.XDR_COMMAND (v3.3 SIEM Stable)
+# =============================================================
+# ✅ Incluye:
 #   - fingerprint: dedupe fuerte (alertname|instance|job|service)
 #   - siem_metadata: evidencia SIEM (labels/annotations/activeAt/value/state)
 #
-# ðŸŽ¯ FIX BACKEND DOWN (Postgres):
-#   - Tu DB (Alembic) creÃ³ threats.id como String(36)
-#   - AquÃ­ estaba como UUID(as_uuid=True) y Postgres fallaba con:
+# 🎯 FIX BACKEND DOWN (Postgres):
+#   - Tu DB (Alembic) creó threats.id como String(36)
+#   - Aquí estaba como UUID(as_uuid=True) y Postgres fallaba con:
 #       operator does not exist: character varying = uuid
-#   - SoluciÃ³n: unificar ORM con DB usando String(36) + uuid4 string
+#   - Solución: unificar ORM con DB usando String(36) + uuid4 string
 # =============================================================
 
 from __future__ import annotations
@@ -20,13 +20,13 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import JSON  # âœ… JSON portable (SQLite/Postgres)
+from sqlalchemy.types import JSON  # ✅ JSON portable (SQLite/Postgres)
 
 from app.models.base import Base
 
 
 # =============================================================
-# âš™ï¸ Enumeraciones
+# ⚙️ Enumeraciones
 # =============================================================
 class ThreatLevel(enum.Enum):
     critical = "critical"
@@ -45,17 +45,17 @@ class ThreatCategory(enum.Enum):
 
 
 # =============================================================
-# ðŸ§© MODELO PRINCIPAL
+# 🧩 MODELO PRINCIPAL
 # =============================================================
 class ThreatModel(Base):
     __tablename__ = "threats"
 
     # ---------------------------------------------------------
-    # ðŸ†” Identificador (UUID en formato STRING)
+    # 🆔 Identificador (UUID en formato STRING)
     # ---------------------------------------------------------
-    # âœ… IMPORTANTE:
-    # - Alembic creÃ³ esta columna como String(36)
-    # - Por eso aquÃ­ NO usamos UUID nativo de Postgres
+    # ✅ IMPORTANTE:
+    # - Alembic creó esta columna como String(36)
+    # - Por eso aquí NO usamos UUID nativo de Postgres
     # - Generamos UUID4 como string (igual que User.id)
     id = Column(
         String(36),
@@ -65,20 +65,20 @@ class ThreatModel(Base):
     )
 
     # ---------------------------------------------------------
-    # ðŸ“‹ InformaciÃ³n base
+    # 📋 Información base
     # ---------------------------------------------------------
     title = Column(String(255), nullable=False)
-    source = Column(String(255), nullable=False)  # prometheus/correlation, manual, firewallâ€¦
+    source = Column(String(255), nullable=False)  # prometheus/correlation, manual, firewall…
     description = Column(Text, nullable=True)
 
     # ---------------------------------------------------------
-    # ðŸ§¬ SIEM â€” DEDUPE + EVIDENCIA
+    # 🧬 SIEM — DEDUPE + EVIDENCIA
     # ---------------------------------------------------------
     fingerprint = Column(String(512), nullable=True, index=True)
     siem_metadata = Column(JSON, nullable=True)
 
     # ---------------------------------------------------------
-    # ðŸ§­ ClasificaciÃ³n
+    # 🧭 Clasificación
     # ---------------------------------------------------------
     category = Column(Enum(ThreatCategory), nullable=True)  # type: ignore[var-annotated]
     score = Column(Integer, nullable=True)
@@ -90,26 +90,26 @@ class ThreatModel(Base):
     database_host = Column(String(255), nullable=True)
 
     # ---------------------------------------------------------
-    # âš ï¸ Severidad
+    # ⚠️ Severidad
     # ---------------------------------------------------------
     level = Column(
         Enum(ThreatLevel), nullable=False, default=ThreatLevel.medium
     )  # type: ignore[var-annotated]
 
     # ---------------------------------------------------------
-    # ðŸ•’ Timestamps
+    # 🕒 Timestamps
     # ---------------------------------------------------------
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # ---------------------------------------------------------
-    # ðŸ‘¤ Usuario creador
+    # 👤 Usuario creador
     # ---------------------------------------------------------
-    # âœ… TambiÃ©n coincide con Alembic: String(36) -> FK users.id
+    # ✅ También coincide con Alembic: String(36) -> FK users.id
     created_by = Column(String(36), ForeignKey("users.id"), nullable=True)
 
     # ---------------------------------------------------------
-    # ðŸ” Helpers
+    # 🔁 Helpers
     # ---------------------------------------------------------
     def __repr__(self) -> str:
         cat = self.category.value if self.category else None
@@ -117,7 +117,7 @@ class ThreatModel(Base):
         return f"<Threat(id={self.id}, title={self.title}, level={lvl}, category={cat})>"
 
     def to_dict(self) -> dict:
-        """SerializaciÃ³n limpia para API / frontend / exports."""
+        """Serialización limpia para API / frontend / exports."""
         return {
             "id": str(self.id),
             "title": self.title,
@@ -139,7 +139,7 @@ class ThreatModel(Base):
 
 
 # =============================================================
-# ðŸ”— RelaciÃ³n con User (import diferido)
+# 🔗 Relación con User (import diferido)
 # =============================================================
 
 ThreatModel.user = relationship("User", back_populates="threats", lazy="joined")

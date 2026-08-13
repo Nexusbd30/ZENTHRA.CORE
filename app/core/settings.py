@@ -1,10 +1,10 @@
-﻿# =============================================================
-# ðŸ’  VAELQORIX â€” SETTINGS dinÃ¡micos (Pydantic v2) Â· v3.9 Postgres-Ready SAFE
 # =============================================================
-# - Lee .env en la raÃ­z del repo backend
+# 💠 VAELQORIX — SETTINGS dinámicos (Pydantic v2) · v3.9 Postgres-Ready SAFE
+# =============================================================
+# - Lee .env en la raíz del repo backend
 # - Ignora variables extra (extra="ignore")
 #
-# âœ… Mejora clave:
+# ✅ Mejora clave:
 #   - Si construye Postgres URI con POSTGRES_*, ESCAPA user/password con quote_plus
 #     (evita UnicodeDecodeError y problemas con caracteres especiales)
 #
@@ -24,7 +24,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # ---------------------------------------------------------
-    # Identidad / ejecuciÃ³n
+    # Identidad / ejecución
     # ---------------------------------------------------------
     PROJECT_NAME: str = "VAELQORIX.XDR_COMMAND"
     ENV: str = "development"
@@ -50,10 +50,10 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     # Base de datos
     # ---------------------------------------------------------
-    # OpciÃ³n A (simple): define SQLALCHEMY_DATABASE_URI en .env
+    # Opción A (simple): define SQLALCHEMY_DATABASE_URI en .env
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///./app.db"
 
-    # OpciÃ³n B (pro): define POSTGRES_* y se construye el URI
+    # Opción B (pro): define POSTGRES_* y se construye el URI
     POSTGRES_HOST: str | None = None
     POSTGRES_PORT: int = 5432
     VAELQORIX_POSTGRES_PORT: int | None = None
@@ -87,12 +87,14 @@ class Settings(BaseSettings):
     VAELQORIX_MONITOR_TOKEN: str | None = None
 
     # ---------------------------------------------------------
-    # ðŸ§  Correlation Engine â€” Scheduler (PROD)
+    # 🧠 Correlation Engine — Scheduler (PROD)
     # ---------------------------------------------------------
     VAELQORIX_CORRELATION_ENABLED: bool = True
+    ZENTHRA_CORRELATION_ENABLED: bool | None = None
     VAELQORIX_CORRELATION_INTERVAL_SEC: int = 60
     VAELQORIX_CORRELATION_STARTUP_DELAY_SEC: int = 5
     VAELQORIX_ENABLE_LAB_ALERTS: bool = False
+    ZENTHRA_ENABLE_LAB_ALERTS: bool | str | None = None
 
     # ---------------------------------------------------------
     # AI / LLM control plane (RedQueen)
@@ -214,9 +216,9 @@ settings.ALERTMANAGER_BASE = (
 )
 
 # -------------------------------------------------------------
-# ðŸ§  Post-procesado: construir URI Postgres si POSTGRES_* existe
+# 🧠 Post-procesado: construir URI Postgres si POSTGRES_* existe
 # -------------------------------------------------------------
-# âœ… CLAVE: escapamos user/password para evitar UnicodeDecodeError y caracteres especiales
+# ✅ CLAVE: escapamos user/password para evitar UnicodeDecodeError y caracteres especiales
 postgres_config_complete = all(
     [
         settings.POSTGRES_HOST,

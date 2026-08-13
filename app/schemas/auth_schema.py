@@ -1,13 +1,13 @@
-﻿# =============================================================
-# ðŸ§© AuthSchema â€” VAELQORIX.XDR_COMMAND (v2.1 JSON MODE)
 # =============================================================
-# Esquemas Pydantic para la autenticaciÃ³n de usuarios.
-# ImplementaciÃ³n moderna compatible con JWT (Bearer Tokens).
+# 🧩 AuthSchema — VAELQORIX.XDR_COMMAND (v2.1 JSON MODE)
+# =============================================================
+# Esquemas Pydantic para la autenticación de usuarios.
+# Implementación moderna compatible con JWT (Bearer Tokens).
 #
 # Incluye:
-#   - LoginRequest â†’ credenciales de entrada
-#   - TokenResponse â†’ estructura del token devuelto
-#   - TokenData â†’ datos del token decodificado
+#   - LoginRequest → credenciales de entrada
+#   - TokenResponse → estructura del token devuelto
+#   - TokenData → datos del token decodificado
 # =============================================================
 
 from typing import Optional
@@ -16,10 +16,10 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 # =============================================================
-# ðŸ§  LoginRequest
+# 🧠 LoginRequest
 # -------------------------------------------------------------
 # Se usa en el endpoint /auth/login.
-# Recibe el email (como username) y la contraseÃ±a en formato JSON.
+# Recibe el email (como username) y la contraseña en formato JSON.
 # =============================================================
 class LoginRequest(BaseModel):
     username: EmailStr = Field(..., examples=["analyst@vaelqorix.com"])
@@ -27,9 +27,9 @@ class LoginRequest(BaseModel):
 
 
 # =============================================================
-# ðŸ” TokenResponse
+# 🔐 TokenResponse
 # -------------------------------------------------------------
-# Devuelto por el endpoint /auth/login tras autenticaciÃ³n correcta.
+# Devuelto por el endpoint /auth/login tras autenticación correcta.
 # Contiene el JWT generado por el backend.
 # =============================================================
 class TokenResponse(BaseModel):
@@ -38,9 +38,9 @@ class TokenResponse(BaseModel):
 
 
 # =============================================================
-# ðŸ§¬ TokenData
+# 🧬 TokenData
 # -------------------------------------------------------------
-# Representa la informaciÃ³n contenida en el JWT decodificado.
+# Representa la información contenida en el JWT decodificado.
 # Usado internamente por el servicio de seguridad (core/security).
 # =============================================================
 class TokenData(BaseModel):

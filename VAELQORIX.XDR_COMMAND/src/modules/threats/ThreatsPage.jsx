@@ -1,9 +1,9 @@
-﻿// =============================================================
-// ThreatsPage â€” Mission-Critical skin (incidents view)
+// =============================================================
+// ThreatsPage — Mission-Critical skin (incidents view)
 // =============================================================
 // Mantiene flujo real:
 //  - listThreats() para tabla (datos vivos)
-//  - runCorrelationOnce() para correlaciÃ³n backend
+//  - runCorrelationOnce() para correlación backend
 //  - ThreatDetailsModal / ThreatFormModal para ver y crear
 // =============================================================
 
@@ -56,7 +56,7 @@ export default function ThreatsPage() {
       const msg =
         err?.message || "Error al cargar las amenazas desde el servidor.";
       if (msg.includes(OFFLINE_MSG)) {
-        notify("warning", "Backend offline â€” no se pueden cargar las amenazas.");
+        notify("warning", "Backend offline — no se pueden cargar las amenazas.");
       } else {
         notify("error", msg);
       }
@@ -85,12 +85,12 @@ export default function ThreatsPage() {
           : 0;
       setCorrelationMessage(
         created > 0
-          ? `CorrelaciÃ³n ejecutada: ${created} nueva(s) amenaza(s).`
-          : "CorrelaciÃ³n ejecutada: sin nuevas amenazas."
+          ? `Correlación ejecutada: ${created} nueva(s) amenaza(s).`
+          : "Correlación ejecutada: sin nuevas amenazas."
       );
       await loadThreats();
     } catch (err) {
-      const msg = err?.message || "Error al ejecutar correlaciÃ³n.";
+      const msg = err?.message || "Error al ejecutar correlación.";
       notify("error", msg);
       setCorrelationMessage(msg);
     } finally {
@@ -122,7 +122,7 @@ export default function ThreatsPage() {
   };
 
   const formatDate = (ts) => {
-    if (!ts) return "â€”";
+    if (!ts) return "—";
     const d = new Date(ts);
     return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
   };
@@ -146,7 +146,7 @@ export default function ThreatsPage() {
           <StatCard label="Active" value={stats.total} color="primary" />
           <StatCard label="Critical" value={stats.critical} color="error" />
           <StatCard label="Medium" value={stats.medium} color="on-surface" />
-          <StatCard label="Resolved" value="â€”" color="secondary" />
+          <StatCard label="Resolved" value="—" color="secondary" />
         </div>
       </div>
 
@@ -219,7 +219,7 @@ export default function ThreatsPage() {
                       {t.title || t.description || "Threat"}
                     </span>
                     <p className="text-[10px] text-outline">
-                      Target: {t.target_service || t.database_host || "â€”"}
+                      Target: {t.target_service || t.database_host || "—"}
                     </p>
                   </td>
                   <td className="px-6 py-4">{severityBadge(t.level || t.severity)}</td>
@@ -230,7 +230,7 @@ export default function ThreatsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs text-on-surface-variant">
-                      {t.created_by || "â€”"}
+                      {t.created_by || "—"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

@@ -1,11 +1,11 @@
-﻿// =============================================================
-// ðŸ§© ThreatFormModal â€” VAELQORIX XDR Command (v4.1 Elite Secure)
+// =============================================================
+// 🧩 ThreatFormModal — VAELQORIX XDR Command (v4.1 Elite Secure)
 // =============================================================
 // Modal para registrar amenazas manuales:
 //
 //   - Usa createThreat() de vaelqorixAPI (JWT mediante interceptores).
-//   - Campos mÃ­nimos: tÃ­tulo + fuente.
-//   - Campos opcionales: nivel, categorÃ­a, score, descripciÃ³n.
+//   - Campos mínimos: título + fuente.
+//   - Campos opcionales: nivel, categoría, score, descripción.
 //   - Manejo de errores de permisos (403) y offline-aware.
 // =============================================================
 
@@ -65,7 +65,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) {
-      setError("Completa al menos tÃ­tulo y fuente.");
+      setError("Completa al menos título y fuente.");
       return;
     }
 
@@ -87,7 +87,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
 
       await createThreat(payload);
 
-      notify("success", "âœ… Amenaza registrada correctamente");
+      notify("success", "✅ Amenaza registrada correctamente");
       onSuccess?.();
       onClose?.();
     } catch (err) {
@@ -95,7 +95,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
 
       if (msg.includes(OFFLINE_MSG)) {
         msg =
-          "Backend offline â€” no se pueden registrar amenazas ahora mismo.";
+          "Backend offline — no se pueden registrar amenazas ahora mismo.";
       } else if (
         msg.toLowerCase().includes("rol administrador") ||
         msg.includes("403")
@@ -105,7 +105,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
       }
 
       setError(msg);
-      notify("error", `âŒ ${msg}`);
+      notify("error", `❌ ${msg}`);
     } finally {
       setSubmitting(false);
     }
@@ -149,14 +149,14 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
               </h2>
               <p className="text-gray-400 text-sm">
                 Registra una amenaza detectada manualmente o durante una
-                revisiÃ³n forense.
+                revisión forense.
               </p>
             </header>
 
             {/* Error */}
             {error && (
               <p className="text-red-300 bg-red-500/10 border border-red-500/30 p-2 rounded-lg text-xs mb-4">
-                âš ï¸ {error}
+                ⚠️ {error}
               </p>
             )}
 
@@ -167,7 +167,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
             >
               <input
                 type="text"
-                placeholder="TÃ­tulo de la amenaza"
+                placeholder="Título de la amenaza"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
@@ -178,7 +178,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
 
               <input
                 type="text"
-                placeholder="Fuente u origen (firewall, revisiÃ³n manual, etc.)"
+                placeholder="Fuente u origen (firewall, revisión manual, etc.)"
                 value={formData.source}
                 onChange={(e) =>
                   setFormData({ ...formData, source: e.target.value })
@@ -195,7 +195,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
                   }
                   className="p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:ring-2 focus:ring-red-500 outline-none"
                 >
-                  <option value="critical">CrÃ­tico</option>
+                  <option value="critical">Crítico</option>
                   <option value="high">Alto</option>
                   <option value="medium">Medio</option>
                   <option value="low">Bajo</option>
@@ -208,7 +208,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
                   }
                   className="p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:ring-2 focus:ring-red-500 outline-none"
                 >
-                  <option value="">CategorÃ­a (opcional)</option>
+                  <option value="">Categoría (opcional)</option>
                   <option value="availability">Availability</option>
                   <option value="network">Network</option>
                   <option value="performance">Performance</option>
@@ -223,7 +223,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
                 min={0}
                 max={100}
                 step={1}
-                placeholder="Score 0â€“100 (opcional)"
+                placeholder="Score 0–100 (opcional)"
                 value={formData.score}
                 onChange={(e) =>
                   setFormData({ ...formData, score: e.target.value })
@@ -232,7 +232,7 @@ export default function ThreatFormModal({ isOpen, onClose, onSuccess }) {
               />
 
               <textarea
-                placeholder="DescripciÃ³n detallada del evento, contexto, evidenciasâ€¦"
+                placeholder="Descripción detallada del evento, contexto, evidencias…"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({

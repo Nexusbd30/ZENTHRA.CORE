@@ -1,5 +1,5 @@
 ﻿# =============================================================
-# 🧠 VAELQORIX.XDR_COMMAND — Security Module (v2.8 RBAC Hardened)
+# [AI] VAELQORIX.XDR_COMMAND - Security Module (v2.8 RBAC Hardened)
 # =============================================================
 # Módulo central de seguridad JWT en modo JSON.
 #
@@ -17,8 +17,9 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import Depends, Header, HTTPException, status
-from jose import JWTError, jwt
+from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
@@ -29,7 +30,7 @@ from app.db.session import get_db
 from app.services.user_service import UserService
 
 # =============================================================
-# ⚙️ CONFIGURACIÓN DEL TOKEN
+# [CFG] CONFIGURACIÓN DEL TOKEN
 # =============================================================
 
 ALGORITHM = "HS256"
@@ -43,7 +44,7 @@ def _configured_secret(name: str, default: object) -> str:
 
 
 # =============================================================
-# 🔐 CONTEXTO DE HASH DE CONTRASEÑAS
+# [SEC] CONTEXTO DE HASH DE CONTRASEÑAS
 # =============================================================
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -60,7 +61,7 @@ def get_password_hash(password: str) -> str:
 
 
 # =============================================================
-# 🔐 CREACIÓN DEL TOKEN JWT
+# [SEC] CREACIÓN DEL TOKEN JWT
 # =============================================================
 
 def create_access_token(
@@ -86,7 +87,7 @@ def create_access_token(
 
 
 # =============================================================
-# 🧩 EXTRACCIÓN DEL TOKEN DESDE EL HEADER
+#  EXTRACCIÓN DEL TOKEN DESDE EL HEADER
 # =============================================================
 
 def get_bearer_token(authorization: str = Header(None)) -> str:
@@ -104,7 +105,7 @@ def get_bearer_token(authorization: str = Header(None)) -> str:
 
 
 # =============================================================
-# 👤 OBTENER USUARIO AUTENTICADO (BÁSICO)
+#  OBTENER USUARIO AUTENTICADO (BÁSICO)
 # =============================================================
 
 def get_current_user(
@@ -125,7 +126,7 @@ def get_current_user(
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError as err:
+    except InvalidTokenError as err:
         raise credentials_exception from err
 
     user = UserService.get_user_by_email(db, email=email)
@@ -136,7 +137,7 @@ def get_current_user(
 
 
 # =============================================================
-# ✅ USUARIO ACTIVO OBLIGATORIO
+# [OK] USUARIO ACTIVO OBLIGATORIO
 # =============================================================
 
 def get_current_active_user(
@@ -152,7 +153,7 @@ def get_current_active_user(
 
 
 # =============================================================
-# 👑 USUARIO ADMIN (COMPATIBILIDAD)
+#  USUARIO ADMIN (COMPATIBILIDAD)
 # =============================================================
 
 def get_current_admin(
@@ -169,7 +170,7 @@ def get_current_admin(
 
 
 # =============================================================
-# 🔐 RBAC FLEXIBLE (NUEVO — PRODUCCIÓN)
+# [SEC] RBAC FLEXIBLE (NUEVO - PRODUCCIÓN)
 # =============================================================
 
 def require_roles(*allowed_roles: str):
@@ -222,8 +223,8 @@ def require_admin_or_monitor_token(
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if not email:
-            raise JWTError("missing subject")
-    except JWTError as err:
+            raise InvalidTokenError("missing subject")
+    except InvalidTokenError as err:
         if monitor_token:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

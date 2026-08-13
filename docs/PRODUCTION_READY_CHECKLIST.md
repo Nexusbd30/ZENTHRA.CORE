@@ -5,7 +5,9 @@ Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
 Fase 4 queda como cierre de endurecimiento backend y code intelligence en `docs/PHASE4_BACKEND_HARDENING.md`.
 El cierre de codigo backend de Fase 5 queda documentado en `docs/PHASE5_BACKEND_CODE_CLOSURE.md`.
-El trabajo restante depende de activacion productiva externa y Fase 6 Product and Operations Closure.
+El primer mapa frontend/backend de Fase 6 queda documentado en `docs/PHASE6_FRONTEND_BACKEND_MAP.md`.
+El cierre local de producto y operaciones de Fase 6 queda documentado en `docs/PHASE6_PRODUCT_OPERATIONS_CLOSURE.md`.
+El trabajo restante depende de activacion productiva externa y validacion en el entorno destino.
 
 ## Backend Core Status
 
@@ -67,6 +69,12 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 ### Phase 6 - Product And Operations Closure
 
 - Add frontend SOC/SecOps command center.
+  - Initial SecOps Command Center route exists at `/dashboard/secops`.
+  - Connected posture, readiness, provider preflight, tenant policies, security events,
+    materialization, export preview and dry-run lifecycle actions.
+  - Connected RedQueen verdict selection, ARES approval evidence generation,
+    approval listing and evidence bundle inspection.
+  - SOC/SIEM send is blocked in the UI unless readiness indicates a live destination.
 - Add Terraform/IaC only after the deployment target is fixed.
 - Add service dashboards, alerts, SLOs, backup/restore, rollback, incident, load,
   resilience and security validation.
@@ -114,7 +122,8 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 
 - In-memory stores are not safe for multi-instance production.
 - External connectors are not live yet.
-- Frontend product workflow is pending.
+- Frontend product workflow is connected for SOC/SecOps repository-local operations.
+  Production operations runbooks and environment drills remain pending.
 - Terraform should wait until provider and deployment decisions are stable.
 - Strict tenant policy persistence exists; additional domain-specific row-level isolation should still be reviewed before broad multi-tenant onboarding.
 - A real LLM gateway and vector retrieval backend are not selected.

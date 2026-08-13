@@ -1,11 +1,11 @@
-﻿# =============================================================
-# ðŸ’  VAELQORIX.XDR_COMMAND â€” CONFIGURACIÃ“N GLOBAL (v3.7 Legacy Wrapper)
+# =============================================================
+# 💠 VAELQORIX.XDR_COMMAND — CONFIGURACIÓN GLOBAL (v3.7 Legacy Wrapper)
 # =============================================================
 # Capa de compatibilidad para imports antiguos:
 #
 #     from app.core.config import settings
 #
-# La fuente Ãºnica de verdad es app.core.settings:
+# La fuente única de verdad es app.core.settings:
 #     - Settings (clase)
 #     - settings (instancia global)
 #

@@ -155,7 +155,11 @@ async def startup():
         db_url.path.lstrip("/"),
     )
 
-    if settings.VAELQORIX_CORRELATION_ENABLED:
+    correlation_enabled = (
+        settings.VAELQORIX_CORRELATION_ENABLED
+        or bool(getattr(settings, "ZENTHRA_CORRELATION_ENABLED", False))
+    )
+    if correlation_enabled:
         global correlation_task
         correlation_task = asyncio.create_task(correlation_worker())
         logger.info("Correlation scheduler started")

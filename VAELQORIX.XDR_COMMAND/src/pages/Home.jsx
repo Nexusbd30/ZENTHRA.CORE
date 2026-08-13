@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import logo from "../assets/logos/vaelqorix-logo.jpeg";
 
@@ -166,7 +166,7 @@ export default function Home() {
 
         <footer className="border-t border-outline-variant bg-surface/60 px-8 py-8 backdrop-blur-sm">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 font-code-sm text-code-sm text-on-surface-variant md:flex-row">
-            <div>Â© 2024 VAELQORIX Systems. End-to-end Encrypted.</div>
+            <div>© 2024 VAELQORIX Systems. End-to-end Encrypted.</div>
             <div className="flex gap-6">
               <a className="transition-colors hover:text-primary" href="#">SEC PROTOCOLS</a>
               <a className="transition-colors hover:text-primary" href="#">API DOCS</a>

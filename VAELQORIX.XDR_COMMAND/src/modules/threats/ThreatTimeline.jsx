@@ -1,10 +1,10 @@
-﻿// =============================================================
-// ðŸ•’ ThreatTimeline â€” VAELQORIX XDR Command (v1.0 Elite SOC)
 // =============================================================
-// Vista cronolÃ³gica estilo SIEM:
+// 🕒 ThreatTimeline — VAELQORIX XDR Command (v1.0 Elite SOC)
+// =============================================================
+// Vista cronológica estilo SIEM:
 //   - Lista amenazas ordenadas por fecha descendente
-//   - Muestra badges de severidad y categorÃ­a
-//   - Clic en un item â†’ abre ThreatDetailsModal via onSelectThreat()
+//   - Muestra badges de severidad y categoría
+//   - Clic en un item → abre ThreatDetailsModal via onSelectThreat()
 // =============================================================
 
 import { useEffect, useState, useCallback } from "react";
@@ -34,7 +34,7 @@ export default function ThreatTimeline({ onSelectThreat, refreshKey = 0, limit =
 
       setItems(list);
     } catch {
-      notify("error", "âŒ No se pudo cargar el timeline de amenazas.");
+      notify("error", "❌ No se pudo cargar el timeline de amenazas.");
     } finally {
       setLoading(false);
     }
@@ -74,19 +74,19 @@ export default function ThreatTimeline({ onSelectThreat, refreshKey = 0, limit =
   const formatTs = (ts) => {
     try {
       const d = new Date(ts);
-      if (isNaN(d.getTime())) return "â€”";
+      if (isNaN(d.getTime())) return "—";
       return d.toLocaleString();
     } catch {
-      return String(ts) || "â€”";
+      return String(ts) || "—";
     }
   };
 
   return (
     <div className="bg-[#020617]/60 border border-slate-700 rounded-2xl p-4 shadow-lg shadow-slate-900/30">
-      <h2 className="text-lg font-semibold mb-3 text-slate-200">ðŸ“… Timeline de amenazas</h2>
+      <h2 className="text-lg font-semibold mb-3 text-slate-200">📅 Timeline de amenazas</h2>
 
       {loading && (
-        <p className="text-xs text-gray-400 mb-2">Cargando timelineâ€¦</p>
+        <p className="text-xs text-gray-400 mb-2">Cargando timeline…</p>
       )}
 
       {items.length === 0 && !loading && (
@@ -105,7 +105,7 @@ export default function ThreatTimeline({ onSelectThreat, refreshKey = 0, limit =
               onClick={() => onSelectThreat?.(t)}
               className="cursor-pointer bg-slate-900/40 border border-slate-700/50 rounded-xl p-3 hover:bg-slate-800/50 transition flex items-start gap-3"
             >
-              {/* LÃ­nea temporal */}
+              {/* Línea temporal */}
               <div className="flex flex-col items-center">
                 <div className="w-3 h-3 rounded-full bg-red-500 shadow-red-900/50 shadow"></div>
                 <div className="flex-1 w-[2px] bg-slate-700/50 mt-1"></div>

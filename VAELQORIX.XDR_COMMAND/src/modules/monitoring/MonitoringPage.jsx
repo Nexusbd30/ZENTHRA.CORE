@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getAlerts,
   getFullInfraHealth,
@@ -175,7 +175,7 @@ export default function MonitoringPage() {
 
       {backendOffline && (
         <div className="mb-6 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Backend offline: la vista sigue visible, pero las mÃ©tricas reales de monitoring no estÃ¡n disponibles.
+          Backend offline: la vista sigue visible, pero las métricas reales de monitoring no están disponibles.
         </div>
       )}
 
@@ -390,7 +390,7 @@ function SourceDiagnosticsPanel({ diagnostics, loading }) {
     <section className="mb-8 bg-[#0f141a] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h4 className="font-label text-xs uppercase tracking-[0.2em] text-[#8ff5ff]">
-          DiagnÃ³stico de Fuentes
+          Diagnóstico de Fuentes
         </h4>
         <span className="font-label text-[10px] uppercase text-slate-500">
           {loading ? "Comprobando..." : diagnostics?.overall || "sin datos reales"}

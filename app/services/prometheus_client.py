@@ -1,11 +1,11 @@
-﻿# =============================================================
-# ðŸ“¡ PrometheusClient â€” VAELQORIX (v1.4 SIEM-Ready Stable)
 # =============================================================
-# âœ… Compatibilidad:
+# 📡 PrometheusClient — VAELQORIX (v1.4 SIEM-Ready Stable)
+# =============================================================
+# ✅ Compatibilidad:
 #   - query(expr) -> List[dict]
 #   - has_result(expr) -> bool
 #
-# âœ… SIEM-ready:
+# ✅ SIEM-ready:
 #   - get_alerts(state="firing") -> List[dict] (NORMALIZADO)
 #   - get_firing_alerts() -> List[dict]
 #   - build_fingerprint(labels, target_service=None) -> str
@@ -35,7 +35,7 @@ class PrometheusClient:
         logger.info("[PrometheusClient] Base URL=%s timeout=%ss", self.base_url, self.timeout)
 
     # ---------------------------------------------------------
-    # ðŸ” Query instantÃ¡nea
+    # 🔍 Query instantánea
     # ---------------------------------------------------------
     def query(self, expr: str) -> List[dict]:
         url = f"{self.base_url}/api/v1/query"
@@ -53,7 +53,7 @@ class PrometheusClient:
         return (data.get("data", {}) or {}).get("result", []) or []
 
     # ---------------------------------------------------------
-    # ðŸ§  Helper booleano
+    # 🧠 Helper booleano
     # ---------------------------------------------------------
     def has_result(self, expr: str) -> bool:
         try:
@@ -62,7 +62,7 @@ class PrometheusClient:
             return False
 
     # ---------------------------------------------------------
-    # ðŸš¨ Alertas activas vÃ­a Prometheus API (/api/v1/alerts)
+    # 🚨 Alertas activas vía Prometheus API (/api/v1/alerts)
     # ---------------------------------------------------------
     def get_alerts(self, state: Optional[str] = "firing") -> List[dict]:
         """
@@ -129,7 +129,7 @@ class PrometheusClient:
         return self.get_alerts(state="firing")
 
     # ---------------------------------------------------------
-    # ðŸ§¬ Fingerprint helper
+    # 🧬 Fingerprint helper
     # ---------------------------------------------------------
     @staticmethod
     def build_fingerprint(labels: Dict[str, Any], target_service: str | None = None) -> str:

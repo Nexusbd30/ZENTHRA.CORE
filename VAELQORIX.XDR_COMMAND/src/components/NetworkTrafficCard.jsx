@@ -1,10 +1,10 @@
-﻿// =============================================================
-// ðŸ“¡ NetworkTrafficCard â€” Monitoreo de TrÃ¡fico Real (Windows)
 // =============================================================
-// - Usa Prometheus vÃ­a /monitoring/query_range (promRange)
+// 📡 NetworkTrafficCard — Monitoreo de Tráfico Real (Windows)
+// =============================================================
+// - Usa Prometheus vía /monitoring/query_range (promRange)
 // - Compatible con tu Windows Exporter actual (collector `net`)
-// - MÃ©trica: windows_net_bytes_total{nic="<NIC>"}
-// - Muestra trÃ¡fico TOTAL (RX+TX) en Mb/s
+// - Métrica: windows_net_bytes_total{nic="<NIC>"}
+// - Muestra tráfico TOTAL (RX+TX) en Mb/s
 // - Firma compatible con DataCenterPage:
 //     <NetworkTrafficCard
 //       nic="Realtek 8822CE Wireless LAN 802.11ac PCI-E NIC"
@@ -62,14 +62,14 @@ export default function NetworkTrafficCard({
         const step = `${stepSeconds}s`;
 
         // =====================================================
-        // ðŸ“¡ TrÃ¡fico total (Mb/s) por NIC
+        // 📡 Tráfico total (Mb/s) por NIC
         //
-        // MÃ©trica de windows_exporter (collector `net`):
+        // Métrica de windows_exporter (collector `net`):
         //   windows_net_bytes_total{nic="<NIC>"}
         //
         // PromQL:
         //   rate(windows_net_bytes_total{nic="<NIC>"}[2m]) * 8 / 1024 / 1024
-        //   -> bytes/s â†’ bits/s â†’ megabits/s
+        //   -> bytes/s → bits/s → megabits/s
         // =====================================================
         const nicName = String(nic || "").trim();
         if (!nicName || nicName === "NIC not detected") {
@@ -120,14 +120,14 @@ export default function NetworkTrafficCard({
           setData(series);
           if (!series.length) {
             setError(
-              "Sin datos de red â€” comprueba que windows_exporter expone windows_net_bytes_total para esa NIC."
+              "Sin datos de red — comprueba que windows_exporter expone windows_net_bytes_total para esa NIC."
             );
           }
         }
       } catch (err) {
-        console.error("[NetworkTrafficCard] Error obteniendo mÃ©tricas de red:", err);
+        console.error("[NetworkTrafficCard] Error obteniendo métricas de red:", err);
         if (!cancelled) {
-          setError("Error al obtener mÃ©tricas de red desde Prometheus.");
+          setError("Error al obtener métricas de red desde Prometheus.");
           setData([]);
         }
       } finally {
@@ -141,7 +141,7 @@ export default function NetworkTrafficCard({
     if (refreshMs > 0) {
       const timer = setInterval(
         fetchData,
-        Math.max(refreshMs, stepSeconds * 1000, 10000) // mÃ­nimo 10s
+        Math.max(refreshMs, stepSeconds * 1000, 10000) // mínimo 10s
       );
       return () => {
         clearInterval(timer);
@@ -177,7 +177,7 @@ export default function NetworkTrafficCard({
         lines={[{ key: "traffic", label: "Total (Mb/s)" }]}
         yLabel="Mb/s"
         height={260}
-        noDataMessage="Sin datos de red â€” revisa collector `net` y nombre exacto de la NIC."
+        noDataMessage="Sin datos de red — revisa collector `net` y nombre exacto de la NIC."
       />
     </div>
   );
