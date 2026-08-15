@@ -24,6 +24,7 @@ def _intelligence_trace(verdict: dict) -> dict:
         "redqueen_analytical_profile": controls.get("redqueen_analytical_profile", {}),
         "redqueen_attack_anticipation": controls.get("redqueen_attack_anticipation", {}),
         "redqueen_bridge_trace": controls.get("redqueen_bridge_trace", {}),
+        "redqueen_strategic_anticipation": controls.get("redqueen_strategic_anticipation", {}),
         "provider_action_adjusted": controls.get("provider_action_adjusted", False),
         "provider_original_action_type": controls.get("provider_original_action_type", ""),
         "provider_adjustment_reason": controls.get("provider_adjustment_reason", ""),

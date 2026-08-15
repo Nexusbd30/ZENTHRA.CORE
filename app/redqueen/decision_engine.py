@@ -18,6 +18,7 @@ from app.redqueen.causal import build_causal_chain
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
 from app.redqueen.prompts import TACTICAL_SYSTEM_PROMPT, tactical_user_prompt
+from app.redqueen.strategic_anticipation import build_strategic_anticipation
 from app.redqueen.xai import generate_xai_explanation
 from app.secops.providers import is_devsecops_action_supported, strongest_supported_devsecops_action
 
@@ -333,6 +334,17 @@ def generate_verdict(
             "mcp_context": mcp_context,
         },
     )
+    strategic_anticipation = build_strategic_anticipation(
+        target=target,
+        risk_score=normalized_score,
+        factors=merged_factors,
+        anticipation=attack_anticipation,
+        bridge_trace=bridge_trace,
+        controls={
+            **controls,
+            "mcp_context": mcp_context,
+        },
+    )
     merged_factors = list(
         dict.fromkeys(
             [
@@ -343,6 +355,8 @@ def generate_verdict(
                 f"attack_stage:{attack_anticipation['latest_stage']}",
                 f"bridge_trace_confidence:{bridge_trace['trace_confidence']}",
                 f"bridge_block_targets:{len(bridge_trace['block_targets'])}",
+                f"strategic_velocity:{strategic_anticipation['stage_velocity']}",
+                f"intervention_window:{strategic_anticipation['intervention_window']}",
             ]
         )
     )
@@ -390,6 +404,7 @@ def generate_verdict(
             "redqueen_analytical_profile": analytical_profile,
             "redqueen_attack_anticipation": attack_anticipation,
             "redqueen_bridge_trace": bridge_trace,
+            "redqueen_strategic_anticipation": strategic_anticipation,
         },
     )
 

@@ -15,6 +15,7 @@ from app.ares.monitor import evaluate_ares_health
 from app.ares.os_business_shield import build_os_business_shield
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
+from app.ares.response_fabric import build_response_fabric
 from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
 from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
@@ -761,6 +762,15 @@ class AutonomyService:
         plan["enterprise_active_defense"] = plan["aggressive_containment"].get(
             "enterprise_active_defense",
             {},
+        )
+        strategic_anticipation = controls.get("redqueen_strategic_anticipation")
+        if not isinstance(strategic_anticipation, dict) and isinstance(verdict_controls, dict):
+            strategic_anticipation = verdict_controls.get("redqueen_strategic_anticipation")
+        plan["response_fabric"] = build_response_fabric(
+            verdict=verdict,
+            strategic_anticipation=strategic_anticipation if isinstance(strategic_anticipation, dict) else {},
+            enterprise_active_defense=plan["enterprise_active_defense"],
+            controls=controls,
         )
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review

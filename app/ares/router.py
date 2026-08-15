@@ -13,6 +13,7 @@ from app.ares.enterprise_active_defense import build_enterprise_active_defense
 from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.ares.kill_switch import kill_switch_state
 from app.ares.os_business_shield import build_os_business_shield
+from app.ares.response_fabric import build_response_fabric
 from app.core.audit import audit_autonomy_event
 from app.core.security import require_admin_or_monitor_token
 from app.db.audit_store import list_audit_records, verify_audit_chain
@@ -92,6 +93,13 @@ class EnterpriseActiveDefenseRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
 
 
+class ResponseFabricRequest(BaseModel):
+    verdict: dict = Field(default_factory=dict)
+    strategic_anticipation: dict = Field(default_factory=dict)
+    enterprise_active_defense: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
 def _json_loads(value: str | None, fallback):
     if not value:
         return fallback
@@ -154,6 +162,11 @@ def ares_status():
             "schema": "vaelqorix.ares.enterprise_active_defense.v1",
             "status": "enabled",
             "purpose": "enterprise_grade_blocking_deception_sinkhole_and_legal_evidence",
+        },
+        "response_fabric": {
+            "schema": "vaelqorix.ares.response_fabric.v1",
+            "status": "enabled",
+            "purpose": "route_next_best_actions_across_ready_enterprise_connectors",
         },
         "kill_switch": kill_switch_state(),
     }
@@ -296,6 +309,16 @@ def build_active_defense_plan(payload: EnterpriseActiveDefenseRequest):
     return build_enterprise_active_defense(
         verdict=payload.verdict,
         bridge_trace=payload.bridge_trace,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/response-fabric/plan")
+def build_response_fabric_plan(payload: ResponseFabricRequest):
+    return build_response_fabric(
+        verdict=payload.verdict,
+        strategic_anticipation=payload.strategic_anticipation,
+        enterprise_active_defense=payload.enterprise_active_defense,
         controls=payload.execution_controls,
     )
 

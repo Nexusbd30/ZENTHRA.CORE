@@ -17,6 +17,7 @@ from app.redqueen.anticipation import anticipate_attack_path
 from app.redqueen.bridge_trace import build_bridge_trace
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
+from app.redqueen.strategic_anticipation import build_strategic_anticipation
 from app.schemas.autonomy_schema import (
     NotFoundResponse,
     PolicyEvaluationResponse,
@@ -64,6 +65,15 @@ class AnticipationRequest(BaseModel):
 class BridgeTraceRequest(BaseModel):
     target: str = Field(..., min_length=1)
     factors: list[str] = Field(default_factory=list)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+class StrategicAnticipationRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    risk_score: float = Field(..., ge=0, le=100)
+    factors: list[str] = Field(default_factory=list)
+    anticipation: dict = Field(default_factory=dict)
+    bridge_trace: dict = Field(default_factory=dict)
     execution_controls: dict = Field(default_factory=dict)
 
 
@@ -117,6 +127,11 @@ def redqueen_status():
             "status": "enabled",
             "purpose": "trace_observed_intrusion_bridge_for_defensive_blocking",
         },
+        "strategic_anticipation": {
+            "schema": "vaelqorix.redqueen.strategic_anticipation.v1",
+            "status": "enabled",
+            "purpose": "predict_intervention_window_and_next_best_defensive_actions",
+        },
     }
 
 
@@ -140,6 +155,18 @@ def trace_bridge(payload: BridgeTraceRequest):
     return build_bridge_trace(
         target=payload.target,
         factors=payload.factors,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/strategic-anticipation")
+def strategic_anticipation(payload: StrategicAnticipationRequest):
+    return build_strategic_anticipation(
+        target=payload.target,
+        risk_score=payload.risk_score,
+        factors=payload.factors,
+        anticipation=payload.anticipation,
+        bridge_trace=payload.bridge_trace,
         controls=payload.execution_controls,
     )
 
