@@ -1,4 +1,5 @@
 from app.ares.executor import execute_plan
+from app.ares.internal_firewall import evaluate_internal_firewall
 from app.ares.planner import build_plan
 
 
@@ -79,3 +80,57 @@ def test_execute_plan_delegates_crypto_rotation(monkeypatch):
     assert calls[1]["command"] == "rotate_crypto_material"
     assert calls[1]["payload"]["key_id"] == "kms-key-01"
     assert calls[1]["payload"]["threat_id"] == "threat-crypto-1"
+
+
+def test_internal_firewall_blocks_protected_disruptive_target_without_owner_approval():
+    verdict = {
+        "verdict_id": "v-fw-1",
+        "action_type": "network_isolate",
+        "target": "database-prod-01",
+        "risk_score": 96,
+        "execution_controls": {
+            "mcp_tool_policy": {"allowed": True},
+        },
+    }
+    plan = build_plan(verdict)
+
+    decision = evaluate_internal_firewall(
+        verdict=verdict,
+        plan=plan,
+        advisor_review={"safe_to_execute": True, "mcp_action_policy": {"allowed": True}},
+        controls={
+            "change_ticket": "CHG-1",
+            "firewall_policy": {"protected_targets": ["database-prod-*"]},
+        },
+    )
+
+    assert decision.allowed is False
+    assert decision.code == "firewall_protected_target_control_missing"
+    assert decision.severity == "critical"
+
+
+def test_internal_firewall_allows_protected_target_with_required_controls():
+    verdict = {
+        "verdict_id": "v-fw-2",
+        "action_type": "network_isolate",
+        "target": "database-prod-01",
+        "risk_score": 96,
+        "execution_controls": {
+            "mcp_tool_policy": {"allowed": True},
+        },
+    }
+    plan = build_plan(verdict)
+
+    decision = evaluate_internal_firewall(
+        verdict=verdict,
+        plan=plan,
+        advisor_review={"safe_to_execute": True, "mcp_action_policy": {"allowed": True}},
+        controls={
+            "change_ticket": "CHG-1",
+            "dependency_owner_approved": True,
+            "firewall_policy": {"protected_targets": ["database-prod-*"]},
+        },
+    )
+
+    assert decision.allowed is True
+    assert decision.code == "ok"

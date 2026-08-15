@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.ares.advisor import review_plan
 from app.ares.approval import verify_approval_payload
 from app.ares.executor import execute_plan
+from app.ares.internal_firewall import evaluate_internal_firewall
 from app.ares.memory import read_ares_memory
 from app.ares.monitor import evaluate_ares_health
 from app.ares.planner import build_plan
@@ -739,6 +740,44 @@ class AutonomyService:
         plan = build_plan(verdict)
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review
+        firewall_decision = evaluate_internal_firewall(
+            verdict=verdict,
+            plan=plan,
+            advisor_review=advisor_review,
+            controls=controls,
+        )
+        plan["internal_firewall"] = {
+            "allowed": firewall_decision.allowed,
+            "code": firewall_decision.code,
+            "detail": firewall_decision.detail,
+            "severity": firewall_decision.severity,
+            "evidence": firewall_decision.evidence,
+        }
+        if not firewall_decision.allowed:
+            execution = {
+                "status": "failed",
+                "duration_ms": 0,
+                "executed_steps": [],
+                "rollback_events": [],
+                "error": firewall_decision.detail,
+            }
+            result = build_execution_result(verdict=verdict, execution=execution)
+            AutonomyService.persist_execution_result(db, result)
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="ares_firewall",
+                action="execution_blocked",
+                result=plan["internal_firewall"],
+            )
+            return {
+                "status": "rejected",
+                "code": firewall_decision.code,
+                "detail": firewall_decision.detail,
+                "verdict_id": verdict.get("verdict_id"),
+                "plan": plan,
+                "result": result,
+            }
         execution = execute_plan(plan, controls=controls)
         result = build_execution_result(verdict=verdict, execution=execution)
         AutonomyService.persist_execution_result(db, result)

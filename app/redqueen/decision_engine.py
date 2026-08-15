@@ -11,6 +11,7 @@ from app.core.settings import settings
 from app.core.signing import sign_payload
 from app.identity.providers import is_identity_action_supported, strongest_supported_identity_action
 from app.intelligence.llm_contract import normalize_llm_decision
+from app.redqueen.analytical_brain import build_analytical_profile
 from app.redqueen.causal import build_causal_chain
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
@@ -295,6 +296,25 @@ def generate_verdict(
         factors=merged_factors,
         llm_reasoning=ai_decision["reasoning"],
     )
+    analytical_profile = build_analytical_profile(
+        target=target,
+        risk_score=normalized_score,
+        action_type=action_type,
+        factors=merged_factors,
+        controls={
+            **controls,
+            "mcp_context": mcp_context,
+        },
+    )
+    merged_factors = list(
+        dict.fromkeys(
+            [
+                *merged_factors,
+                f"analytical_posture:{analytical_profile['posture']}",
+                f"analytical_diligence:{analytical_profile['diligence_score']}",
+            ]
+        )
+    )
 
     verdict = VerdictDraft(
         verdict_id=uuid4().hex,
@@ -336,6 +356,7 @@ def generate_verdict(
             "minimum_action_type": ai_decision["minimum_action_type"],
             "minimum_action_enforced": ai_decision["minimum_action_enforced"],
             "redqueen_thinking_model": thinking_model,
+            "redqueen_analytical_profile": analytical_profile,
         },
     )
 

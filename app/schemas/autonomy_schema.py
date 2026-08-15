@@ -18,6 +18,7 @@ class AresStatusResponse(BaseModel):
     module: str
     role: str
     phase: str
+    internal_firewall: dict[str, Any] | None = None
     kill_switch: dict[str, Any]
 
 

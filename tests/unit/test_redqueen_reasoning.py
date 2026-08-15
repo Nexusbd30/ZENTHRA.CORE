@@ -36,6 +36,11 @@ def test_llm_cannot_downgrade_critical_action(monkeypatch):
     assert verdict["execution_controls"]["redqueen_thinking_model"]["redqueen_control_percent"] == 80
     assert verdict["execution_controls"]["redqueen_thinking_model"]["human_control_percent"] == 20
     assert "execution_boundary:ares_only" in verdict["factors"]
+    assert "analytical_posture:critical_review" in verdict["factors"]
+    assert verdict["execution_controls"]["redqueen_analytical_profile"]["schema"] == (
+        "vaelqorix.redqueen.analytical_brain.v1"
+    )
+    assert verdict["execution_controls"]["redqueen_analytical_profile"]["diligence_score"] >= 80
     assert verdict["execution_controls"]["policy_result"]["code"] == "human_required"
     assert verdict["causal_chain"]["action"] == "network_isolate"
 

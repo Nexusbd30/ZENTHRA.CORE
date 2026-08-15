@@ -106,6 +106,18 @@ def ares_status():
         "module": "ares",
         "role": "executor_of_redqueen_orders",
         "phase": "phase-2-core",
+        "internal_firewall": {
+            "schema": "vaelqorix.ares.internal_firewall.v1",
+            "status": "enabled",
+            "blocks": [
+                "mcp_action_denied",
+                "mcp_tool_denied",
+                "firewall_action_denied",
+                "firewall_action_not_allowed",
+                "protected_target_without_owner_approval",
+                "advisor_marked_unsafe_when_enforced",
+            ],
+        },
         "kill_switch": kill_switch_state(),
     }
 
