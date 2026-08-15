@@ -13,6 +13,7 @@ from app.identity.providers import is_identity_action_supported, strongest_suppo
 from app.intelligence.llm_contract import normalize_llm_decision
 from app.redqueen.analytical_brain import build_analytical_profile
 from app.redqueen.anticipation import anticipate_attack_path
+from app.redqueen.bridge_trace import build_bridge_trace
 from app.redqueen.causal import build_causal_chain
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
@@ -35,6 +36,7 @@ ALLOWED_ACTIONS = {
     "identity_lockdown",
     "network_isolate",
     "system_harden",
+    "aggressive_containment",
 }
 
 ACTION_SEVERITY = {
@@ -52,6 +54,7 @@ ACTION_SEVERITY = {
     "identity_lockdown": 3,
     "network_isolate": 4,
     "system_harden": 2,
+    "aggressive_containment": 4,
 }
 
 DOMAIN_ACTIONS = {
@@ -62,9 +65,10 @@ DOMAIN_ACTIONS = {
         "revoke_session",
         "degrade_privileges",
         "identity_lockdown",
+        "aggressive_containment",
     },
-    "endpoint": {"observe", "soar_delegate", "endpoint_isolate"},
-    "network": {"observe", "soar_delegate", "network_isolate"},
+    "endpoint": {"observe", "soar_delegate", "endpoint_isolate", "aggressive_containment"},
+    "network": {"observe", "soar_delegate", "network_isolate", "aggressive_containment"},
     "crypto": {"observe", "soar_delegate", "crypto_rotate"},
     "devsecops": {
         "observe",
@@ -74,6 +78,7 @@ DOMAIN_ACTIONS = {
         "revoke_pipeline_token",
         "quarantine_artifact",
         "block_deployment",
+        "aggressive_containment",
     },
     "generic": ALLOWED_ACTIONS,
 }
@@ -320,6 +325,14 @@ def generate_verdict(
             "mcp_context": mcp_context,
         },
     )
+    bridge_trace = build_bridge_trace(
+        target=target,
+        factors=merged_factors,
+        controls={
+            **controls,
+            "mcp_context": mcp_context,
+        },
+    )
     merged_factors = list(
         dict.fromkeys(
             [
@@ -328,6 +341,8 @@ def generate_verdict(
                 f"analytical_diligence:{analytical_profile['diligence_score']}",
                 f"attack_horizon:{attack_anticipation['horizon']}",
                 f"attack_stage:{attack_anticipation['latest_stage']}",
+                f"bridge_trace_confidence:{bridge_trace['trace_confidence']}",
+                f"bridge_block_targets:{len(bridge_trace['block_targets'])}",
             ]
         )
     )
@@ -374,6 +389,7 @@ def generate_verdict(
             "redqueen_thinking_model": thinking_model,
             "redqueen_analytical_profile": analytical_profile,
             "redqueen_attack_anticipation": attack_anticipation,
+            "redqueen_bridge_trace": bridge_trace,
         },
     )
 

@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.ares.advisor import review_plan
+from app.ares.aggressive_containment import build_aggressive_containment
 from app.ares.approval import verify_approval_payload
 from app.ares.executor import execute_plan
 from app.ares.internal_firewall import evaluate_internal_firewall
@@ -747,6 +748,14 @@ class AutonomyService:
             target=str(verdict.get("target") or ""),
             action_type=str(verdict.get("action_type") or "observe"),
             anticipation=anticipation if isinstance(anticipation, dict) else {},
+            controls=controls,
+        )
+        bridge_trace = controls.get("redqueen_bridge_trace")
+        if not isinstance(bridge_trace, dict) and isinstance(verdict_controls, dict):
+            bridge_trace = verdict_controls.get("redqueen_bridge_trace")
+        plan["aggressive_containment"] = build_aggressive_containment(
+            verdict=verdict,
+            bridge_trace=bridge_trace if isinstance(bridge_trace, dict) else {},
             controls=controls,
         )
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)

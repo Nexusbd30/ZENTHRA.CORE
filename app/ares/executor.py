@@ -25,6 +25,7 @@ ACTION_EXECUTORS: dict[str, BaseAction] = {
     "quarantine_artifact": DevSecOpsAction(),
     "block_deployment": DevSecOpsAction(),
     "system_harden": SoarAction(),
+    "aggressive_containment": SoarAction(),
 }
 
 

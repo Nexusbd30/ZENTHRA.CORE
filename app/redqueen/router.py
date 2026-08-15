@@ -14,6 +14,7 @@ from app.db.vector import vector_store
 from app.models.entity_profile import EntityProfile
 from app.models.verdict import Verdict
 from app.redqueen.anticipation import anticipate_attack_path
+from app.redqueen.bridge_trace import build_bridge_trace
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
 from app.schemas.autonomy_schema import (
@@ -56,6 +57,12 @@ class VectorMemoryRequest(BaseModel):
 class AnticipationRequest(BaseModel):
     target: str = Field(..., min_length=1)
     risk_score: float = Field(..., ge=0, le=100)
+    factors: list[str] = Field(default_factory=list)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+class BridgeTraceRequest(BaseModel):
+    target: str = Field(..., min_length=1)
     factors: list[str] = Field(default_factory=list)
     execution_controls: dict = Field(default_factory=dict)
 
@@ -105,6 +112,11 @@ def redqueen_status():
             "status": "enabled",
             "purpose": "anticipate_attack_paths_for_business_infrastructure_defense",
         },
+        "bridge_trace": {
+            "schema": "vaelqorix.redqueen.bridge_trace.v1",
+            "status": "enabled",
+            "purpose": "trace_observed_intrusion_bridge_for_defensive_blocking",
+        },
     }
 
 
@@ -118,6 +130,15 @@ def anticipate_attack(payload: AnticipationRequest):
     return anticipate_attack_path(
         target=payload.target,
         risk_score=payload.risk_score,
+        factors=payload.factors,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/bridge-trace")
+def trace_bridge(payload: BridgeTraceRequest):
+    return build_bridge_trace(
+        target=payload.target,
         factors=payload.factors,
         controls=payload.execution_controls,
     )

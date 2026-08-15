@@ -35,6 +35,14 @@ ACTION_POLICIES: dict[str, ActionPolicy] = {
         always_requires_human=True,
     ),
     "system_harden": ActionPolicy(45, 100, 82, severity=2),
+    "aggressive_containment": ActionPolicy(
+        75,
+        100,
+        68,
+        severity=4,
+        disruptive=True,
+        always_requires_human=True,
+    ),
 }
 
 

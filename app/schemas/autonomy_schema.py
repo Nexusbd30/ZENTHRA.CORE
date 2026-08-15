@@ -13,6 +13,7 @@ class RedQueenStatusResponse(BaseModel):
     autonomy_target: int
     thinking_model: dict[str, Any] | None = None
     attack_anticipation: dict[str, Any] | None = None
+    bridge_trace: dict[str, Any] | None = None
 
 
 class AresStatusResponse(BaseModel):
@@ -20,6 +21,8 @@ class AresStatusResponse(BaseModel):
     role: str
     phase: str
     internal_firewall: dict[str, Any] | None = None
+    os_business_shield: dict[str, Any] | None = None
+    aggressive_containment: dict[str, Any] | None = None
     kill_switch: dict[str, Any]
 
 

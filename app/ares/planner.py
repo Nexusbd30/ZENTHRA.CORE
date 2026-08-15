@@ -13,6 +13,7 @@ DISRUPTIVE_ACTIONS = {
     "quarantine_artifact",
     "block_deployment",
     "system_harden",
+    "aggressive_containment",
 }
 
 
@@ -210,6 +211,46 @@ def build_plan(verdict: dict) -> dict:
                 impact="checks that protected business service remains healthy",
                 rollback=None,
                 criticality=2,
+            ),
+        ]
+    elif action_type == "aggressive_containment":
+        steps = [
+            _step(
+                "preserve_bridge_evidence",
+                target=target,
+                impact="captures defensive trace evidence and chain of custody",
+                rollback=None,
+                criticality=2,
+            ),
+            _step(
+                "block_suspected_bridge",
+                target=target,
+                impact="blocks observed ingress, pivot or delivery bridge inside owned controls",
+                rollback="containment_rollback",
+                criticality=5,
+                requires_confirmation=True,
+            ),
+            _step(
+                "revoke_related_sessions",
+                target=target,
+                impact="revokes suspicious sessions and refresh tokens related to the bridge",
+                rollback=None,
+                criticality=4,
+            ),
+            _step(
+                "isolate_confirmed_endpoint",
+                target=target,
+                impact="isolates confirmed endpoint or runner pivot from business network",
+                rollback="containment_rollback",
+                criticality=5,
+                requires_confirmation=True,
+            ),
+            _step(
+                "open_traceability_case",
+                target=target,
+                impact="opens SOC traceability case with evidence and recommended blocks",
+                rollback=None,
+                criticality=1,
             ),
         ]
     elif action_type == "crypto_rotate":
