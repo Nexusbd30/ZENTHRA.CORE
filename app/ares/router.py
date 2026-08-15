@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.ares.approval import build_approval_payload
 from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.ares.kill_switch import kill_switch_state
+from app.ares.os_business_shield import build_os_business_shield
 from app.core.audit import audit_autonomy_event
 from app.core.security import require_admin_or_monitor_token
 from app.db.audit_store import list_audit_records, verify_audit_chain
@@ -70,6 +71,13 @@ class RollbackRequest(BaseModel):
     actor: str = Field(default="admin", min_length=1)
 
 
+class ShieldPlanRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    action_type: str = Field(default="system_harden", min_length=1)
+    anticipation: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
 def _json_loads(value: str | None, fallback):
     if not value:
         return fallback
@@ -117,6 +125,11 @@ def ares_status():
                 "protected_target_without_owner_approval",
                 "advisor_marked_unsafe_when_enforced",
             ],
+        },
+        "os_business_shield": {
+            "schema": "vaelqorix.ares.os_business_shield.v1",
+            "status": "enabled",
+            "purpose": "preventive_defense_for_operating_system_and_business_services",
         },
         "kill_switch": kill_switch_state(),
     }
@@ -233,6 +246,16 @@ def get_operation_flow():
             "Disruptive actions require traceability and may require signed human approval.",
         ],
     }
+
+
+@router.post("/shield/plan")
+def build_shield_plan(payload: ShieldPlanRequest):
+    return build_os_business_shield(
+        target=payload.target,
+        action_type=payload.action_type,
+        anticipation=payload.anticipation,
+        controls=payload.execution_controls,
+    )
 
 
 @router.post("/execute")

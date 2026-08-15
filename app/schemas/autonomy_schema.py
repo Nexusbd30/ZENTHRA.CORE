@@ -12,6 +12,7 @@ class RedQueenStatusResponse(BaseModel):
     phase: str
     autonomy_target: int
     thinking_model: dict[str, Any] | None = None
+    attack_anticipation: dict[str, Any] | None = None
 
 
 class AresStatusResponse(BaseModel):

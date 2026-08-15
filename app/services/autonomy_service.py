@@ -11,6 +11,7 @@ from app.ares.executor import execute_plan
 from app.ares.internal_firewall import evaluate_internal_firewall
 from app.ares.memory import read_ares_memory
 from app.ares.monitor import evaluate_ares_health
+from app.ares.os_business_shield import build_os_business_shield
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
 from app.ares.validator import validate_verdict
@@ -738,6 +739,16 @@ class AutonomyService:
                 AutonomyService.persist_approval(db, approval_evidence)
 
         plan = build_plan(verdict)
+        anticipation = controls.get("redqueen_attack_anticipation")
+        verdict_controls = verdict.get("execution_controls")
+        if not isinstance(anticipation, dict) and isinstance(verdict_controls, dict):
+            anticipation = verdict_controls.get("redqueen_attack_anticipation")
+        plan["os_business_shield"] = build_os_business_shield(
+            target=str(verdict.get("target") or ""),
+            action_type=str(verdict.get("action_type") or "observe"),
+            anticipation=anticipation if isinstance(anticipation, dict) else {},
+            controls=controls,
+        )
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review
         firewall_decision = evaluate_internal_firewall(

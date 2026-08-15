@@ -24,6 +24,7 @@ ACTION_EXECUTORS: dict[str, BaseAction] = {
     "revoke_pipeline_token": DevSecOpsAction(),
     "quarantine_artifact": DevSecOpsAction(),
     "block_deployment": DevSecOpsAction(),
+    "system_harden": SoarAction(),
 }
 
 

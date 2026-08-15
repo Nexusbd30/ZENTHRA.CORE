@@ -22,6 +22,7 @@ def _intelligence_trace(verdict: dict) -> dict:
         "llm_final_action_source": controls.get("llm_final_action_source", ""),
         "llm_guardrail_decisions": controls.get("llm_guardrail_decisions", []),
         "redqueen_analytical_profile": controls.get("redqueen_analytical_profile", {}),
+        "redqueen_attack_anticipation": controls.get("redqueen_attack_anticipation", {}),
         "provider_action_adjusted": controls.get("provider_action_adjusted", False),
         "provider_original_action_type": controls.get("provider_original_action_type", ""),
         "provider_adjustment_reason": controls.get("provider_adjustment_reason", ""),

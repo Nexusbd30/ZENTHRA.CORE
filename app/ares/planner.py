@@ -12,6 +12,7 @@ DISRUPTIVE_ACTIONS = {
     "revoke_pipeline_token",
     "quarantine_artifact",
     "block_deployment",
+    "system_harden",
 }
 
 
@@ -184,6 +185,31 @@ def build_plan(verdict: dict) -> dict:
                 impact="notifies operators",
                 rollback=None,
                 criticality=1,
+            ),
+        ]
+    elif action_type == "system_harden":
+        steps = [
+            _step(
+                "baseline_os_posture",
+                target=target,
+                impact="collects defensive posture without changing workload state",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "apply_defensive_hardening",
+                target=target,
+                impact="applies approved host, identity, network or service hardening controls",
+                rollback="system_hardening_rollback",
+                criticality=3,
+                requires_confirmation=True,
+            ),
+            _step(
+                "verify_business_service_health",
+                target=target,
+                impact="checks that protected business service remains healthy",
+                rollback=None,
+                criticality=2,
             ),
         ]
     elif action_type == "crypto_rotate":

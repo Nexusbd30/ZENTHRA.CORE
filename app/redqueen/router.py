@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.db.vector import vector_store
 from app.models.entity_profile import EntityProfile
 from app.models.verdict import Verdict
+from app.redqueen.anticipation import anticipate_attack_path
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
 from app.schemas.autonomy_schema import (
@@ -50,6 +51,13 @@ class VectorMemoryRequest(BaseModel):
     record_id: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
     metadata: dict = Field(default_factory=dict)
+
+
+class AnticipationRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    risk_score: float = Field(..., ge=0, le=100)
+    factors: list[str] = Field(default_factory=list)
+    execution_controls: dict = Field(default_factory=dict)
 
 
 def _json_loads(value: str | None, fallback):
@@ -92,12 +100,27 @@ def redqueen_status():
         "phase": "phase-2-core",
         "autonomy_target": int(settings.REDQUEEN_AUTONOMY_MAX),
         "thinking_model": build_thinking_model(risk_score=0.0),
+        "attack_anticipation": {
+            "schema": "vaelqorix.redqueen.attack_anticipation.v1",
+            "status": "enabled",
+            "purpose": "anticipate_attack_paths_for_business_infrastructure_defense",
+        },
     }
 
 
 @router.post("/policy/evaluate", response_model=PolicyEvaluationResponse)
 def policy_evaluate(score: float, action_type: str):
     return evaluate_policy(score=score, action_type=action_type)
+
+
+@router.post("/anticipate")
+def anticipate_attack(payload: AnticipationRequest):
+    return anticipate_attack_path(
+        target=payload.target,
+        risk_score=payload.risk_score,
+        factors=payload.factors,
+        controls=payload.execution_controls,
+    )
 
 
 @router.post("/verdict")

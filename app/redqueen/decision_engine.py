@@ -12,6 +12,7 @@ from app.core.signing import sign_payload
 from app.identity.providers import is_identity_action_supported, strongest_supported_identity_action
 from app.intelligence.llm_contract import normalize_llm_decision
 from app.redqueen.analytical_brain import build_analytical_profile
+from app.redqueen.anticipation import anticipate_attack_path
 from app.redqueen.causal import build_causal_chain
 from app.redqueen.mission import build_thinking_model
 from app.redqueen.policy_matrix import evaluate_policy
@@ -33,6 +34,7 @@ ALLOWED_ACTIONS = {
     "endpoint_isolate",
     "identity_lockdown",
     "network_isolate",
+    "system_harden",
 }
 
 ACTION_SEVERITY = {
@@ -49,6 +51,7 @@ ACTION_SEVERITY = {
     "endpoint_isolate": 2,
     "identity_lockdown": 3,
     "network_isolate": 4,
+    "system_harden": 2,
 }
 
 DOMAIN_ACTIONS = {
@@ -160,6 +163,8 @@ def _fallback_action(risk_score: float, *, domain: str = "generic") -> str:
         return "identity_lockdown"
     if risk_score >= 65:
         return "endpoint_isolate"
+    if risk_score >= 55:
+        return "system_harden"
     if risk_score >= 50:
         return "soar_delegate"
     return "observe"
@@ -306,12 +311,23 @@ def generate_verdict(
             "mcp_context": mcp_context,
         },
     )
+    attack_anticipation = anticipate_attack_path(
+        target=target,
+        risk_score=normalized_score,
+        factors=merged_factors,
+        controls={
+            **controls,
+            "mcp_context": mcp_context,
+        },
+    )
     merged_factors = list(
         dict.fromkeys(
             [
                 *merged_factors,
                 f"analytical_posture:{analytical_profile['posture']}",
                 f"analytical_diligence:{analytical_profile['diligence_score']}",
+                f"attack_horizon:{attack_anticipation['horizon']}",
+                f"attack_stage:{attack_anticipation['latest_stage']}",
             ]
         )
     )
@@ -357,6 +373,7 @@ def generate_verdict(
             "minimum_action_enforced": ai_decision["minimum_action_enforced"],
             "redqueen_thinking_model": thinking_model,
             "redqueen_analytical_profile": analytical_profile,
+            "redqueen_attack_anticipation": attack_anticipation,
         },
     )
 
