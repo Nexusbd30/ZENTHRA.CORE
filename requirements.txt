@@ -4,7 +4,7 @@ pydantic==2.13.4
 pydantic-settings==2.4.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-python-jose==3.5.0
+PyJWT[crypto]==2.13.0
 sqlalchemy==2.0.36
 python-multipart==0.0.32
 email-validator==2.3.0

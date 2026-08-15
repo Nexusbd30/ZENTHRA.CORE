@@ -1,11 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: redqueen-ingress
+  name: vaelqorix-runtime-policy
 spec:
   podSelector:
-    matchLabels:
-      app: redqueen
+    matchExpressions:
+    - key: app
+      operator: In
+      values:
+      - vaelqorix-api
+      - redqueen
+      - ares
+      - ingestion
+      - vaelqorix-frontend
   policyTypes:
   - Ingress
   - Egress
@@ -15,6 +22,22 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
+    - protocol: TCP
+      port: 8080
   egress:
   - to:
     - podSelector: {}
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379

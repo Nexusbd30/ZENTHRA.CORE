@@ -17,8 +17,9 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import Depends, Header, HTTPException, status
-from jose import JWTError, jwt
+from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
@@ -125,7 +126,7 @@ def get_current_user(
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError as err:
+    except InvalidTokenError as err:
         raise credentials_exception from err
 
     user = UserService.get_user_by_email(db, email=email)
@@ -222,8 +223,8 @@ def require_admin_or_monitor_token(
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if not email:
-            raise JWTError("missing subject")
-    except JWTError as err:
+            raise InvalidTokenError("missing subject")
+    except InvalidTokenError as err:
         if monitor_token:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

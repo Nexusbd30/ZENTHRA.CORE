@@ -9,9 +9,6 @@ from app.intelligence.repository import get_persistent_knowledge_repository
 from app.intelligence.status import build_enterprise_intelligence_status
 from app.platform.blacknode import blacknode_gateway
 from app.platform.cortexflow import cortexflow_runtime
-from app.platform.vaelqorixapi import vaelqorixapi_registry
-from app.platform.vaelqorixflow import vaelqorixflow_engine
-from app.platform.vaelqorixvault import vaelqorixvault_retriever
 from app.platform.registry import (
     CURRENT_CORE,
     CURRENT_RUNTIME,
@@ -21,6 +18,9 @@ from app.platform.registry import (
     PLATFORM_UMBRELLA,
     PRODUCT_NAME,
 )
+from app.platform.vaelqorixapi import vaelqorixapi_registry
+from app.platform.vaelqorixflow import vaelqorixflow_engine
+from app.platform.vaelqorixvault import vaelqorixvault_retriever
 
 
 def build_platform_map() -> dict[str, Any]:

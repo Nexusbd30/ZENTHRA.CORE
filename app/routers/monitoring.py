@@ -2,13 +2,13 @@
 # 🛰️ MONITORING — VAELQORIX.CORE v4.2 (Elite-Hardening)
 # =============================================================
 # Responsabilidades:
-#   - /monitoring/* protegido por Bearer interno (VAELQORIX_MONITOR_TOKEN)
+#   - /monitoring/* protegido por Bearer interno o JWT admin.
 #   - /hooks/alertmanager protegido por IP Whitelist (red Docker)
 #   - Config dinámica via app.core.settings (lee .env)
 #
 # Notas:
-#   - El frontend usa VITE_VAELQORIX_MONITOR_TOKEN para llamar aquí.
-#   - Ningún JWT de usuario da acceso a /monitoring/*.
+#   - El frontend usa JWT admin; no se exponen tokens internos en cliente.
+#   - Los JWT sin rol admin no dan acceso a /monitoring/*.
 #   - El webhook de Alertmanager SOLO acepta tráfico de la red Docker.
 # =============================================================
 

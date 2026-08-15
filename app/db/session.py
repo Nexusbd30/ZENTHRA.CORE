@@ -1,16 +1,16 @@
-﻿# =============================================================
-# ðŸ—„ï¸ session.py â€” DB Engine & Sessions (v3.19 Alembic-SAFE)
-# VAELQORIX.XDR_COMMAND Â· Capa de Persistencia
+# =============================================================
+# 🗄️ session.py — DB Engine & Sessions (v3.19 Alembic-SAFE)
+# VAELQORIX.XDR_COMMAND · Capa de Persistencia
 # =============================================================
 # Centraliza:
-#   - CreaciÃ³n del engine de SQLAlchemy (SQLite / PostgreSQL)
+#   - Creación del engine de SQLAlchemy (SQLite / PostgreSQL)
 #   - SessionLocal (sesiones por request / job)
 #   - Dependency get_db() para FastAPI
 #
-# DiseÃ±o:
+# Diseño:
 #   - SQLite en dev (simple, sin pool real)
 #   - PostgreSQL en prod (pooling + pre_ping)
-#   - Compatible con Alembic (engine Ãºnico y consistente)
+#   - Compatible con Alembic (engine único y consistente)
 # =============================================================
 
 from __future__ import annotations
@@ -18,11 +18,11 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Wrapper legacy â†’ fuente Ãºnica: app.core.settings.settings
+# Wrapper legacy → fuente única: app.core.settings.settings
 from app.core.config import settings
 
 # =============================================================
-# ðŸ”Ž Helpers
+# 🔎 Helpers
 # =============================================================
 
 def _is_sqlite(uri: str) -> bool:
@@ -41,16 +41,16 @@ IS_SQLITE = _is_sqlite(DB_URI)
 
 
 # =============================================================
-# ðŸ”Œ Engine
+# 🔌 Engine
 # =============================================================
 # Reglas:
 # - SQLite:
-#     â€¢ check_same_thread=False (FastAPI es multi-thread)
-#     â€¢ Sin pooling real
+#     • check_same_thread=False (FastAPI es multi-thread)
+#     • Sin pooling real
 # - PostgreSQL:
-#     â€¢ pool_pre_ping=True  â†’ evita conexiones muertas
-#     â€¢ pool_size razonable â†’ API + scheduler
-#     â€¢ max_overflow        â†’ picos de carga
+#     • pool_pre_ping=True  → evita conexiones muertas
+#     • pool_size razonable → API + scheduler
+#     • max_overflow        → picos de carga
 #
 # future=True:
 #   - Activa comportamiento SQLAlchemy 2.x
@@ -77,19 +77,19 @@ else:
         }
     )
 
-# Engine Ãºnico de la aplicaciÃ³n
-# âš ï¸ Alembic debe usar ESTE engine indirectamente vÃ­a settings
+# Engine único de la aplicación
+# ⚠️ Alembic debe usar ESTE engine indirectamente vía settings
 engine = create_engine(DB_URI, **engine_kwargs)
 
 
 # =============================================================
-# ðŸ§© SessionLocal
+# 🧩 SessionLocal
 # =============================================================
-# ConfiguraciÃ³n elegida:
-# - autocommit=False â†’ commits explÃ­citos
-# - autoflush=False  â†’ control manual del flush
+# Configuración elegida:
+# - autocommit=False → commits explícitos
+# - autoflush=False  → control manual del flush
 # - expire_on_commit=False
-#     â€¢ Muy Ãºtil en APIs: permite devolver objetos tras commit
+#     • Muy útil en APIs: permite devolver objetos tras commit
 #       sin reconsultar la DB
 # =============================================================
 
@@ -103,22 +103,22 @@ SessionLocal = sessionmaker(
 
 
 # =============================================================
-# ðŸ’‰ FastAPI Dependency â€” get_db
+# 💉 FastAPI Dependency — get_db
 # =============================================================
 def get_db():
     """
-    Crea una sesiÃ³n de BD por request / job.
+    Crea una sesión de BD por request / job.
 
-    Uso tÃ­pico:
+    Uso típico:
         def endpoint(db: Session = Depends(get_db)):
             ...
 
-    GarantÃ­as:
-      - Siempre cierra la sesiÃ³n
+    Garantías:
+      - Siempre cierra la sesión
       - Compatible con:
-          â€¢ Requests HTTP
-          â€¢ Background tasks
-          â€¢ Scheduler / correlation engine
+          • Requests HTTP
+          • Background tasks
+          • Scheduler / correlation engine
     """
     db = SessionLocal()
     try:

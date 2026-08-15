@@ -1,10 +1,10 @@
-﻿// =============================================================
-// ðŸ’  VAELQORIX UserFormModal â€” v2.4 Final
 // =============================================================
-// Modal profesional para creaciÃ³n y ediciÃ³n de usuarios.
+// 💠 VAELQORIX UserFormModal — v2.4 Final
+// =============================================================
+// Modal profesional para creación y edición de usuarios.
 // Integrado con:
 //   - Backend FastAPI (/users/)
-//   - Sistema JWT vÃ­a vaelqorixApi
+//   - Sistema JWT vía vaelqorixApi
 //   - Notificaciones globales (NotificationProvider)
 // =============================================================
 
@@ -15,13 +15,13 @@ import vaelqorixApi from "@/api/vaelqorixApi";
 import { useNotify } from "@/components/NotificationProvider";
 
 // =============================================================
-// âš™ï¸ COMPONENTE PRINCIPAL
+// ⚙️ COMPONENTE PRINCIPAL
 // =============================================================
 export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   const notify = useNotify();
 
   // ------------------------------------------------------------
-  // ðŸ§  ESTADOS
+  // 🧠 ESTADOS
   // ------------------------------------------------------------
   const [formData, setFormData] = useState({
     full_name: "",
@@ -34,7 +34,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   const [loading, setLoading] = useState(false);
 
   // ------------------------------------------------------------
-  // âœ³ï¸ Cargar datos si es modo ediciÃ³n
+  // ✳️ Cargar datos si es modo edición
   // ------------------------------------------------------------
   useEffect(() => {
     if (user) {
@@ -46,7 +46,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
         is_active: user.is_active ?? true,
       });
     } else {
-      // ðŸ” Reset al abrir en modo "crear"
+      // 🔁 Reset al abrir en modo "crear"
       setFormData({
         full_name: "",
         email: "",
@@ -58,7 +58,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   }, [user, isOpen]);
 
   // ------------------------------------------------------------
-  // ðŸ§© Manejo de cambios
+  // 🧩 Manejo de cambios
   // ------------------------------------------------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -69,7 +69,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   };
 
   // ------------------------------------------------------------
-  // ðŸ’¾ Enviar formulario (crear o actualizar)
+  // 💾 Enviar formulario (crear o actualizar)
   // ------------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,19 +77,19 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
 
     try {
       if (user) {
-        // âœï¸ Actualizar usuario existente
+        // ✏️ Actualizar usuario existente
         await vaelqorixApi.put(`/users/${user.id}`, formData);
         notify("success", `Usuario ${formData.full_name} actualizado correctamente`);
       } else {
-        // ðŸŸ¢ Crear nuevo usuario
+        // 🟢 Crear nuevo usuario
         await vaelqorixApi.post(`/users/`, formData);
         notify("success", `Usuario ${formData.full_name} creado correctamente`);
       }
 
-      onSuccess?.(); // ðŸ” Refresca tabla
-      onClose(); // ðŸ”’ Cierra modal
+      onSuccess?.(); // 🔁 Refresca tabla
+      onClose(); // 🔒 Cierra modal
     } catch (err) {
-      console.error("âŒ Error al guardar usuario:", err);
+      console.error("❌ Error al guardar usuario:", err);
       const msg =
         err.response?.data?.detail ||
         "Error al guardar los datos del usuario";
@@ -100,7 +100,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   };
 
   // ------------------------------------------------------------
-  // ðŸŽ¨ RENDER DEL MODAL
+  // 🎨 RENDER DEL MODAL
   // ------------------------------------------------------------
   return (
     <AnimatePresence>
@@ -126,7 +126,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
               <X size={20} />
             </button>
 
-            {/* TÃ­tulo */}
+            {/* Título */}
             <div className="flex items-center gap-2 mb-4">
               <Shield className="text-blue-400" size={22} />
               <h2 className="text-xl font-semibold">
@@ -151,7 +151,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
 
               {/* Correo */}
               <div>
-                <label className="text-sm text-neutral-400">Correo electrÃ³nico</label>
+                <label className="text-sm text-neutral-400">Correo electrónico</label>
                 <input
                   type="email"
                   name="email"
@@ -162,10 +162,10 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                 />
               </div>
 
-              {/* ContraseÃ±a */}
+              {/* Contraseña */}
               {!user && (
                 <div>
-                  <label className="text-sm text-neutral-400">ContraseÃ±a</label>
+                  <label className="text-sm text-neutral-400">Contraseña</label>
                   <input
                     type="password"
                     name="password"
@@ -206,7 +206,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                 </label>
               </div>
 
-              {/* BotÃ³n de acciÃ³n */}
+              {/* Botón de acción */}
               <button
                 type="submit"
                 disabled={loading}

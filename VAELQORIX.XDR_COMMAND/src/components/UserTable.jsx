@@ -1,14 +1,14 @@
-﻿// =============================================================
-// ðŸ’  VAELQORIX UserTable â€” v2.5 Final Offline-aware
 // =============================================================
-// MÃ³dulo de gestiÃ³n de usuarios (CRUD completo)
+// 💠 VAELQORIX UserTable — v2.5 Final Offline-aware
+// =============================================================
+// Módulo de gestión de usuarios (CRUD completo)
 // - Integrado con backend FastAPI (/users/)
 // - Autenticado con JWT mediante vaelqorixApi
-// - DiseÃ±o profesional (inspirado en AWS IAM Console)
+// - Diseño profesional (inspirado en AWS IAM Console)
 // - Modo offline-aware:
 //     * Si el backend no responde ("No se puede conectar con el servidor.")
 //       se muestra un mensaje claro y NO se muestra
-//       "No se encontraron usuarios" como si fuera tabla vacÃ­a real.
+//       "No se encontraron usuarios" como si fuera tabla vacía real.
 // =============================================================
 
 import React, { useEffect, useState } from "react";
@@ -43,7 +43,7 @@ export default function UserTable() {
   const [error, setError] = useState(null);
 
   // =============================================================
-  // ðŸ“¦ CARGAR USUARIOS (con paginaciÃ³n y bÃºsqueda)
+  // 📦 CARGAR USUARIOS (con paginación y búsqueda)
   // =============================================================
   const fetchUsers = async () => {
     try {
@@ -57,12 +57,12 @@ export default function UserTable() {
       setUsers(response.data.items || []);
       setTotalPages(response.data.pages || 1);
     } catch (err) {
-      console.error("âŒ Error al obtener usuarios:", err);
+      console.error("❌ Error al obtener usuarios:", err);
       let msg = err?.message || "Error al cargar usuarios desde el servidor";
 
       if (msg.includes(OFFLINE_MSG)) {
-        msg = "Backend offline â€” no se pueden cargar los usuarios ahora mismo.";
-        notify("warning", `âš ï¸ ${msg}`);
+        msg = "Backend offline — no se pueden cargar los usuarios ahora mismo.";
+        notify("warning", `⚠️ ${msg}`);
       } else {
         notify("error", msg);
       }
@@ -79,7 +79,7 @@ export default function UserTable() {
   }, [page, query]);
 
   // =============================================================
-  // ðŸ—‘ï¸ ELIMINAR USUARIO
+  // 🗑️ ELIMINAR USUARIO
   // =============================================================
   const handleDelete = async () => {
     if (!selectedUser) return;
@@ -92,7 +92,7 @@ export default function UserTable() {
       setConfirmOpen(false);
       fetchUsers();
     } catch (err) {
-      console.error("âŒ Error al eliminar usuario:", err);
+      console.error("❌ Error al eliminar usuario:", err);
       const msg =
         err?.message || "Error al eliminar usuario desde el servidor";
       notify("error", msg);
@@ -100,7 +100,7 @@ export default function UserTable() {
   };
 
   // =============================================================
-  // ðŸŽ¨ RENDER PRINCIPAL
+  // 🎨 RENDER PRINCIPAL
   // =============================================================
   return (
     <div className="p-6 text-white">
@@ -108,7 +108,7 @@ export default function UserTable() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold flex items-center gap-2">
           <Shield className="text-blue-400" size={24} />
-          GestiÃ³n de Usuarios
+          Gestión de Usuarios
         </h1>
 
         <button
@@ -122,7 +122,7 @@ export default function UserTable() {
         </button>
       </div>
 
-      {/* BARRA DE BÃšSQUEDA */}
+      {/* BARRA DE BÚSQUEDA */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 w-full max-w-sm">
           <Search size={18} className="text-neutral-400" />
@@ -147,7 +147,7 @@ export default function UserTable() {
       {/* ERROR OFFLINE / OTROS */}
       {error && (
         <div className="mb-4 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-lg">
-          âš ï¸ {error}
+          ⚠️ {error}
         </div>
       )}
 
@@ -231,7 +231,7 @@ export default function UserTable() {
         </table>
       </Motion.div>
 
-      {/* PAGINACIÃ“N */}
+      {/* PAGINACIÓN */}
       <div className="flex justify-end mt-4 gap-3 text-sm text-neutral-300">
         <button
           onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -244,7 +244,7 @@ export default function UserTable() {
         </button>
 
         <span className="px-3 py-1 bg-neutral-800 rounded-lg">
-          PÃ¡gina {page} / {totalPages}
+          Página {page} / {totalPages}
         </span>
 
         <button
@@ -271,7 +271,7 @@ export default function UserTable() {
       <ConfirmDialog
         isOpen={confirmOpen}
         title="Eliminar usuario"
-        message={`Â¿Seguro que deseas eliminar la cuenta de ${selectedUser?.full_name}?`}
+        message={`¿Seguro que deseas eliminar la cuenta de ${selectedUser?.full_name}?`}
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"
         danger

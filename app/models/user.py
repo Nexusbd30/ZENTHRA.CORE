@@ -1,17 +1,17 @@
-﻿# =============================================================
-# ðŸ‘¤ UserModel â€” VAELQORIX.XDR_COMMAND (v2.1 Hardened Stable)
+# =============================================================
+# 👤 UserModel — VAELQORIX.XDR_COMMAND (v2.1 Hardened Stable)
 # =============================================================
 # Representa a los usuarios registrados dentro del sistema.
 #
-# CaracterÃ­sticas:
+# Características:
 #  - ID basado en UUID (String(36)) como clave primaria
-#    â†’ mejora seguridad y unicidad global frente a IDs incrementales.
-#  - Campo `role` usado por el mÃ³dulo de seguridad:
-#       Â· "admin" / "administrator" / "superadmin" â†’ acceso elevado
-#       Â· "user" (por defecto) â†’ acceso estÃ¡ndar
+#    → mejora seguridad y unicidad global frente a IDs incrementales.
+#  - Campo `role` usado por el módulo de seguridad:
+#       · "admin" / "administrator" / "superadmin" → acceso elevado
+#       · "user" (por defecto) → acceso estándar
 #  - Campo `is_active` usado por `get_current_active_user` para
 #    bloquear accesos sin eliminar la cuenta.
-#  - RelaciÃ³n ORM con ThreatModel (amenazas generadas por el usuario).
+#  - Relación ORM con ThreatModel (amenazas generadas por el usuario).
 # =============================================================
 
 import uuid
@@ -24,20 +24,20 @@ from app.models.base import Base
 
 class User(Base):
     """
-    ðŸ§  Modelo de base de datos para los usuarios del sistema VAELQORIX.
+    🧠 Modelo de base de datos para los usuarios del sistema VAELQORIX.
 
-    Cada usuario puede estar asociado a mÃºltiples amenazas (ThreatModel),
-    creadas manualmente o generadas por el motor de correlaciÃ³n
+    Cada usuario puede estar asociado a múltiples amenazas (ThreatModel),
+    creadas manualmente o generadas por el motor de correlación
     VAELQORIX.XDR_COMMAND.
     """
 
     __tablename__ = "users"
 
     # ---------------------------------------------------------
-    # ðŸ†” Identificador Ãºnico universal (UUID)
+    # 🆔 Identificador único universal (UUID)
     # ---------------------------------------------------------
     # Se almacena como texto (String(36)) para mantener compatibilidad
-    # con la mayorÃ­a de motores SQL y facilitar logs/depuraciÃ³n.
+    # con la mayoría de motores SQL y facilitar logs/depuración.
     id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
@@ -46,19 +46,19 @@ class User(Base):
     )
 
     # ---------------------------------------------------------
-    # ðŸ“› InformaciÃ³n bÃ¡sica del usuario
+    # 📛 Información básica del usuario
     # ---------------------------------------------------------
     full_name: Mapped[str] = mapped_column(String(255), nullable=True)
 
-    # Rol lÃ³gico de seguridad (controlado por app.core.security):
-    #   - "admin" / "administrator" / "superadmin" â†’ acceso admin
-    #   - "user" â†’ acceso estÃ¡ndar (por defecto)
+    # Rol lógico de seguridad (controlado por app.core.security):
+    #   - "admin" / "administrator" / "superadmin" → acceso admin
+    #   - "user" → acceso estándar (por defecto)
     role: Mapped[str] = mapped_column(String(50), default="user")
 
     # ---------------------------------------------------------
-    # ðŸ“§ AutenticaciÃ³n y acceso
+    # 📧 Autenticación y acceso
     # ---------------------------------------------------------
-    # Email Ãºnico, utilizado como identificador principal de login.
+    # Email único, utilizado como identificador principal de login.
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
@@ -66,24 +66,24 @@ class User(Base):
         nullable=False,
     )
 
-    # Hash de la contraseÃ±a (nunca almacenar texto plano).
+    # Hash de la contraseña (nunca almacenar texto plano).
     hashed_password: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
 
     # ---------------------------------------------------------
-    # âš™ï¸ Estado del usuario
+    # ⚙️ Estado del usuario
     # ---------------------------------------------------------
     # Campo evaluado por:
-    #   - get_current_active_user â†’ bloquea acceso si es False.
+    #   - get_current_active_user → bloquea acceso si es False.
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
     )
 
     # ---------------------------------------------------------
-    # ðŸ”— RelaciÃ³n con amenazas (ThreatModel)
+    # 🔗 Relación con amenazas (ThreatModel)
     # ---------------------------------------------------------
     # Permite acceder a todas las amenazas creadas por el usuario.
     threats = relationship(
@@ -93,7 +93,7 @@ class User(Base):
     )
 
     # ---------------------------------------------------------
-    # ðŸ§¾ RepresentaciÃ³n legible para logs/depuraciÃ³n
+    # 🧾 Representación legible para logs/depuración
     # ---------------------------------------------------------
     def __repr__(self) -> str:
         return (

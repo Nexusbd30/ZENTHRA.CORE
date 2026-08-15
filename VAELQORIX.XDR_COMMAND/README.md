@@ -1,13 +1,12 @@
-﻿# VAELQORIX Frontend (React + Vite)
+# VAELQORIX Frontend (React + Vite)
 
 Frontend real-time para VAELQORIX.XDR_COMMAND. Consumimos el backend FastAPI y las rutas de observabilidad sin datos mock.
 
-## ConfiguraciÃ³n
+## Configuración
 
 1) Copia `.env.example` a `.env` y rellena valores reales:
 ```
 VITE_API_URL=http://<backend>/api        # o http://localhost:8000 si haces port-forward
-VITE_VAELQORIX_MONITOR_TOKEN=<token-interno>  # el mismo que usa Prometheus para /monitoring/*
 VITE_PROMETHEUS_PUBLIC_URL=http://<prometheus>:9090  # opcional
 ```
 
@@ -22,7 +21,7 @@ corepack pnpm install
 corepack pnpm run dev -- --host
 ```
 
-4) Build producciÃ³n:
+4) Build producción:
 ```
 corepack pnpm run build
 corepack pnpm run preview   # sirve el build localmente para validar
@@ -30,14 +29,14 @@ corepack pnpm run preview   # sirve el build localmente para validar
 
 ## Despliegue con Docker
 
-- Construye el frontend con `corepack pnpm run build` y sirve `dist/` detrÃ¡s del reverse proxy que expone el backend.
+- Construye el frontend con `corepack pnpm run build` y sirve `dist/` detrás del reverse proxy que expone el backend.
 - Ajusta `VITE_API_URL` al dominio del proxy (idealmente mismo dominio + ruta `/api` para evitar CORS).
-- Inyecta `VITE_VAELQORIX_MONITOR_TOKEN` solo en entornos seguros; no lo dejes vacÃ­o si usas las vistas de monitorizaciÃ³n.
+- No inyectes tokens internos de monitorizacion en el frontend. Las rutas protegidas deben usar JWT admin o un proxy servidor.
 
-## ConexiÃ³n sin mocks
+## Conexión sin mocks
 
 - Todos los datos provienen del backend:
-  - Alertas: `/monitoring/alerts/realtime` â†’ Alertmanager.
+  - Alertas: `/monitoring/alerts/realtime` → Alertmanager.
   - Salud infra: `/monitoring/health/full`.
   - Usuarios/Amenazas: `/users`, `/threats`.
-- Se eliminaron los mocks y cualquier dato ficticio; si un servicio no responde se mostrarÃ¡ error en pantalla.
+- Se eliminaron los mocks y cualquier dato ficticio; si un servicio no responde se mostrará error en pantalla.

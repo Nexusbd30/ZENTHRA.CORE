@@ -2,6 +2,8 @@
 
 import pytest
 
+from app.core.settings import settings
+
 
 @pytest.mark.asyncio
 async def test_create_duplicate_user(test_client):
@@ -26,6 +28,22 @@ async def test_create_user_rejects_weak_password(test_client):
     )
 
     assert create.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_user_rejects_public_registration_when_disabled(test_client, monkeypatch):
+    monkeypatch.setattr(settings, "VAELQORIX_PUBLIC_REGISTRATION_ENABLED", False)
+
+    create = await test_client.post(
+        "/users/",
+        json={
+            "email": f"closed_{uuid.uuid4().hex[:6]}@test.com",
+            "password": "password123",
+        },
+    )
+
+    assert create.status_code == 403
+    assert "registro publico deshabilitado" in create.json()["detail"].lower()
 
 
 @pytest.mark.asyncio

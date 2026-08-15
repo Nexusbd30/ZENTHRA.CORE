@@ -1,5 +1,5 @@
-﻿// =============================================================
-// ðŸ“Š ThreatTable â€” VAELQORIX XDR Command (v4.3 Elite Secure+UX+Filters)
+// =============================================================
+// 📊 ThreatTable — VAELQORIX XDR Command (v4.3 Elite Secure+UX+Filters)
 // =============================================================
 // Responsabilidades:
 //   - Obtener la lista de amenazas desde el backend (listThreats).
@@ -9,9 +9,9 @@
 //
 // UX extra:
 //   - Badge de nivel (critical/high/medium/low).
-//   - Badge de categorÃ­a (availability/network/database/auth/other).
-//   - Filtros SOC por nivel, origen y categorÃ­a.
-//   - Estado offline vs â€œsin datosâ€ claramente diferenciados.
+//   - Badge de categoría (availability/network/database/auth/other).
+//   - Filtros SOC por nivel, origen y categoría.
+//   - Estado offline vs “sin datos” claramente diferenciados.
 // =============================================================
 
 import { useEffect, useState, useCallback } from "react";
@@ -42,13 +42,13 @@ export default function ThreatTable({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ðŸŽ›ï¸ Filtros SOC
+  // 🎛️ Filtros SOC
   const [filterSeverity, setFilterSeverity] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
 
   // -------------------------------------------------------------
-  // ðŸ§² Cargar amenazas desde el backend
+  // 🧲 Cargar amenazas desde el backend
   // -------------------------------------------------------------
   const fetchThreats = useCallback(async () => {
     setLoading(true);
@@ -63,10 +63,10 @@ export default function ThreatTable({
       const isOffline = msg.includes(OFFLINE_MSG);
 
       if (isOffline) {
-        msg = "Backend offline â€” no se pueden cargar las amenazas ahora mismo.";
-        notify("warning", `âš ï¸ ${msg}`);
+        msg = "Backend offline — no se pueden cargar las amenazas ahora mismo.";
+        notify("warning", `⚠️ ${msg}`);
       } else {
-        notify("error", `âŒ ${msg}`);
+        notify("error", `❌ ${msg}`);
       }
 
       setError(msg);
@@ -87,27 +87,27 @@ export default function ThreatTable({
   }, [autoRefreshMs, fetchThreats]);
 
   // -------------------------------------------------------------
-  // ðŸ—‘ï¸ Eliminar amenaza
+  // 🗑️ Eliminar amenaza
   // -------------------------------------------------------------
   const handleDelete = async (threat) => {
-    if (!window.confirm(`Â¿Eliminar la amenaza "${threat.title}"?`)) return;
+    if (!window.confirm(`¿Eliminar la amenaza "${threat.title}"?`)) return;
 
     try {
       await deleteThreat(threat.id);
-      notify("success", "âœ… Amenaza eliminada correctamente");
+      notify("success", "✅ Amenaza eliminada correctamente");
       fetchThreats();
     } catch (err) {
       const msg =
         err?.message || "Error al eliminar la amenaza. Intenta de nuevo.";
-      notify("error", `âŒ ${msg}`);
+      notify("error", `❌ ${msg}`);
     }
   };
 
   // -------------------------------------------------------------
-  // ðŸ”Ž Helpers de presentaciÃ³n
+  // 🔎 Helpers de presentación
   // -------------------------------------------------------------
   const formatTimestamp = (ts) => {
-    if (!ts) return "â€”";
+    if (!ts) return "—";
     try {
       const d = ts instanceof Date ? ts : new Date(ts);
       if (Number.isNaN(d.getTime())) return String(ts);
@@ -180,7 +180,7 @@ export default function ThreatTable({
   };
 
   // -------------------------------------------------------------
-  // ðŸ§® Aplicar filtros SOC en cliente
+  // 🧮 Aplicar filtros SOC en cliente
   // -------------------------------------------------------------
   const filteredThreats = threats.filter((t) => {
     const sev = String(t.level || t.severity || "medium").toLowerCase();
@@ -204,7 +204,7 @@ export default function ThreatTable({
       }
     }
 
-    // Filtro por categorÃ­a
+    // Filtro por categoría
     if (filterCategory !== "all" && cat !== filterCategory) {
       return false;
     }
@@ -213,7 +213,7 @@ export default function ThreatTable({
   });
 
   // -------------------------------------------------------------
-  // ðŸŽ¨ Render
+  // 🎨 Render
   // -------------------------------------------------------------
   return (
     <div className="bg-[#020617]/60 border border-red-500/20 rounded-2xl p-4 shadow-lg shadow-red-900/30">
@@ -222,7 +222,7 @@ export default function ThreatTable({
         <div className="text-gray-300">
           {loading
             ? "Cargando amenazas..."
-            : `Amenazas registradas: ${threats.length} Â· Mostrando: ${filteredThreats.length}`}
+            : `Amenazas registradas: ${threats.length} · Mostrando: ${filteredThreats.length}`}
         </div>
         <button
           type="button"
@@ -271,7 +271,7 @@ export default function ThreatTable({
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] uppercase tracking-wide text-gray-400">
-            CategorÃ­a
+            Categoría
           </span>
           <select
             value={filterCategory}
@@ -292,7 +292,7 @@ export default function ThreatTable({
       {/* Mensaje error/offline */}
       {error && (
         <div className="mb-4 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-lg">
-          âš ï¸ {error}
+          ⚠️ {error}
         </div>
       )}
 
@@ -302,9 +302,9 @@ export default function ThreatTable({
           <thead className="bg-white/5 text-gray-300 uppercase text-xs">
             <tr>
               <th className="px-4 py-3 text-left">ID</th>
-              <th className="px-4 py-3 text-left">TÃ­tulo</th>
+              <th className="px-4 py-3 text-left">Título</th>
               <th className="px-4 py-3 text-left">Origen</th>
-              <th className="px-4 py-3 text-left">CategorÃ­a</th>
+              <th className="px-4 py-3 text-left">Categoría</th>
               <th className="px-4 py-3 text-left">Nivel</th>
               <th className="px-4 py-3 text-left">Detectado</th>
               <th className="px-4 py-3 text-right">Acciones</th>
@@ -337,10 +337,10 @@ export default function ThreatTable({
                   onClick={() => onSelectThreat?.(t)}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                    {(t.id || "").toString().slice(0, 8)}â€¦
+                    {(t.id || "").toString().slice(0, 8)}…
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold">
-                    {t.title || "â€”"}
+                    {t.title || "—"}
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-300">
                     {t.source || t.origin || "Desconocido"}
@@ -405,7 +405,7 @@ export default function ThreatTable({
                   colSpan={7}
                   className="px-4 py-4 text-center text-gray-400 text-xs"
                 >
-                  Cargando datos de amenazasâ€¦
+                  Cargando datos de amenazas…
                 </td>
               </tr>
             )}

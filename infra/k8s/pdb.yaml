@@ -1,9 +1,39 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  name: vaelqorix-api-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: vaelqorix-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
   name: redqueen-pdb
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: redqueen
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ingestion-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ingestion
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vaelqorix-frontend-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: vaelqorix-frontend

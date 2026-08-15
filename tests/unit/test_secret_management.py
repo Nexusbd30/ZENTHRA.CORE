@@ -3,8 +3,8 @@
 from pathlib import Path
 from uuid import uuid4
 
+import jwt
 import requests
-from jose import jwt
 
 from app.actions._dispatch import dispatch_command
 from app.core import secrets

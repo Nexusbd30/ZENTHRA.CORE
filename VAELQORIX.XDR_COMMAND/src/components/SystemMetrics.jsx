@@ -1,8 +1,8 @@
-﻿// =============================================================
-// ðŸ’  SystemMetrics â€” VAELQORIX XDR Command (v5.4 Windows-Exporter Safe)
+// =============================================================
+// 💠 SystemMetrics — VAELQORIX XDR Command (v5.4 Windows-Exporter Safe)
 // =============================================================
 // - CPU % a partir de windows_cpu_time_total{mode="idle"}
-//   FÃ³rmula (por instancia):
+//   Fórmula (por instancia):
 //     100 - avg(rate(windows_cpu_time_total{mode="idle"}[2m])) * 100
 //
 // - Memoria libre (GB), robusto:
@@ -49,7 +49,7 @@ const instantPoint = async (q, key) => {
 
 export default function SystemMetrics({
   windowMinutes = 10, // ventana de tiempo (min)
-  stepSeconds = 15, // resoluciÃ³n (s)
+  stepSeconds = 15, // resolución (s)
 }) {
   const [loading, setLoading] = useState(true);
   const [cpu, setCpu] = useState([]);
@@ -67,7 +67,7 @@ export default function SystemMetrics({
         const step = `${stepSeconds}s`;
 
         // =====================================================
-        // ðŸ§  CPU %
+        // 🧠 CPU %
         //   100 - avg by (instance) (rate(windows_cpu_time_total{mode="idle"}[2m]) * 100)
         // =====================================================
         const qCPU =
@@ -85,7 +85,7 @@ export default function SystemMetrics({
         }
 
         // =====================================================
-        // ðŸ§  Memoria libre (GB)
+        // 🧠 Memoria libre (GB)
         //
         // 1) windows_os_physical_memory_free_bytes (collector `os`)
         // 2) fallback: windows_memory_available_bytes (collector `memory`)
@@ -123,7 +123,7 @@ export default function SystemMetrics({
       } catch (e) {
         console.error("[SystemMetrics] metrics error:", e);
         if (!cancelled) {
-          setError("Error al obtener mÃ©tricas de Prometheus.");
+          setError("Error al obtener métricas de Prometheus.");
           setCpu([]);
           setMem([]);
         }
@@ -137,7 +137,7 @@ export default function SystemMetrics({
     fetchData();
     const id = setInterval(
       fetchData,
-      Math.max(stepSeconds * 1000, 10000) // â‰¥10s
+      Math.max(stepSeconds * 1000, 10000) // ≥10s
     );
 
     return () => {
@@ -147,7 +147,7 @@ export default function SystemMetrics({
   }, [windowMinutes, stepSeconds]);
 
   // =========================================================
-  // ðŸŽ¨ UI
+  // 🎨 UI
   // =========================================================
   if (loading) {
     return (
@@ -172,7 +172,7 @@ export default function SystemMetrics({
         data={cpu}
         lines={[{ key: "cpu", label: "CPU %" }]}
         yLabel="Uso de CPU (%)"
-        noDataMessage="Sin datos de CPU â€” comprueba que windows_exporter expone windows_cpu_time_total."
+        noDataMessage="Sin datos de CPU — comprueba que windows_exporter expone windows_cpu_time_total."
       />
 
       {/* Memoria libre */}
@@ -180,7 +180,7 @@ export default function SystemMetrics({
         data={mem}
         lines={[{ key: "mem", label: "Memoria %" }]}
         yLabel="Uso de memoria (%)"
-        noDataMessage="Sin datos de memoria â€” comprueba mÃ©tricas de memoria en windows_exporter."
+        noDataMessage="Sin datos de memoria — comprueba métricas de memoria en windows_exporter."
       />
     </div>
   );

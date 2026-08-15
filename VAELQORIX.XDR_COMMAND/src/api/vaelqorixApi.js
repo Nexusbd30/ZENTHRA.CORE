@@ -1,53 +1,41 @@
-﻿// =============================================================
-// VAELQORIX XDR Command â€” API CLIENT
+// =============================================================
+// VAELQORIX XDR Command — API CLIENT
 // v3.20 Elite Secure RealAuth+UX + Hardening + Correlation+Health
 // =============================================================
 // Responsabilidades:
 //   - Gestionar todas las llamadas HTTP al backend VAELQORIX.
-//   - Inyectar el JWT de sesiÃ³n en rutas protegidas (/users, /threats, ...).
-//   - Usar un monitor token *dedicado* para /monitoring/* (no JWT de usuario).
+//   - Inyectar el JWT de sesión en rutas protegidas (/users, /threats, ...).
+//   - Inyectar JWT de usuario/admin tambien en /monitoring/* y /api/v1/*.
 //   - Manejo global de errores (401/403/network) con mensajes UX-friendly.
-//   - Soporte opcional de mocks solo para mÃ©tricas PromQL si VITE_USE_MOCKS=true.
+//   - Soporte opcional de mocks solo para métricas PromQL si VITE_USE_MOCKS=true.
 //   - Expone helpers para:
-//       Â· Motor de correlaciÃ³n: /monitoring/correlation/run
-//       Â· Health global infra: /monitoring/health/full
+//       · Motor de correlación: /monitoring/correlation/run
+//       · Health global infra: /monitoring/health/full
 //
 // NOTAS CLAVE:
 //   - NUNCA se generan sesiones falsas tipo offline@mock.
 //   - Si el backend cae (network error), se lanza:
 //       "No se puede conectar con el servidor."
 //     y los componentes muestran mensajes tipo
-//       "Backend offline â€” ..."
+//       "Backend offline — ..."
 // =============================================================
 
 import axios from "axios";
 
 // =============================================================
-// ðŸŒ Config base
+// 🌐 Config base
 // =============================================================
 
-// URL base del backend (definida en .env â†’ VITE_API_URL)
+// URL base del backend (definida en .env → VITE_API_URL)
 const API_BASE_URL =
   (import.meta.env.VITE_API_URL || "http://127.0.0.1:8010").replace(/\/+$/, "");
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 45000);
 
-// Token interno para /monitoring/* (NO es el JWT de usuario)
-const MONITOR_TOKEN = (
-  import.meta.env.VITE_VAELQORIX_MONITOR_TOKEN ||
-  ""
-).trim();
-
 // Clave donde guardamos el JWT real de usuario
 const USER_TOKEN_KEY = "access_token";
 
-if (!MONITOR_TOKEN) {
-  console.warn(
-    "[VAELQORIX] VITE_VAELQORIX_MONITOR_TOKEN vacio; /monitoring/* usara JWT admin si existe"
-  );
-}
-
 // =============================================================
-// ðŸ§© Instancia axios principal
+// 🧩 Instancia axios principal
 // =============================================================
 
 const vaelqorixApi = axios.create({
@@ -57,11 +45,11 @@ const vaelqorixApi = axios.create({
 });
 
 // =============================================================
-// ðŸ§­ Utilidades de ruta
+// 🧭 Utilidades de ruta
 // =============================================================
 
 /**
- * Determina si una peticiÃ³n apunta a /monitoring/*
+ * Determina si una petición apunta a /monitoring/*
  * (usa URL absoluta para evitar falsos positivos).
  */
 const isMonitoringPath = (config) => {
@@ -95,7 +83,7 @@ const isAutonomyPath = (config) => {
 };
 
 /**
- * Determina si una peticiÃ³n es al endpoint de login.
+ * Determina si una petición es al endpoint de login.
  */
 const isAuthLoginPath = (config) => {
   const url = String(config?.url || "");
@@ -103,7 +91,7 @@ const isAuthLoginPath = (config) => {
 };
 
 // =============================================================
-// ðŸ” Helpers de token de usuario
+// 🔐 Helpers de token de usuario
 // =============================================================
 
 export const getUserToken = () => {
@@ -119,35 +107,31 @@ export const setUserToken = (token) => {
 };
 
 // =============================================================
-// ðŸ” Interceptores
+// 🔐 Interceptores
 // =============================================================
 
-// ðŸ“¨ REQUEST â€” InyecciÃ³n de tokens (JWT o monitor-token)
+// 📨 REQUEST — Inyección de tokens (JWT o monitor-token)
 vaelqorixApi.interceptors.request.use(
   (config) => {
     // Aseguramos que headers exista
     config.headers = config.headers || {};
 
-    // 1) ExcepciÃ³n: /auth/login â†’ NO enviamos JWT
+    // 1) Excepción: /auth/login → NO enviamos JWT
     if (isAuthLoginPath(config)) {
       return config;
     }
 
-    // 2) /monitoring/* â†’ SIEMPRE via monitor token (no JWT de usuario)
+    // 2) /monitoring/* y /api/v1/* usan JWT real de usuario/admin.
     if (isMonitoringPath(config) || isAutonomyPath(config)) {
-      if (MONITOR_TOKEN) {
-        config.headers.Authorization = `Bearer ${MONITOR_TOKEN}`;
-      } else {
-        const jwt = getUserToken();
-        if (jwt) config.headers.Authorization = `Bearer ${jwt}`;
-      }
+      const jwt = getUserToken();
+      if (jwt) config.headers.Authorization = `Bearer ${jwt}`;
       if (!config.headers.Accept) {
         config.headers.Accept = "application/json";
       }
       return config;
     }
 
-    // 3) Resto de rutas protegidas â†’ JWT REAL de usuario
+    // 3) Resto de rutas protegidas → JWT REAL de usuario
     const jwt = getUserToken();
     if (jwt) {
       config.headers.Authorization = `Bearer ${jwt}`;
@@ -158,7 +142,7 @@ vaelqorixApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ðŸ“© RESPONSE â€” Manejo global de errores
+// 📩 RESPONSE — Manejo global de errores
 vaelqorixApi.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -167,52 +151,52 @@ vaelqorixApi.interceptors.response.use(
     const url = String(requestConfig?.url || "");
 
     // =========================================================
-    // ðŸŒ Error de red (backend caÃ­do / sin respuesta)
-    //   â†’ error.response es undefined, es un fallo de conexiÃ³n
+    // 🌐 Error de red (backend caído / sin respuesta)
+    //   → error.response es undefined, es un fallo de conexión
     // =========================================================
     if (!error.response) {
       console.error(
-        "[VAELQORIX] Error de conexiÃ³n con el servidor:",
+        "[VAELQORIX] Error de conexión con el servidor:",
         error.message
       );
       if (error.code === "ECONNABORTED") {
-        throw new Error("La peticiÃ³n al backend tardÃ³ demasiado.");
+        throw new Error("La petición al backend tardó demasiado.");
       }
       throw new Error("No se puede conectar con el servidor.");
     }
 
     // =========================================================
-    // ðŸ” 401 â†’ Token invÃ¡lido/expirado (excepto en /auth/login)
+    // 🔐 401 → Token inválido/expirado (excepto en /auth/login)
     // =========================================================
     if (status === 401 && !isAuthLoginPath(requestConfig)) {
-      console.warn("[VAELQORIX] Token invÃ¡lido o expirado. Cerrando sesiÃ³nâ€¦");
+      console.warn("[VAELQORIX] Token inválido o expirado. Cerrando sesión…");
       setUserToken("");
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
 
     // =========================================================
-    // ðŸŽ¯ 403 en rutas sensibles (/users*, /threats*)
-    //     â†’ mensaje claro de falta de permisos (rol admin)
+    // 🎯 403 en rutas sensibles (/users*, /threats*)
+    //     → mensaje claro de falta de permisos (rol admin)
     // =========================================================
     if (
       status === 403 &&
       (url.startsWith("/users") || url.startsWith("/threats"))
     ) {
       const msg =
-        "No tienes permisos para realizar esta acciÃ³n (se requiere rol administrador).";
-      console.warn("[VAELQORIX] 403 en ruta sensible:", url, "â†’", msg);
+        "No tienes permisos para realizar esta acción (se requiere rol administrador).";
+      console.warn("[VAELQORIX] 403 en ruta sensible:", url, "→", msg);
       throw new Error(msg);
     }
 
     // =========================================================
-    // ðŸ§± Resto de errores â†’ usar detail/message del backend si existe
+    // 🧱 Resto de errores → usar detail/message del backend si existe
     // =========================================================
     const detail =
       error.response?.data?.detail ||
       error.response?.data?.message ||
       error.message ||
-      "Error desconocido en la comunicaciÃ³n con el servidor";
+      "Error desconocido en la comunicación con el servidor";
 
     console.error("[VAELQORIX] API Error:", detail);
     throw new Error(detail);
@@ -220,7 +204,7 @@ vaelqorixApi.interceptors.response.use(
 );
 
 // =============================================================
-// ðŸ” Auth â€” 100% real (sin mocks)
+// 🔐 Auth — 100% real (sin mocks)
 // =============================================================
 
 /**
@@ -232,7 +216,7 @@ export const loginUser = async ({ username, password }) => {
   const { data } = await vaelqorixApi.post("/auth/login", payload);
 
   if (data?.access_token) {
-    // ðŸ” Guardamos el mismo token que usas en PowerShell
+    // 🔐 Guardamos el mismo token que usas en PowerShell
     setUserToken(data.access_token);
   }
 
@@ -241,7 +225,7 @@ export const loginUser = async ({ username, password }) => {
 
 /**
  * Obtiene el usuario actual real desde /users/me.
- * Si falla, se lanza error y el AuthContext decide cÃ³mo reaccionar.
+ * Si falla, se lanza error y el AuthContext decide cómo reaccionar.
  */
 export const getCurrentUser = async () => {
   const { data } = await vaelqorixApi.get("/users/me");
@@ -249,7 +233,7 @@ export const getCurrentUser = async () => {
 };
 
 /**
- * Logout global: limpia storage y fuerza redirecciÃ³n a /login.
+ * Logout global: limpia storage y fuerza redirección a /login.
  */
 export const logoutUser = () => {
   setUserToken("");
@@ -258,11 +242,11 @@ export const logoutUser = () => {
 };
 
 // =============================================================
-// ðŸ‘¥ Users
+// 👥 Users
 // =============================================================
 
 /**
- * Lista de usuarios paginada (o simple array, segÃºn backend).
+ * Lista de usuarios paginada (o simple array, según backend).
  */
 export const getUsers = async (page = 1, limit = 20) => {
   const { data } = await vaelqorixApi.get(`/users/?page=${page}&limit=${limit}`);
@@ -292,7 +276,7 @@ export const toggleUserActive = async (id, isActive) => {
 };
 
 // =============================================================
-// ðŸš¨ Threats
+// 🚨 Threats
 // =============================================================
 
 export const listThreats = async (skip = 0, limit = 20) => {
@@ -321,11 +305,11 @@ export const deleteThreat = async (id) => {
 };
 
 // =============================================================
-// ðŸ§  Correlation Engine (monitoring/correlation/run)
+// 🧠 Correlation Engine (monitoring/correlation/run)
 // =============================================================
 
 /**
- * Ejecuta el motor de correlaciÃ³n en backend.
+ * Ejecuta el motor de correlación en backend.
  * Protegido por VAELQORIX_MONITOR_TOKEN (no usa JWT de usuario).
  *
  * Respuesta:
@@ -340,7 +324,7 @@ export const runCorrelationOnce = async () => {
 };
 
 // =============================================================
-// ðŸ©º Health Global Infraestructura (monitoring/health/full)
+// 🩺 Health Global Infraestructura (monitoring/health/full)
 // =============================================================
 
 /**
@@ -355,7 +339,7 @@ export const getFullInfraHealth = async () => {
 };
 
 // =============================================================
-// ðŸ©º Helpers generales
+// 🩺 Helpers generales
 // =============================================================
 
 export const getHealth = async () => {
@@ -374,12 +358,12 @@ export const listThreatsRaw = async (skip = 0, limit = 20) => {
 };
 
 // =============================================================
-// ðŸ”” Alertas Prometheus (SIEMPRE REAL desde Alertmanager)
+// 🔔 Alertas Prometheus (SIEMPRE REAL desde Alertmanager)
 // =============================================================
 
 /**
  * Devuelve la lista plana de alertas activas desde:
- *   /monitoring/alerts/realtime â†’ backend â†’ Alertmanager /api/v2/alerts
+ *   /monitoring/alerts/realtime → backend → Alertmanager /api/v2/alerts
  */
 export const getAlerts = async () => {
   const { data } = await vaelqorixApi.get("/monitoring/alerts/realtime", {
@@ -618,7 +602,7 @@ export const verifyAresXAudit = async ({ fromSequence = 1 } = {}) => {
 };
 
 // =============================================================
-// ðŸ“ˆ PromQL (con fallback a mocks SOLO si USE_MOCKS es true)
+// 📈 PromQL (con fallback a mocks SOLO si USE_MOCKS es true)
 // =============================================================
 
 export const promQuery = async (q) => {
@@ -634,7 +618,7 @@ export const promRange = async ({ q, start, end, step = "15s" }) => {
 };
 
 // =============================================================
-// ðŸ–§ Windows Host â€” NICs disponibles (para mÃ©tricas de red)
+// 🖧 Windows Host — NICs disponibles (para métricas de red)
 // =============================================================
 
 export const getWindowsNICs = async () => {
