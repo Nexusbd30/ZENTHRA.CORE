@@ -195,6 +195,23 @@ class Settings(BaseSettings):
                 raise ValueError("VAELQORIX_MONITOR_TOKEN requerido en produccion")
             if str(self.SECRET_BACKEND or "").strip().lower() == "env":
                 raise ValueError("SECRET_BACKEND=file o gestor externo requerido en produccion")
+            if self.VAELQORIX_PUBLIC_REGISTRATION_ENABLED:
+                raise ValueError("VAELQORIX_PUBLIC_REGISTRATION_ENABLED=false requerido en produccion")
+            distributed_backends = {
+                "RATE_LIMIT_BACKEND": self.RATE_LIMIT_BACKEND,
+                "REPLAY_GUARD_BACKEND": self.REPLAY_GUARD_BACKEND,
+                "ARES_KILL_SWITCH_BACKEND": self.ARES_KILL_SWITCH_BACKEND,
+            }
+            for name, value in distributed_backends.items():
+                if str(value or "").strip().lower() != "redis":
+                    raise ValueError(f"{name}=redis requerido en produccion")
+            action_mode = str(self.ACTION_EXECUTION_MODE or "").strip().lower()
+            if action_mode in {"mock", "dry_run"}:
+                raise ValueError("ACTION_EXECUTION_MODE real requerido en produccion")
+            if str(self.AI_PROVIDER or "").strip().lower() == "local_stub":
+                raise ValueError("AI_PROVIDER real requerido en produccion")
+            if str(self.VECTOR_STORE_PROVIDER or "").strip().lower() == "local":
+                raise ValueError("VECTOR_STORE_PROVIDER externo requerido en produccion")
         return self
 
 

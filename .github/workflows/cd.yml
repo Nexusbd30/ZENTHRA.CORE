@@ -1,37 +1,149 @@
-﻿name: CD
+name: Production
 
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "master"]
+    branches: ["main"]
 
 permissions:
   contents: read
   packages: write
 
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/${{ github.repository_owner }}/vaelqorix-api
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/vaelqorix-frontend
+
 jobs:
-  deploy:
-    name: Build and Deploy
+  validate:
+    name: Validate Release
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
     - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt -r requirements-dev.txt
+
+    - name: Backend quality gates
+      run: |
+        python -m ruff check app tests scripts
+        python -m mypy app
+        python scripts/check_text_encoding.py
+        python scripts/production_preflight.py
+        python -m pip_audit -r requirements.txt
+        python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install frontend dependencies
+      working-directory: VAELQORIX.XDR_COMMAND
+      run: pnpm install --frozen-lockfile
+
+    - name: Frontend quality gates
+      working-directory: VAELQORIX.XDR_COMMAND
+      run: |
+        pnpm audit --prod
+        pnpm lint
+        pnpm build
+
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    environment: production
+    env:
+      KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+      PRODUCTION_HOSTNAME: ${{ vars.PRODUCTION_HOSTNAME }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      PROMETHEUS_BASE: ${{ vars.PROMETHEUS_BASE }}
+      ALERTMANAGER_BASE: ${{ vars.ALERTMANAGER_BASE }}
+      ACTION_EXECUTION_MODE: ${{ vars.ACTION_EXECUTION_MODE }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+      AI_BASE_URL: ${{ vars.AI_BASE_URL }}
+      AI_MODEL: ${{ vars.AI_MODEL }}
+      VECTOR_STORE_PROVIDER: ${{ vars.VECTOR_STORE_PROVIDER }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Production configuration preflight
+      run: |
+        required=(
+          KUBE_CONFIG_DATA
+          PRODUCTION_HOSTNAME
+          POSTGRES_HOST
+          POSTGRES_DB
+          POSTGRES_USER
+          REDIS_URL
+          CORS_ORIGINS
+          ACTION_EXECUTION_MODE
+          AI_PROVIDER
+          VECTOR_STORE_PROVIDER
+        )
+        for name in "${required[@]}"; do
+          if [ -z "${!name}" ]; then
+            echo "::error::$name is required in the production GitHub environment"
+            exit 1
+          fi
+        done
+        case "$PRODUCTION_HOSTNAME" in
+          *example.com*|localhost|127.0.0.1)
+            echo "::error::PRODUCTION_HOSTNAME must be a real public production host"
+            exit 1
+            ;;
+        esac
+        if [ "$ACTION_EXECUTION_MODE" != "webhook" ] && [ "$ACTION_EXECUTION_MODE" != "provider" ] && [ "$ACTION_EXECUTION_MODE" != "real" ]; then
+          echo "::error::ACTION_EXECUTION_MODE must be webhook, provider, or real for production"
+          exit 1
+        fi
+        if [ "$AI_PROVIDER" = "local_stub" ]; then
+          echo "::error::AI_PROVIDER=local_stub is not a production provider"
+          exit 1
+        fi
+        if [ "$VECTOR_STORE_PROVIDER" = "local" ]; then
+          echo "::error::VECTOR_STORE_PROVIDER=local is not a production vector backend"
+          exit 1
+        fi
 
     - name: Log in to GHCR
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
+        registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push image
+    - name: Build and push backend image
       uses: docker/build-push-action@v6
       with:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/vaelqorix:${{ github.sha }}
-          ghcr.io/${{ github.repository_owner }}/vaelqorix:stable
+          ${{ env.API_IMAGE }}:${{ github.sha }}
+          ${{ env.API_IMAGE }}:production
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v6
+      with:
+        context: VAELQORIX.XDR_COMMAND
+        push: true
+        build-args: |
+          VITE_API_URL=/
+        tags: |
+          ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          ${{ env.FRONTEND_IMAGE }}:production
 
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
@@ -41,16 +153,87 @@ jobs:
     - name: Configure kubeconfig
       run: |
         mkdir -p "$HOME/.kube"
-        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > "$HOME/.kube/config"
+        echo "$KUBE_CONFIG_DATA" | base64 -d > "$HOME/.kube/config"
 
-    - name: Deploy manifests
+    - name: Preflight cluster secrets
       run: |
         kubectl get secret aresx-secrets
-        kubectl apply -f infra/k8s/configmap.yaml
+        kubectl get secret vaelqorix-tls
+
+    - name: Apply production config
+      run: |
+        kubectl create configmap aresx-config \
+          --from-literal=ENV=production \
+          --from-literal=LOG_LEVEL=INFO \
+          --from-literal=SECRET_BACKEND=file \
+          --from-literal=SECRET_FILE_DIR=/run/secrets/aresx \
+          --from-literal=ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+          --from-literal=VAELQORIX_PUBLIC_REGISTRATION_ENABLED=false \
+          --from-literal=ENTERPRISE_TENANT_MODE=strict \
+          --from-literal=RATE_LIMIT_BACKEND=redis \
+          --from-literal=REPLAY_GUARD_BACKEND=redis \
+          --from-literal=ARES_KILL_SWITCH_BACKEND=redis \
+          --from-literal=REDIS_KEY_PREFIX=vaelqorix \
+          --from-literal=POSTGRES_HOST="$POSTGRES_HOST" \
+          --from-literal=POSTGRES_PORT="${POSTGRES_PORT:-5432}" \
+          --from-literal=POSTGRES_DB="$POSTGRES_DB" \
+          --from-literal=POSTGRES_USER="$POSTGRES_USER" \
+          --from-literal=REDIS_URL="$REDIS_URL" \
+          --from-literal=CORS_ORIGINS="$CORS_ORIGINS" \
+          --from-literal=PROMETHEUS_BASE="${PROMETHEUS_BASE:-http://prometheus:9090}" \
+          --from-literal=ALERTMANAGER_BASE="${ALERTMANAGER_BASE:-http://alertmanager:9093}" \
+          --from-literal=VAELQORIX_CORRELATION_ENABLED=true \
+          --from-literal=VAELQORIX_CORRELATION_INTERVAL_SEC=60 \
+          --from-literal=VAELQORIX_CORRELATION_STARTUP_DELAY_SEC=10 \
+          --from-literal=BOOTSTRAP_ADMIN_ENABLED=false \
+          --from-literal=ACTION_EXECUTION_MODE="$ACTION_EXECUTION_MODE" \
+          --from-literal=AI_PROVIDER="$AI_PROVIDER" \
+          --from-literal=AI_BASE_URL="$AI_BASE_URL" \
+          --from-literal=AI_MODEL="$AI_MODEL" \
+          --from-literal=VECTOR_STORE_PROVIDER="$VECTOR_STORE_PROVIDER" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Apply workloads
+      run: |
+        kubectl apply -f infra/k8s/deployment-api.yaml
         kubectl apply -f infra/k8s/deployment-redqueen.yaml
+        kubectl apply -f infra/k8s/deployment-ares.yaml
+        kubectl apply -f infra/k8s/deployment-ingestion.yaml
+        kubectl apply -f infra/k8s/deployment-frontend.yaml
+        kubectl apply -f infra/k8s/service-api.yaml
         kubectl apply -f infra/k8s/service.yaml
+        kubectl apply -f infra/k8s/service-ares.yaml
+        kubectl apply -f infra/k8s/service-ingestion.yaml
+        kubectl apply -f infra/k8s/service-frontend.yaml
         kubectl apply -f infra/k8s/hpa.yaml
         kubectl apply -f infra/k8s/pdb.yaml
         kubectl apply -f infra/k8s/networkpolicy.yaml
-        kubectl set image deployment/redqueen redqueen=ghcr.io/${{ github.repository_owner }}/vaelqorix:${{ github.sha }}
-        kubectl rollout status deployment/redqueen --timeout=180s
+        sed "s/vaelqorix.example.com/$PRODUCTION_HOSTNAME/g" infra/k8s/ingress.yaml | kubectl apply -f -
+
+    - name: Set release images
+      run: |
+        kubectl set image deployment/vaelqorix-api api=${{ env.API_IMAGE }}:${{ github.sha }}
+        kubectl set image deployment/redqueen redqueen=${{ env.API_IMAGE }}:${{ github.sha }}
+        kubectl set image deployment/ares ares=${{ env.API_IMAGE }}:${{ github.sha }}
+        kubectl set image deployment/ingestion ingestion=${{ env.API_IMAGE }}:${{ github.sha }}
+        kubectl set image deployment/vaelqorix-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+    - name: Run migrations
+      run: |
+        kubectl delete job vaelqorix-migrate --ignore-not-found=true
+        kubectl apply -f infra/k8s/job-migrate.yaml
+        kubectl set image job/vaelqorix-migrate migrate=${{ env.API_IMAGE }}:${{ github.sha }}
+        kubectl wait --for=condition=complete job/vaelqorix-migrate --timeout=300s
+
+    - name: Rollout status
+      run: |
+        kubectl rollout status deployment/vaelqorix-api --timeout=300s
+        kubectl rollout status deployment/redqueen --timeout=300s
+        kubectl rollout status deployment/ares --timeout=300s
+        kubectl rollout status deployment/ingestion --timeout=300s
+        kubectl rollout status deployment/vaelqorix-frontend --timeout=300s
+
+    - name: Production smoke test
+      run: |
+        curl --fail --silent --show-error "https://$PRODUCTION_HOSTNAME/health"
+        curl --fail --silent --show-error "https://$PRODUCTION_HOSTNAME/ready"

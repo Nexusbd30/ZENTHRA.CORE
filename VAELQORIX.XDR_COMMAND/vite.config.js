@@ -1,5 +1,5 @@
 ﻿// =============================================================
-// âš™ï¸ vite.config.js â€” ConfiguraciÃ³n principal de VAELQORIX.XDR_COMMAND
+// vite.config.js - VAELQORIX.XDR_COMMAND main configuration
 // =============================================================
 // - Plugin React
 // - Alias "@/..."

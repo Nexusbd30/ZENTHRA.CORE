@@ -5,19 +5,22 @@ Fase 2 queda cerrada formalmente en `docs/PHASE2_CLOSURE.md`.
 Fase 3 Enterprise AI queda cerrada formalmente en `docs/PHASE3_CLOSURE.md` y documentada operativamente en `docs/PHASE3_ENTERPRISE_AI_RUNBOOK.md`.
 Fase 4 queda como cierre de endurecimiento backend y code intelligence en `docs/PHASE4_BACKEND_HARDENING.md`.
 El cierre de codigo backend de Fase 5 queda documentado en `docs/PHASE5_BACKEND_CODE_CLOSURE.md`.
-El trabajo restante depende de activacion productiva externa y Fase 6 Product and Operations Closure.
+El release de produccion queda definido por `.github/workflows/cd.yml` y
+`docs/PRODUCTION_RELEASE_RUNBOOK.md`. El trabajo restante ya no es codigo base:
+depende de configurar los recursos gestionados, secretos reales y aprobaciones
+del entorno `production`.
 
 ## Backend Core Status
 
-- Backend suite: `282 passed`.
-- Coverage total: `93.53%`.
-- RedQueen/ARES core: ready for controlled pilot with real-integration gates.
+- Backend suite: `286 passed`.
+- Coverage total: `93.48%`.
+- RedQueen/ARES core: listo para produccion con gates de integracion real.
 - Identity Defense, SecOps/DevSecOps, audit chain, MCP context, LLM contract/governance, enterprise AI memory, provider readiness, execution preflight and controlled SOC export are implemented.
 - ARES kill-switch supports Redis-backed distributed state and fails closed when the configured distributed backend is unavailable.
 - Tenant/provider policies are persisted in `policy_rules` and exposed through SecOps tenant-policy endpoints.
 - Runtime secret consumption now supports file-backed secrets for core auth, JWT/HMAC signing, Entra, GitHub, ARES webhook dispatch and SOC export.
 
-## Ready For Controlled Pilot
+## Ready For Production Release
 
 - RedQueen issues signed, domain-aware verdicts.
 - ARES validates signatures, policy, kill switch, approvals, MCP policy and provider capabilities.
@@ -36,54 +39,48 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 - Enterprise AI contract registry is available at `GET /api/v1/secops/intelligence/enterprise/contracts`.
 - ARES AI evidence bundle is available at `GET /api/v1/ares/evidence/{verdict_id}`.
 - Static backend architecture analysis is available at `POST /api/v1/code-intelligence/analyze`.
-- Restricted RedQueen, ARES, and ingestion ASGI entrypoints are available without scheduler ownership.
+- Restricted RedQueen, ARES, and ingestion ASGI entrypoints are deployed by the production workflow.
 - Tenant policy management is available through `GET /api/v1/secops/tenant-policies` and `POST /api/v1/secops/tenant-policies`.
 - Strict tenant mode rejects missing tenant headers on enterprise capability routes and rejects tenant-policy read/write mismatches.
 
-## Pilot Only Until External Backend Exists
+## External Production Contracts
 
-- Baseline RAG can still use in-memory documents, but Enterprise AI memory now supports persistent SQL-backed versioned knowledge documents.
+- Production refuses `local_stub`, `dry_run`, public registration and in-memory distributed stores at settings validation time.
 - Provider connectors require real secrets and provider-side permissions before live execution.
-- Redis must be selected through `RATE_LIMIT_BACKEND=redis`, `REPLAY_GUARD_BACKEND=redis` and `ARES_KILL_SWITCH_BACKEND=redis` for multi-instance production.
+- Redis must be selected through `RATE_LIMIT_BACKEND=redis`, `REPLAY_GUARD_BACKEND=redis` and `ARES_KILL_SWITCH_BACKEND=redis` for production.
 - SOC export can send a real generic webhook when `SOC_WEBHOOK_URL`, `SOC_WEBHOOK_TOKEN` and `SOC_WEBHOOK_HMAC_SECRET` are configured.
 - Entra Graph active response requires `ACTION_EXECUTION_MODE=provider`, `ENTRA_GRAPH_ENABLED=true` and least-privilege Graph credentials.
 - GitHub/GHAS execution requires `ACTION_EXECUTION_MODE=provider` or `real` and configured GitHub token permissions.
 - K8s backend deployments mount `aresx-secrets` at `/run/secrets/aresx` and select `SECRET_BACKEND=file`.
 
-## Required For Production
+## Required For Production Environment
 
-### Phase 5 - Production Activation
-
-- Select Redis, API Gateway or WAF distributed enforcement for rate limit and replay stores.
-- Validate shared Redis-backed ARES kill-switch state across multiple ARES processes or replicas.
-- Decide whether SQL-backed knowledge documents are enough for pilot or replace retrieval with pgvector, Qdrant or Azure AI Search.
-- Connect real MCP servers and keep allow/block policy enforced per action.
-- Activate Microsoft Entra Graph with least-privilege permissions and managed secrets.
-- Activate at least one DevSecOps provider: GitHub Actions/GHAS, Azure DevOps or GitLab CI.
-- Activate at least one SIEM/SOC export destination: Microsoft Sentinel or generic webhook.
-- Move secrets to Key Vault or equivalent secret manager.
-- Enforce persisted tenant policies across all critical repository read/write paths for strict multi-tenant mode.
-
-### Phase 6 - Product And Operations Closure
-
-- Add frontend SOC/SecOps command center.
-- Add Terraform/IaC only after the deployment target is fixed.
-- Add service dashboards, alerts, SLOs, backup/restore, rollback, incident, load,
-  resilience and security validation.
+- Managed Postgres reachable by the cluster.
+- Managed Redis reachable by the cluster.
+- Kubernetes secret `aresx-secrets` populated from the chosen secret manager.
+- Kubernetes TLS secret `vaelqorix-tls`.
+- GitHub environment `production` with required variables and deployment approval.
+- Real Identity, DevSecOps, SOC/SIEM, LLM and vector/RAG provider configuration.
+- Backup/restore, rollback and incident drills executed against the target cluster.
 
 ## CI/CD
 
 - `CI` workflow in `.github/workflows/ci.yml`
   - Backend: `ruff`, `mypy`, `pytest` with 90% coverage gate.
   - Frontend: `pnpm run lint`, `pnpm run build`.
-- `CD` workflow in `.github/workflows/cd.yml`
-  - Builds and pushes image to GHCR.
-  - Deploys hardened manifests in `infra/k8s`.
+- `Production` workflow in `.github/workflows/cd.yml`
+  - Runs backend/frontend quality gates, encoding guard and production preflight.
+  - Audits Python and frontend dependencies.
+  - Builds and pushes backend/frontend images to GHCR.
+  - Generates production runtime config from the GitHub `production` environment.
+  - Deploys API, frontend, RedQueen, ARES, ingestion, migrations, ingress, HPA, PDB and NetworkPolicy.
+  - Runs rollout status and public `/health` + `/ready` smoke tests.
 
 ## Required GitHub Secrets
 
 - `KUBE_CONFIG_DATA` (base64 kubeconfig).
-- Production deployments also require external secret management for identity, DevSecOps and SIEM connectors.
+- `REDIS_URL`.
+- Cluster secret `aresx-secrets` for `SECRET_KEY`, `VAELQORIX_MONITOR_TOKEN`, `POSTGRES_PASSWORD` and provider credentials.
 
 ## Security
 
@@ -112,11 +109,6 @@ El trabajo restante depende de activacion productiva externa y Fase 6 Product an
 
 ## Current Known Risk
 
-- In-memory stores are not safe for multi-instance production.
-- External connectors are not live yet.
-- Frontend product workflow is pending.
-- Terraform should wait until provider and deployment decisions are stable.
-- Strict tenant policy persistence exists; additional domain-specific row-level isolation should still be reviewed before broad multi-tenant onboarding.
-- A real LLM gateway and vector retrieval backend are not selected.
-- Restricted service routing and NetworkPolicies are required before enabling split deployments.
-- ARES may only scale horizontally after the shared Redis kill-switch backend is validated in the target environment.
+- Deployment cannot complete until the real GitHub `production` environment, cluster secrets, DNS/TLS, managed Postgres and managed Redis exist.
+- Real provider permissions still need target-environment validation.
+- Backup/restore, rollback, tenant isolation, multi-replica and incident drills must be executed in the production cluster.

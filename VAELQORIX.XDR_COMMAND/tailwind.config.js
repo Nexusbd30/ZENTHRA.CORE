@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ðŸŽ¨ Paleta VAELQORIX
+        // VAELQORIX palette
         background: "#0f172a",   // fondo general (azul oscuro)
         card: "#1e293b",         // gris azulado para tarjetas
         primary: "#2563eb",      // azul corporativo brillante
@@ -17,7 +17,7 @@ export default {
         success: "#22c55e",      // verde para confirmaciones
         warning: "#f59e0b",      // amarillo de advertencia
 
-        // ðŸ©¶ Escala de grises personalizada (incluye 950)
+        // Custom gray scale, including 950
         gray: {
           50: "#f9fafb",
           100: "#f3f4f6",

@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: frontend
-        image: ghcr.io/your-org/vaelqorix-frontend:1.0.0
+        image: ghcr.io/vaelqorix/vaelqorix-frontend:stable
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -52,4 +52,3 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
-

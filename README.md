@@ -112,7 +112,6 @@ corepack pnpm install
 
 Variables frontend (`VAELQORIX.XDR_COMMAND/.env`):
 - `VITE_API_URL=http://127.0.0.1:8010` para desarrollo local cuando Docker ya ocupa `8000`
-- `VITE_VAELQORIX_MONITOR_TOKEN=` en produccion; solo usarlo en desarrollo local controlado
 - `VITE_USE_MOCKS=false`
 
 ## Observabilidad (Docker)
@@ -192,7 +191,7 @@ Estado detectado en este entorno:
 
 1. El backend esta listo para piloto controlado, pero los proveedores externos todavia deben activarse y validarse con credenciales reales.
 2. El despliegue actual es un monolito FastAPI modular. RedQueen, ARES e ingestion no deben separarse en deployments hasta disponer de entrypoints independientes.
-3. Enterprise AI mantiene defaults seguros `local_stub` y `dry_run`; la activacion real exige readiness, preflight y evidencia de auditoria.
+3. Produccion rechaza `local_stub`, `dry_run`, stores en memoria y registro publico.
 4. La configuracion local usa archivos `.env` ignorados por Git.
    - Solo se debe commitear `.env.example`; los secretos reales deben vivir en variables de entorno, vault o secretos del cluster.
 5. Fase 4 continua como endurecimiento backend y code intelligence, sin iniciar frontend.
@@ -203,7 +202,7 @@ Estado detectado en este entorno:
 1. Aplicar politicas tenant persistidas a todos los repositorios criticos antes de activar modo multi-tenant estricto.
 2. Validar al menos un proveedor Identity, DevSecOps y SOC de extremo a extremo.
 3. Seleccionar gateway LLM y backend de recuperacion vectorial.
-4. Mantener `local_stub` y `dry_run` hasta superar readiness, preflight y validacion operativa.
+4. Mantener ejecucion controlada hasta superar readiness, preflight y validacion operativa.
 5. Usar `POST /api/v1/code-intelligence/analyze` para inventariar componentes, dependencias, rutas y puntos de ejecucion sin ejecutar el codigo analizado.
 
 Estado backend Fase 5:

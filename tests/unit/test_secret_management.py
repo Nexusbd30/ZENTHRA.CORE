@@ -10,7 +10,7 @@ from app.actions._dispatch import dispatch_command
 from app.core import secrets
 from app.core.internal_auth import require_internal_bearer
 from app.core.security import ALGORITHM, create_access_token
-from app.core.settings import settings
+from app.core.settings import Settings, settings
 from app.core.signing import sign_payload, verify_payload_signature
 from app.identity.entra import (
     build_entra_provider_evidence,
@@ -94,6 +94,55 @@ def test_production_rejects_plain_env_secret_backend(monkeypatch):
         assert "SECRET_BACKEND" in str(exc)
     else:
         raise AssertionError("production must reject env-only secret backend")
+
+
+def test_production_settings_reject_lab_runtime_defaults(monkeypatch):
+    production_env = {
+        "ENV": "production",
+        "SECRET_KEY": "production-secret-key-with-enough-entropy",
+        "VAELQORIX_MONITOR_TOKEN": "production-monitor-token",
+        "SECRET_BACKEND": "file",
+        "VAELQORIX_PUBLIC_REGISTRATION_ENABLED": "false",
+        "RATE_LIMIT_BACKEND": "redis",
+        "REPLAY_GUARD_BACKEND": "redis",
+        "ARES_KILL_SWITCH_BACKEND": "redis",
+        "ACTION_EXECUTION_MODE": "dry_run",
+        "AI_PROVIDER": "local_stub",
+        "VECTOR_STORE_PROVIDER": "local",
+    }
+    for key, value in production_env.items():
+        monkeypatch.setenv(key, value)
+
+    try:
+        Settings()
+    except ValueError as exc:
+        assert "ACTION_EXECUTION_MODE" in str(exc)
+    else:
+        raise AssertionError("production settings must reject dry_run")
+
+
+def test_production_settings_accept_real_runtime_contract(monkeypatch):
+    production_env = {
+        "ENV": "production",
+        "SECRET_KEY": "production-secret-key-with-enough-entropy",
+        "VAELQORIX_MONITOR_TOKEN": "production-monitor-token",
+        "SECRET_BACKEND": "file",
+        "VAELQORIX_PUBLIC_REGISTRATION_ENABLED": "false",
+        "RATE_LIMIT_BACKEND": "redis",
+        "REPLAY_GUARD_BACKEND": "redis",
+        "ARES_KILL_SWITCH_BACKEND": "redis",
+        "ACTION_EXECUTION_MODE": "webhook",
+        "AI_PROVIDER": "ollama",
+        "VECTOR_STORE_PROVIDER": "qdrant",
+    }
+    for key, value in production_env.items():
+        monkeypatch.setenv(key, value)
+
+    production_settings = Settings()
+
+    assert production_settings.ENV == "production"
+    assert production_settings.SECRET_BACKEND == "file"
+    assert production_settings.ACTION_EXECUTION_MODE == "webhook"
 
 
 def test_provider_execution_reads_file_backed_secrets(monkeypatch):
