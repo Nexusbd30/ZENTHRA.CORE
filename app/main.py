@@ -17,13 +17,17 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
 from app.ares.router import router as ares_router
+from app.cases.router import router as cases_router
 from app.code_intelligence.router import router as code_intelligence_router
+from app.compliance.router import router as compliance_router
+from app.connectors.router import router as connectors_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
 from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
 from app.db.session import SessionLocal, get_db
+from app.detection.router import router as detection_router
 from app.health.router import router as system_health_router
 from app.identity.router import router as identity_router
 from app.ingestion.aresx_router import router as aresx_ingest_router
@@ -32,6 +36,7 @@ from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
 from app.models.user import User
 from app.platform.router import router as platform_router
+from app.playbooks.router import router as playbooks_router
 from app.redqueen.router import router as redqueen_router
 from app.routers import (
     audit,
@@ -42,7 +47,9 @@ from app.routers import (
     threats,
     users,
 )
+from app.runtime.router import router as runtime_router
 from app.secops.router import router as secops_router
+from app.sensors.router import router as sensors_router
 from app.services.correlation_engine import correlation_engine
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
@@ -230,6 +237,13 @@ app.include_router(platform_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
 app.include_router(code_intelligence_router)
+app.include_router(sensors_router)
+app.include_router(detection_router)
+app.include_router(connectors_router)
+app.include_router(playbooks_router)
+app.include_router(cases_router)
+app.include_router(runtime_router)
+app.include_router(compliance_router)
 
 
 @app.get("/", include_in_schema=False)
