@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.ares.aggressive_containment import build_aggressive_containment
 from app.ares.approval import build_approval_payload
+from app.ares.enterprise_active_defense import build_enterprise_active_defense
 from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.ares.kill_switch import kill_switch_state
 from app.ares.os_business_shield import build_os_business_shield
@@ -85,6 +86,12 @@ class ContainmentPlanRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
 
 
+class EnterpriseActiveDefenseRequest(BaseModel):
+    verdict: dict = Field(default_factory=dict)
+    bridge_trace: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
 def _json_loads(value: str | None, fallback):
     if not value:
         return fallback
@@ -142,6 +149,11 @@ def ares_status():
             "schema": "vaelqorix.ares.aggressive_containment.v1",
             "status": "enabled",
             "purpose": "authorized_active_defense_to_neutralize_observed_intrusions",
+        },
+        "enterprise_active_defense": {
+            "schema": "vaelqorix.ares.enterprise_active_defense.v1",
+            "status": "enabled",
+            "purpose": "enterprise_grade_blocking_deception_sinkhole_and_legal_evidence",
         },
         "kill_switch": kill_switch_state(),
     }
@@ -273,6 +285,15 @@ def build_shield_plan(payload: ShieldPlanRequest):
 @router.post("/containment/plan")
 def build_containment_plan(payload: ContainmentPlanRequest):
     return build_aggressive_containment(
+        verdict=payload.verdict,
+        bridge_trace=payload.bridge_trace,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/active-defense/plan")
+def build_active_defense_plan(payload: EnterpriseActiveDefenseRequest):
+    return build_enterprise_active_defense(
         verdict=payload.verdict,
         bridge_trace=payload.bridge_trace,
         controls=payload.execution_controls,

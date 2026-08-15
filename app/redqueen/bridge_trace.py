@@ -78,6 +78,50 @@ def _network_candidates(payload: dict[str, Any], factors: list[str]) -> list[dic
                 "confidence": 0.48,
             }
         )
+    asn = _first_text(payload.get("asn"), payload.get("source_asn"), *_factor_values(factors, "asn:"))
+    if asn:
+        candidates.append(
+            {
+                "type": "asn",
+                "value": asn.upper(),
+                "scope": "internet_routing",
+                "role": "observed_network_owner",
+                "confidence": 0.62,
+            }
+        )
+    country = _first_text(
+        payload.get("country"),
+        payload.get("source_country"),
+        payload.get("geo_country"),
+        *_factor_values(factors, "geo_country:"),
+        *_factor_values(factors, "identity_geo_country:"),
+    )
+    if country:
+        candidates.append(
+            {
+                "type": "geo_country",
+                "value": country.upper(),
+                "scope": "geo_policy",
+                "role": "observed_geo_origin",
+                "confidence": 0.52,
+            }
+        )
+    domain = _first_text(
+        payload.get("domain"),
+        payload.get("source_domain"),
+        payload.get("callback_domain"),
+        *_factor_values(factors, "domain:"),
+    )
+    if domain:
+        candidates.append(
+            {
+                "type": "domain",
+                "value": domain.lower(),
+                "scope": "dns",
+                "role": "observed_domain_indicator",
+                "confidence": 0.66,
+            }
+        )
     return candidates
 
 
@@ -219,6 +263,34 @@ def _block_targets(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "value": value,
                     "scope": "devsecops",
                     "action": "freeze_release_path",
+                }
+            )
+        elif item_type == "asn":
+            blocks.append(
+                {
+                    "type": "asn",
+                    "value": value,
+                    "scope": "perimeter",
+                    "action": "rate_limit_or_block_asn",
+                }
+            )
+        elif item_type == "geo_country":
+            blocks.append(
+                {
+                    "type": "geo_country",
+                    "value": value,
+                    "scope": "perimeter",
+                    "action": "geo_block_or_step_up_auth",
+                }
+            )
+        elif item_type == "domain":
+            blocks.append(
+                {
+                    "type": "domain",
+                    "value": value,
+                    "scope": "owned_dns_or_proxy",
+                    "action": "dns_block_or_authorized_sinkhole",
+                    "requires_authorization": True,
                 }
             )
     return list({f"{item['type']}:{item['value']}:{item['action']}": item for item in blocks}.values())

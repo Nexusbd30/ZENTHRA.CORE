@@ -23,6 +23,7 @@ class AresStatusResponse(BaseModel):
     internal_firewall: dict[str, Any] | None = None
     os_business_shield: dict[str, Any] | None = None
     aggressive_containment: dict[str, Any] | None = None
+    enterprise_active_defense: dict[str, Any] | None = None
     kill_switch: dict[str, Any]
 
 

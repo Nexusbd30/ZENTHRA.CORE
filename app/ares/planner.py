@@ -252,6 +252,35 @@ def build_plan(verdict: dict) -> dict:
                 rollback=None,
                 criticality=1,
             ),
+            _step(
+                "deploy_waf_edr_siem_rules",
+                target=target,
+                impact="deploys approved detection and prevention rules in owned controls",
+                rollback="containment_rollback",
+                criticality=3,
+            ),
+            _step(
+                "activate_deception_grid",
+                target=target,
+                impact="activates authorized honeypots, honeytokens and canaries inside owned assets",
+                rollback="containment_rollback",
+                criticality=2,
+            ),
+            _step(
+                "apply_authorized_sinkhole",
+                target=target,
+                impact="sinkholes only owned or explicitly authorized domains and otherwise blocks/reports",
+                rollback="containment_rollback",
+                criticality=4,
+                requires_confirmation=True,
+            ),
+            _step(
+                "export_legal_escalation_pack",
+                target=target,
+                impact="prepares evidence package for SOC, provider abuse desk, CERT or legal counsel",
+                rollback=None,
+                criticality=1,
+            ),
         ]
     elif action_type == "crypto_rotate":
         steps = [

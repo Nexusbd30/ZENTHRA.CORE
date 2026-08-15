@@ -34,6 +34,19 @@ ARES containment can prepare:
 - SOC traceability case with chain of custody.
 - neutralization verification after disruptive actions.
 
+ARES also emits `vaelqorix.ares.enterprise_active_defense.v1` for enterprise-grade response packaging. This contract is intended for regulated customers and large security vendors because it separates decisions from provider execution while preserving the same audit, approval and rollback path.
+
+Enterprise active defense controls:
+
+- `perimeter_auto_block`: block or rate-limit observed IPs, ASNs, countries and domains in owned firewall, WAF, DNS, proxy or NDR controls.
+- `identity_burn_protocol`: revoke sessions, tokens, API keys and force MFA through the approved IdP.
+- `endpoint_workload_isolation`: isolate endpoints, runners, workloads or segments and snapshot forensic state.
+- `devsecops_release_freeze`: block deployments, quarantine artifacts and require release approval.
+- `waf_edr_siem_rule_deployment`: deploy prevention/detection rules through WAF, EDR, SIEM and SOAR.
+- `deception_grid`: issue honeytokens, canary files and internal honeypot routing inside owned environments.
+- `authorized_sinkhole`: sinkhole only owned or explicitly authorized domains; otherwise block and report.
+- `legal_escalation_pack`: prepare case evidence for SOC, provider abuse desk, CERT/CSIRT and legal counsel.
+
 The containment plan is still governed by:
 
 - signed RedQueen verdict.
@@ -62,5 +75,20 @@ For production, route active containment steps through approved providers or sig
 - Endpoint: EDR host isolation.
 - DevSecOps: GitHub/GHAS, Jenkins, SonarQube or artifact registry freeze.
 - SOC/SIEM: Sentinel, Wazuh, QRadar or signed SOC webhook.
+- Deception: internal honeypot manager, honeytoken service, canary file deployment or deception platform.
+- DNS/sinkhole: owned DNS, RPZ, proxy or cloud DNS controls with explicit domain authorization.
 
 All connectors must preserve idempotency, evidence payloads and operator audit data.
+
+## Enterprise Boundary
+
+The enterprise active defense module is designed for customers such as global vendors, system integrators, regulated enterprises and Big 4 advisory/security operations. Its value is fast defensive containment with provable governance.
+
+The system must still enforce:
+
+- no hack-back.
+- no unauthorized access to external attacker infrastructure.
+- no destructive action outside owned or explicitly authorized environments.
+- human approval for disruptive controls.
+- immutable audit and evidence hashes.
+- provider-specific least privilege.

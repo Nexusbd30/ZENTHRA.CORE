@@ -758,6 +758,10 @@ class AutonomyService:
             bridge_trace=bridge_trace if isinstance(bridge_trace, dict) else {},
             controls=controls,
         )
+        plan["enterprise_active_defense"] = plan["aggressive_containment"].get(
+            "enterprise_active_defense",
+            {},
+        )
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review
         firewall_decision = evaluate_internal_firewall(

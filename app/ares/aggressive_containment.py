@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.ares.enterprise_active_defense import build_enterprise_active_defense
+
 CONTAINMENT_SCHEMA = "vaelqorix.ares.aggressive_containment.v1"
 
 
@@ -29,6 +31,8 @@ def _block_steps(bridge_trace: dict[str, Any]) -> list[dict[str, Any]]:
             control = "endpoint_isolation"
         elif block_type in {"repository", "pipeline"}:
             control = "release_freeze"
+        elif block_type in {"asn", "geo_country", "domain"}:
+            control = "perimeter_policy_block"
         else:
             control = "soc_review"
         steps.append(
@@ -37,7 +41,8 @@ def _block_steps(bridge_trace: dict[str, Any]) -> list[dict[str, Any]]:
                 "target": value,
                 "source": block_type,
                 "action": action,
-                "requires_confirmation": control in {"perimeter_block", "endpoint_isolation", "release_freeze"},
+                "requires_confirmation": control
+                in {"perimeter_block", "perimeter_policy_block", "endpoint_isolation", "release_freeze"},
             }
         )
     return steps
@@ -109,6 +114,11 @@ def build_aggressive_containment(
             "soc_case_management",
         ],
         "neutralization_steps": neutralization_steps,
+        "enterprise_active_defense": build_enterprise_active_defense(
+            verdict=verdict,
+            bridge_trace=bridge_trace,
+            controls=controls,
+        ),
         "guardrails": list(dict.fromkeys(guardrails)),
         "bridge_trace": bridge_trace,
     }
