@@ -36,6 +36,7 @@ jobs:
         python -m ruff check app tests scripts
         python -m mypy app
         python scripts/check_text_encoding.py
+        python scripts/preproduction_readiness.py --env-file .env.preproduc.example --allow-placeholders
         python -m pip_audit -r requirements.txt
         python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90
 
@@ -59,8 +60,27 @@ jobs:
     needs: validate
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/preproduc'
     environment: preproduction
+    env:
+      KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+      PREPRODUCTION_HOSTNAME: ${{ vars.PREPRODUCTION_HOSTNAME }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      PROMETHEUS_BASE: ${{ vars.PROMETHEUS_BASE }}
+      ALERTMANAGER_BASE: ${{ vars.ALERTMANAGER_BASE }}
+      ACTION_EXECUTION_MODE: ${{ vars.ACTION_EXECUTION_MODE }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+      AI_BASE_URL: ${{ vars.AI_BASE_URL }}
+      AI_MODEL: ${{ vars.AI_MODEL }}
+      VECTOR_STORE_PROVIDER: ${{ vars.VECTOR_STORE_PROVIDER }}
     steps:
     - uses: actions/checkout@v4
+
+    - name: Preproduction configuration preflight
+      run: python scripts/preproduction_readiness.py --cluster-secrets-mounted
 
     - name: Log in to GHCR
       uses: docker/login-action@v3
@@ -97,16 +117,48 @@ jobs:
     - name: Configure kubeconfig
       run: |
         mkdir -p "$HOME/.kube"
-        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > "$HOME/.kube/config"
+        echo "$KUBE_CONFIG_DATA" | base64 -d > "$HOME/.kube/config"
 
     - name: Preflight cluster secrets
       run: |
         kubectl get secret aresx-secrets
         kubectl get secret vaelqorix-tls
 
+    - name: Apply preproduction config
+      run: |
+        kubectl create configmap aresx-config \
+          --from-literal=ENV=production \
+          --from-literal=LOG_LEVEL=INFO \
+          --from-literal=SECRET_BACKEND=file \
+          --from-literal=SECRET_FILE_DIR=/run/secrets/aresx \
+          --from-literal=ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+          --from-literal=VAELQORIX_PUBLIC_REGISTRATION_ENABLED=false \
+          --from-literal=ENTERPRISE_TENANT_MODE=strict \
+          --from-literal=RATE_LIMIT_BACKEND=redis \
+          --from-literal=REPLAY_GUARD_BACKEND=redis \
+          --from-literal=ARES_KILL_SWITCH_BACKEND=redis \
+          --from-literal=REDIS_KEY_PREFIX=vaelqorix:preproduc \
+          --from-literal=POSTGRES_HOST="$POSTGRES_HOST" \
+          --from-literal=POSTGRES_PORT="${POSTGRES_PORT:-5432}" \
+          --from-literal=POSTGRES_DB="$POSTGRES_DB" \
+          --from-literal=POSTGRES_USER="$POSTGRES_USER" \
+          --from-literal=REDIS_URL="$REDIS_URL" \
+          --from-literal=CORS_ORIGINS="$CORS_ORIGINS" \
+          --from-literal=PROMETHEUS_BASE="${PROMETHEUS_BASE:-http://prometheus:9090}" \
+          --from-literal=ALERTMANAGER_BASE="${ALERTMANAGER_BASE:-http://alertmanager:9093}" \
+          --from-literal=VAELQORIX_CORRELATION_ENABLED=true \
+          --from-literal=VAELQORIX_CORRELATION_INTERVAL_SEC=60 \
+          --from-literal=VAELQORIX_CORRELATION_STARTUP_DELAY_SEC=10 \
+          --from-literal=BOOTSTRAP_ADMIN_ENABLED=false \
+          --from-literal=ACTION_EXECUTION_MODE="$ACTION_EXECUTION_MODE" \
+          --from-literal=AI_PROVIDER="$AI_PROVIDER" \
+          --from-literal=AI_BASE_URL="$AI_BASE_URL" \
+          --from-literal=AI_MODEL="$AI_MODEL" \
+          --from-literal=VECTOR_STORE_PROVIDER="$VECTOR_STORE_PROVIDER" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
     - name: Apply base manifests
       run: |
-        kubectl apply -f infra/k8s/configmap.yaml
         kubectl apply -f infra/k8s/deployment-api.yaml
         kubectl apply -f infra/k8s/deployment-redqueen.yaml
         kubectl apply -f infra/k8s/deployment-ares.yaml
@@ -120,7 +172,7 @@ jobs:
         kubectl apply -f infra/k8s/hpa.yaml
         kubectl apply -f infra/k8s/pdb.yaml
         kubectl apply -f infra/k8s/networkpolicy.yaml
-        kubectl apply -f infra/k8s/ingress.yaml
+        sed "s/vaelqorix.example.com/$PREPRODUCTION_HOSTNAME/g" infra/k8s/ingress.yaml | kubectl apply -f -
 
     - name: Set release images
       run: |
@@ -144,3 +196,6 @@ jobs:
         kubectl rollout status deployment/ares --timeout=180s
         kubectl rollout status deployment/ingestion --timeout=180s
         kubectl rollout status deployment/vaelqorix-frontend --timeout=180s
+
+    - name: Preproduction smoke test
+      run: python scripts/preproduction_smoke.py "https://$PREPRODUCTION_HOSTNAME"

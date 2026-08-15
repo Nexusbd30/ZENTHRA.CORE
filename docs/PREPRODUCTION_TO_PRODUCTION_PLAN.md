@@ -22,6 +22,28 @@ All production-facing work now lands on the `preproduc` branch. `main` remains u
 - DNS record for the preproduction hostname.
 - Real credentials for the first Identity, DevSecOps, SOC/SIEM, LLM, and vector/RAG integrations selected for pilot.
 
+## Preproduction Configuration Gate
+
+Preproduction uses production-grade settings before the final `main` release. Use
+`.env.preproduc.example` as the contract for GitHub environment variables and secret-manager
+entries.
+
+Before deploying, run:
+
+```bash
+python scripts/preproduction_readiness.py
+```
+
+For checking the committed template only:
+
+```bash
+python scripts/preproduction_readiness.py --env-file .env.preproduc.example --allow-placeholders
+```
+
+The real preproduction run must fail when it finds localhost endpoints, SQLite, placeholder
+secrets, public registration, in-memory rate limit/replay/kill-switch storage, local AI, local
+vector storage, or non-HTTPS CORS origins.
+
 ## Deployment Flow
 
 1. Push to `preproduc` or run the Preproduction workflow manually.
@@ -30,6 +52,7 @@ All production-facing work now lands on the `preproduc` branch. `main` remains u
 4. Kubernetes manifests are applied.
 5. Alembic migrations run as a Kubernetes Job.
 6. Deployments roll out for API, RedQueen, ARES, ingestion, and frontend.
+7. Public smoke tests verify `/health`, `/ready`, RedQueen status, ARES status, and connector readiness.
 
 ## Production Exit Criteria
 
@@ -50,4 +73,3 @@ All production-facing work now lands on the `preproduc` branch. `main` remains u
 4. Merge `preproduc` into `main`.
 5. Tag the release.
 6. Deploy production from `main`.
-
