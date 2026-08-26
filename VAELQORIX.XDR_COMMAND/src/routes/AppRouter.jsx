@@ -1,5 +1,5 @@
 // =============================================================
-// SISTEMA DE RUTAS PRINCIPAL — VAELQORIX XDR Command (v3.7 Clean)
+// SISTEMA DE RUTAS PRINCIPAL - VAELQORIX XDR Command (v3.7 Clean)
 // =============================================================
 
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -21,6 +21,7 @@ import DataCenterPage from "@/modules/datacenter/DataCenterPage";
 import MonitoringPage from "@/modules/monitoring/MonitoringPage";
 import DiagnosticsPage from "@/modules/diagnostics/DiagnosticsPage";
 import SecurityPage from "@/modules/security/SecurityPage";
+import SecOpsPage from "@/modules/secops/SecOpsPage";
 import AlertsPage from "@/modules/alerts/AlertsPage"; // NUEVO
 import LogsPage from "@/modules/logs/LogsPage";
 
@@ -59,6 +60,7 @@ export default function AppRouter() {
         <Route path="logs" element={<LogsPage />} />
         <Route path="monitoring" element={<MonitoringPage />} />
         <Route path="diagnostics" element={<DiagnosticsPage />} />
+        <Route path="secops" element={<SecOpsPage />} />
         <Route path="security" element={<SecurityPage />} />
         {/* Pagina dedicada de alertas */}
         <Route path="alerts" element={<AlertsPage />} />

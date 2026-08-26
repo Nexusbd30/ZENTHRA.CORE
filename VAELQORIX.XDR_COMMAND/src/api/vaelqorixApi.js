@@ -389,6 +389,111 @@ export const getProductionReadiness = async () => {
   return data;
 };
 
+// =============================================================
+// SecOps / DevSecOps Command Center
+// =============================================================
+
+export const getSecOpsStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/secops/status");
+  return data;
+};
+
+export const getSecOpsPosture = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/secops/posture");
+  return data;
+};
+
+export const getSecOpsEnterpriseReadiness = async ({ tenantId } = {}) => {
+  const headers = tenantId ? { "X-Tenant-Id": tenantId } : undefined;
+  const { data } = await vaelqorixApi.get("/api/v1/secops/enterprise/readiness", { headers });
+  return data;
+};
+
+export const listTenantPolicies = async ({ tenantId } = {}) => {
+  const params = tenantId ? { tenant_id: tenantId } : {};
+  const { data } = await vaelqorixApi.get("/api/v1/secops/tenant-policies", { params });
+  return Array.isArray(data) ? data : data.items || [];
+};
+
+export const upsertTenantPolicy = async (payload) => {
+  const { data } = await vaelqorixApi.post("/api/v1/secops/tenant-policies", payload);
+  return data;
+};
+
+export const getSecOpsIntegrationsReadiness = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/secops/integrations/readiness");
+  return data;
+};
+
+export const listSecOpsProviders = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/secops/providers");
+  return Array.isArray(data) ? data : [];
+};
+
+export const getSecOpsProviderReadiness = async (provider) => {
+  const { data } = await vaelqorixApi.get(
+    `/api/v1/secops/providers/${encodeURIComponent(provider)}/readiness`
+  );
+  return data;
+};
+
+export const runSecOpsExecutionPreflight = async ({ provider, actionType, executionControls = {} }) => {
+  const { data } = await vaelqorixApi.post("/api/v1/secops/execution/preflight", {
+    provider,
+    action_type: actionType,
+    execution_controls: executionControls,
+  });
+  return data;
+};
+
+export const getSecOpsSecurityEvents = async ({ eventType, reason, tenantId, limit = 50 } = {}) => {
+  const params = { limit };
+  if (eventType) params.event_type = eventType;
+  if (reason) params.reason = reason;
+  if (tenantId) params.tenant_id = tenantId;
+  const { data } = await vaelqorixApi.get("/api/v1/secops/security/events", { params });
+  return data;
+};
+
+export const exportSecOpsSecurityEvents = async ({
+  destination = "generic_webhook",
+  format = "soc_case.v1",
+  includeItems = true,
+  send = false,
+  limit = 100,
+  reason,
+  tenantId,
+} = {}) => {
+  const payload = { destination, format, include_items: includeItems, send, limit };
+  if (reason) payload.reason = reason;
+  if (tenantId) payload.tenant_id = tenantId;
+  const { data } = await vaelqorixApi.post("/api/v1/secops/security/events/export", payload);
+  return data;
+};
+
+export const materializeSecOpsSecurityEvents = async ({ minCount = 2, limit = 100 } = {}) => {
+  const { data } = await vaelqorixApi.post("/api/v1/secops/security/events/materialize", {
+    min_count: minCount,
+    limit,
+  });
+  return data;
+};
+
+export const runSecOpsSecurityEventLifecycle = async (
+  sourceEventId,
+  { executionControls = { dry_run: true }, humanApproved = false, approvalEvidence = null } = {}
+) => {
+  const { data } = await vaelqorixApi.post(
+    `/api/v1/secops/security/events/${encodeURIComponent(sourceEventId)}/lifecycle`,
+    {
+      execution_controls: executionControls,
+      human_approved: humanApproved,
+      approval_evidence: approvalEvidence,
+    }
+  );
+  return data;
+};
+
 export const getResponseLogs = async ({ limit = 100, source, status } = {}) => {
   const params = { limit };
   if (source) params.source = source;
@@ -483,6 +588,15 @@ export const getAresStatus = async () => {
   return data;
 };
 
+export const createAresApprovalToken = async ({ verdict, approver, reason = "" }) => {
+  const { data } = await vaelqorixApi.post("/api/v1/ares/approval-token", {
+    verdict,
+    approver,
+    reason,
+  });
+  return data;
+};
+
 export const getAresOperationFlow = async () => {
   const { data } = await vaelqorixApi.get("/api/v1/ares/operation-flow");
   return data;
@@ -564,6 +678,11 @@ export const rollbackAresExecution = async (
 
 export const getAresApprovals = async (verdictId) => {
   const { data } = await vaelqorixApi.get(`/api/v1/ares/approvals/${verdictId}`);
+  return data;
+};
+
+export const getAresEvidenceBundle = async (verdictId) => {
+  const { data } = await vaelqorixApi.get(`/api/v1/ares/evidence/${verdictId}`);
   return data;
 };
 

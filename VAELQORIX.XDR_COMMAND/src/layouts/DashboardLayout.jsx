@@ -12,6 +12,7 @@ import {
   Menu,
   Network,
   Search,
+  Settings,
   ShieldCheck,
   ShieldAlert,
   Stethoscope,
@@ -32,6 +33,7 @@ const navSections = [
       { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, end: true },
       { to: "/dashboard/alerts", label: "Alertas", icon: Bell },
       { to: "/dashboard/threats", label: "Incidentes", icon: ShieldAlert },
+      { to: "/dashboard/secops", label: "SecOps", icon: Settings },
       { to: "/dashboard/monitoring", label: "Monitoreo", icon: Activity },
     ],
   },
@@ -73,6 +75,11 @@ const routeTitles = {
     title: "Monitoreo",
     eyebrow: "Infraestructura",
     description: "Metricas de servicios, recursos y disponibilidad.",
+  },
+  "/dashboard/secops": {
+    title: "SecOps",
+    eyebrow: "Gobierno operativo",
+    description: "Readiness, providers, tenant policies, eventos SOC y preflight de acciones.",
   },
   "/dashboard/diagnostics": {
     title: "Diagnostico",
@@ -118,7 +125,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const routeMeta = getRouteMeta(location.pathname);
-  const operatorName = (user?.email || "operator")
+  const operatorName = (user.email || "operator")
     .split("@")[0]
     .replace(/[-_.]+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
@@ -194,7 +201,7 @@ export default function DashboardLayout() {
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <StatusTile icon={Gauge} label="Fase" value="2" />
+            <StatusTile icon={Gauge} label="Fase" value="6" />
             <StatusTile icon={DatabaseZap} label="Modo" value="UI" />
           </div>
         </div>
@@ -233,12 +240,12 @@ export default function DashboardLayout() {
         <div className="border-t border-white/10 p-4">
           <div className="mb-3 flex items-center gap-3 bg-[#0b1020] p-3">
             <div className="flex h-9 w-9 items-center justify-center bg-[#22304f] font-label text-xs font-bold text-[#adc6ff]">
-              {(user?.email || "OP").slice(0, 2).toUpperCase()}
+              {(user.email || "OP").slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-white">{operatorName}</div>
               <div className="truncate font-label text-[10px] uppercase text-[#8c909f]">
-                {user?.role || "operator"}
+                {user.role || "operator"}
               </div>
             </div>
           </div>
