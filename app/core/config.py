@@ -1,5 +1,5 @@
 # =============================================================
-# 💠 ZENTHRA.CORE_SECURITY — CONFIGURACIÓN GLOBAL (v3.7 Legacy Wrapper)
+# 💠 VAELQORIX.XDR_COMMAND — CONFIGURACIÓN GLOBAL (v3.7 Legacy Wrapper)
 # =============================================================
 # Capa de compatibilidad para imports antiguos:
 #

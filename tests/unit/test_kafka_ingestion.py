@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 
@@ -6,7 +6,7 @@ from app.ingestion.kafka_consumer import consume_message_batch, normalize_kafka_
 
 
 class FakeMessage:
-    def __init__(self, value: dict | str, topic: str = "zenthra.siem"):
+    def __init__(self, value: dict | str, topic: str = "vaelqorix.siem"):
         self._value = value
         self._topic = topic
 
@@ -29,7 +29,7 @@ def test_kafka_message_normalizes_raw_event():
                 "target": "db-prod-01",
                 "source_ip": "198.51.100.9",
             },
-            topic="zenthra.siem",
+            topic="vaelqorix.siem",
         )
     )
 
@@ -49,7 +49,7 @@ def test_kafka_message_uses_adapter_from_topic():
                 "data": {"srcip": "198.51.100.7"},
                 "full_log": "sshd failed password burst",
             },
-            topic="zenthra.wazuh",
+            topic="vaelqorix.wazuh",
         )
     )
 

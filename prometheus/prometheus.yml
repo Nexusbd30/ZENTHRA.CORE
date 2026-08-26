@@ -1,11 +1,16 @@
-global:
+﻿global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
 scrape_configs:
-  - job_name: 'zenthra-core'
+  - job_name: 'vaelqorix-core'
     metrics_path: /metrics
-    bearer_token_file: /etc/prometheus/secrets/zenthra_monitor_token
+    bearer_token_file: /etc/prometheus/secrets/vaelqorix_monitor_token
     static_configs:
       - targets: ['backend:8000']
 

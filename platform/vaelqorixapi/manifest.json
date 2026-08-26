@@ -1,0 +1,28 @@
+﻿{
+  "name": "VaelqorixAPI",
+  "type": "integration_tool_platform",
+  "status": "mapped_to_existing_backend",
+  "responsibilities": [
+    "tool_registry",
+    "external_apis",
+    "github",
+    "jira",
+    "slack",
+    "cloud_providers",
+    "databases",
+    "webhooks",
+    "tool_call_audit"
+  ],
+  "current_backend_mapping": [
+    "app.actions",
+    "app.identity",
+    "app.secops",
+    "app.ingestion"
+  ],
+  "initial_tools": [
+    "document_search_tool",
+    "log_analyzer_tool",
+    "github_reader_tool",
+    "ticket_draft_tool"
+  ]
+}

@@ -1,5 +1,5 @@
 # ==============================================================
-# 🔐 AUTH ROUTER — ZENTHRA.CORE_SECURITY (v4.1 RBAC JWT)
+# 🔐 AUTH ROUTER — VAELQORIX.XDR_COMMAND (v4.1 RBAC JWT)
 # ==============================================================
 # Modo JSON completo:
 #   POST /auth/login

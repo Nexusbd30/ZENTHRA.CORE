@@ -1,5 +1,5 @@
 # =============================================================
-# 🔥 ZENTHRA — Correlation Engine (v3.0 SIEM Incident Mode + DEDUPE Hardened)
+# 🔥 VAELQORIX — Correlation Engine (v3.0 SIEM Incident Mode + DEDUPE Hardened)
 # =============================================================
 # ✅ SIEM Behavior:
 #   - 1 fingerprint = 1 incidente OPEN mientras la alerta siga firing
@@ -41,12 +41,12 @@ BASE_RULES = [
     {
         "rule_id": "BackendDown",
         "title": "Backend caído (BackendDown)",
-        "description": "Prometheus detectó que zenthra-core no responde a /metrics (BackendDown firing).",
+        "description": "Prometheus detectó que vaelqorix-core no responde a /metrics (BackendDown firing).",
         "alert": "BackendDown",
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 95,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,  # legacy/compat (ya no controla dedupe)
     },
     {
@@ -57,7 +57,7 @@ BASE_RULES = [
         "level": ThreatLevel.high,
         "category": ThreatCategory.performance,
         "score": 80,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
@@ -68,7 +68,7 @@ BASE_RULES = [
         "level": ThreatLevel.high,
         "category": ThreatCategory.availability,
         "score": 75,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
@@ -135,7 +135,7 @@ BASE_RULES = [
         "level": ThreatLevel.low,
         "category": ThreatCategory.availability,
         "score": 10,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 5,
     },
     # 🖥️ Windows
@@ -189,7 +189,7 @@ COMPOSITE_RULES = [
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 92,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 15,
     },
     {
@@ -211,7 +211,7 @@ COMPOSITE_RULES = [
         "level": ThreatLevel.critical,
         "category": ThreatCategory.availability,
         "score": 100,
-        "target_service": "zenthra-core",
+        "target_service": "vaelqorix-core",
         "window": 10,
     },
     {
@@ -509,7 +509,10 @@ class CorrelationEngine:
         rules_triggered: List[str] = []
 
         now = datetime.utcnow()
-        enable_lab = str(getattr(settings, "ZENTHRA_ENABLE_LAB_ALERTS", "false")).lower() == "true"
+        lab_setting = getattr(settings, "ZENTHRA_ENABLE_LAB_ALERTS", None)
+        if lab_setting is None:
+            lab_setting = settings.VAELQORIX_ENABLE_LAB_ALERTS
+        enable_lab = str(lab_setting).lower() == "true"
 
         # 1) Leer firing desde Prometheus
         firing = self.prom.get_firing_alerts()

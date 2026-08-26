@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 # ==========================================================
-# 🔐 TEST DE AUTENTICACIÓN — ZENTHRA.CORE_SECURITY / NEXUSDB
+# 🔐 TEST DE AUTENTICACIÓN — VAELQORIX.XDR_COMMAND / VAELQORIXDB
 # ==========================================================
 # Este módulo prueba el flujo completo de autenticación:
 # - Creación de usuario (POST /users/)

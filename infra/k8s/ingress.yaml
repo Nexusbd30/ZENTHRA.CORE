@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaelqorix
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - vaelqorix.example.com
+    secretName: vaelqorix-tls
+  rules:
+  - host: vaelqorix.example.com
+    http:
+      paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /users
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /threats
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /monitoring
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /metrics
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /ready
+        pathType: Exact
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-api
+            port:
+              name: http
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vaelqorix-frontend
+            port:
+              name: http

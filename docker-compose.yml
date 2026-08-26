@@ -1,8 +1,8 @@
-# ==========================================================
-# ZENTHRA - Observabilidad Stack + PostgreSQL (v3.9.1)
+﻿# ==========================================================
+# VAELQORIX - Observabilidad Stack + PostgreSQL (v3.9.1)
 # ==========================================================
 # Stack completo: backend, PostgreSQL y observabilidad.
-# Expone PostgreSQL en 55432 para acceso local desde herramientas externas.
+# Expone PostgreSQL en ${VAELQORIX_POSTGRES_PORT:-56432} para acceso local desde herramientas externas.
 #
 # Nota:
 # - El backend dockerizado conecta a postgres por hostname "postgres:5432".
@@ -14,44 +14,73 @@ services:
   # =========================================================
   backend:
     build: .
-    container_name: zenthra_backend
+    container_name: vaelqorix_backend
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8000:8000"
     environment:
       - ENV=${ENV:-production}
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
-      - ZENTHRA_MONITOR_TOKEN=${ZENTHRA_MONITOR_TOKEN:?ZENTHRA_MONITOR_TOKEN is required}
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://zenthra:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-zenthra}
+      - VAELQORIX_MONITOR_TOKEN=${VAELQORIX_MONITOR_TOKEN:?VAELQORIX_MONITOR_TOKEN is required}
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://vaelqorix:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vaelqorix}
       - PROMETHEUS_BASE=http://prometheus:9090
       - ALERTMANAGER_BASE=http://alertmanager:9093
+      - ALERTMANAGER_ALLOWED_CIDRS=${ALERTMANAGER_ALLOWED_CIDRS:-172.16.0.0/12,127.0.0.1/32,::1/128}
+      - PROM_TIMEOUT_SEC=${PROM_TIMEOUT_SEC:-2}
       - PROM_CACHE_TTL_SECONDS=${PROM_CACHE_TTL_SECONDS:-5}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-redis}
+      - REPLAY_GUARD_BACKEND=${REPLAY_GUARD_BACKEND:-redis}
+      - ARES_KILL_SWITCH_BACKEND=${ARES_KILL_SWITCH_BACKEND:-redis}
+      - ARES_KILL_SWITCH_KEY=${ARES_KILL_SWITCH_KEY:-ares:kill_switch}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX:-vaelqorix}
+      - SECRET_BACKEND=${SECRET_BACKEND:-file}
+      - SECRET_FILE_DIR=${SECRET_FILE_DIR:-/run/secrets}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
       interval: 15s
       timeout: 5s
       retries: 10
     networks:
-      - zenthra_net
+      - vaelqorix_net
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: vaelqorix_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - vaelqorix_net
 
   # =========================================================
   # POSTGRES - Base de datos (staging/prod)
   # =========================================================
   postgres:
-    image: postgres:16-alpine
-    container_name: zenthra_postgres
+    image: postgres:16.6-alpine
+    container_name: vaelqorix_postgres
     restart: unless-stopped
 
     # Como tu backend corre en Windows HOST, exponemos el puerto al host
     ports:
-      - "55432:5432"
+      - "${VAELQORIX_POSTGRES_PORT:-56432}:5432"
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-zenthra}
-      - POSTGRES_USER=${POSTGRES_USER:-zenthra}
+      - POSTGRES_DB=${POSTGRES_DB:-vaelqorix}
+      - POSTGRES_USER=${POSTGRES_USER:-vaelqorix}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
 
     volumes:
@@ -59,19 +88,19 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zenthra -d zenthra"]
+      test: ["CMD-SHELL", "pg_isready -U vaelqorix -d vaelqorix"]
       interval: 10s
       timeout: 5s
       retries: 10
 
     networks:
-      - zenthra_net
+      - vaelqorix_net
 
   # =========================================================
   # PROMETHEUS - Observabilidad central
   # =========================================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.1.0
     container_name: prometheus
     restart: unless-stopped
     ports:
@@ -87,7 +116,7 @@ services:
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
 
       # Token interno (bearer) para /metrics del backend
-      - C:\ZENTHRA\secrets\zenthra_monitor_token:/etc/prometheus/secrets/zenthra_monitor_token:ro
+      - ${PROMETHEUS_MONITOR_TOKEN_FILE:?PROMETHEUS_MONITOR_TOKEN_FILE is required}:/etc/prometheus/secrets/vaelqorix_monitor_token:ro
 
       # Datos persistentes TSDB
       - prometheus_data:/prometheus
@@ -100,13 +129,13 @@ services:
       - --web.enable-lifecycle
 
     networks:
-      - zenthra_net
+      - vaelqorix_net
 
   # =========================================================
   # GRAFANA - Visualizacion
   # =========================================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     container_name: grafana
     restart: unless-stopped
 
@@ -124,13 +153,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
 
     networks:
-      - zenthra_net
+      - vaelqorix_net
 
   # =========================================================
   # ALERTMANAGER - Gestion y ruteo de alertas
   # =========================================================
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.28.0
     container_name: alertmanager
     restart: unless-stopped
 
@@ -148,13 +177,13 @@ services:
       - --storage.path=/alertmanager
 
     networks:
-      - zenthra_net
+      - vaelqorix_net
 
   # =========================================================
   # BLACKBOX EXPORTER - Sondeo de endpoints externos
   # =========================================================
   blackbox_exporter:
-    image: prom/blackbox-exporter:latest
+    image: prom/blackbox-exporter:v0.25.0
     container_name: blackbox_exporter
     restart: unless-stopped
 
@@ -168,7 +197,7 @@ services:
       - --config.file=/etc/blackbox_exporter/config.yml
 
     networks:
-      - zenthra_net
+      - vaelqorix_net
 
 # ==========================================================
 # VOLUMES PERSISTENTES
@@ -177,10 +206,11 @@ volumes:
   prometheus_data:
   grafana_data:
   postgres_data:
+  redis_data:
 
 # ==========================================================
 # NETWORK (interno)
 # ==========================================================
 networks:
-  zenthra_net:
+  vaelqorix_net:
     driver: bridge

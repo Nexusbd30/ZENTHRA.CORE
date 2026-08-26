@@ -1,8 +1,10 @@
-from datetime import UTC, datetime, timedelta
+﻿from datetime import UTC, datetime, timedelta
 
+from app.ares.reporter import build_execution_result
 from app.models.threat_model import ThreatCategory, ThreatLevel, ThreatModel
 from app.redqueen.decision_engine import ACTION_SEVERITY, generate_verdict
 from app.redqueen.perception import build_threat_perception
+from app.redqueen.prompts import tactical_user_prompt
 from app.redqueen.risk_scorer import score_perception
 
 
@@ -25,8 +27,57 @@ def test_llm_cannot_downgrade_critical_action(monkeypatch):
     assert verdict["action_type"] == "network_isolate"
     assert ACTION_SEVERITY[verdict["action_type"]] >= ACTION_SEVERITY["network_isolate"]
     assert verdict["execution_controls"]["minimum_action_enforced"] is True
+    assert verdict["execution_controls"]["redqueen_thinking_model"]["primary_goal"] == (
+        "control_intrusion_and_block_threats"
+    )
+    assert verdict["execution_controls"]["redqueen_thinking_model"]["execution_boundary"] == (
+        "redqueen_decides_ares_executes"
+    )
+    assert verdict["execution_controls"]["redqueen_thinking_model"]["redqueen_control_percent"] == 80
+    assert verdict["execution_controls"]["redqueen_thinking_model"]["human_control_percent"] == 20
+    assert "execution_boundary:ares_only" in verdict["factors"]
+    assert "analytical_posture:critical_review" in verdict["factors"]
+    assert verdict["execution_controls"]["redqueen_analytical_profile"]["schema"] == (
+        "vaelqorix.redqueen.analytical_brain.v1"
+    )
+    assert verdict["execution_controls"]["redqueen_analytical_profile"]["diligence_score"] >= 80
     assert verdict["execution_controls"]["policy_result"]["code"] == "human_required"
     assert verdict["causal_chain"]["action"] == "network_isolate"
+
+
+def test_redqueen_prompt_prioritizes_intrusion_control_and_ares_execution():
+    prompt = tactical_user_prompt(
+        target="edge-fw-01",
+        risk_score=91,
+        factors=["lateral_movement", "active_exfiltration"],
+    )
+
+    assert "control defensivo" in prompt
+    assert "bloqueo de amenaza" in prompt
+    assert "ARES" in prompt
+    assert "RedQueen 80%" in prompt
+    assert "ser humano 20%" in prompt
+    assert "no ejecuta acciones operativas" in prompt
+
+
+def test_redqueen_requires_human_at_80_percent_boundary(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"soar_delegate","confidence":0.80,'
+            '"reasoning":"delegate controlled response","factors":["controlled_response"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="srv-auth",
+        risk_score=80,
+        factors=["credential_attack"],
+        execution_controls={},
+    )
+
+    assert verdict["requires_human"] is True
+    assert verdict["execution_controls"]["redqueen_thinking_model"]["autonomy_threshold"] == 80
 
 
 def test_verdict_records_mcp_action_policy_when_action_is_blocked(monkeypatch):
@@ -48,6 +99,106 @@ def test_verdict_records_mcp_action_policy_when_action_is_blocked(monkeypatch):
     assert verdict["action_type"] == "network_isolate"
     assert verdict["execution_controls"]["mcp_action_policy"]["allowed"] is False
     assert verdict["execution_controls"]["mcp_action_policy"]["code"] == "mcp_action_blocked"
+
+
+def test_redqueen_can_authorize_dns_firewall_block_for_network_domain(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"dns_firewall_block","confidence":0.91,'
+            '"reasoning":"block command and control domain",'
+            '"factors":["dns_callback","command_and_control"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="malware.example",
+        risk_score=72,
+        factors=["dns_callback"],
+        execution_controls={
+            "perception": {
+                "entity_type": "network",
+                "source": "network_sensor:dns",
+            },
+        },
+    )
+
+    assert verdict["action_type"] == "dns_firewall_block"
+    assert verdict["execution_controls"]["action_domain"] == "network"
+    assert verdict["execution_controls"]["llm_governance"]["approved_for_ares"] is True
+    assert verdict["causal_chain"]["action"] == "dns_firewall_block"
+
+
+def test_verdict_records_mcp_tool_policy_for_declared_tools(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"soar_delegate","confidence":0.70,'
+            '"reasoning":"delegate with evidence","factors":["mcp_supported"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="release-prod",
+        risk_score=55,
+        factors=["pipeline_risk"],
+        execution_controls={
+            "mcp_context": {
+                "tools": ["identity.lookup", "pipeline.lookup"],
+                "allowed_tools": ["identity.lookup", "pipeline.lookup"],
+            }
+        },
+    )
+
+    assert verdict["execution_controls"]["mcp_tool_policy"]["schema"] == (
+        "vaelqorix.mcp_tool_policy.v1"
+    )
+    assert verdict["execution_controls"]["mcp_tool_policy"]["allowed"] is True
+    assert verdict["execution_controls"]["mcp_tool_policy"]["requested_tools"] == [
+        "identity.lookup",
+        "pipeline.lookup",
+    ]
+
+
+def test_redqueen_adjusts_devsecops_action_to_provider_capability(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"block_deployment","confidence":0.94,'
+            '"reasoning":"block risky release","factors":["critical_pipeline_risk"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="repository:vaelqorix/core-security",
+        risk_score=95,
+        factors=["secret_exposure"],
+        execution_controls={
+            "devsecops_contract": "devsecops_signal.v1",
+            "devsecops_provider": "sonarqube",
+            "perception": {
+                "entity_type": "repository",
+                "source": "devsecops:sonarqube",
+            },
+        },
+    )
+
+    assert verdict["action_type"] == "require_release_approval"
+    assert verdict["execution_controls"]["provider_action_adjusted"] is True
+    assert verdict["execution_controls"]["provider_original_action_type"] == "block_deployment"
+    assert verdict["execution_controls"]["provider_adjustment_reason"] == (
+        "devsecops_provider_capability_adjustment:sonarqube"
+    )
+    assert "provider_adjusted_to:require_release_approval" in verdict["factors"]
+    result = build_execution_result(
+        verdict=verdict,
+        execution={"status": "success", "duration_ms": 0, "executed_steps": []},
+    )
+    trace = [item for item in result["evidence"] if item.get("kind") == "intelligence_trace"][0]
+    assert trace["provider_action_adjusted"] is True
+    assert trace["provider_adjustment_reason"] == (
+        "devsecops_provider_capability_adjustment:sonarqube"
+    )
 
 
 def test_perception_and_risk_scorer_use_enriched_siem_signals():

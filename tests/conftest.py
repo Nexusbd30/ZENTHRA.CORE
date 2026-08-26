@@ -1,4 +1,5 @@
-﻿import uuid
+import uuid
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -12,14 +13,8 @@ from app.models.base import Base
 from app.models.threat_model import ThreatModel  # noqa: F401
 from app.models.user import User  # noqa: F401
 
-TEST_DB_URL = "sqlite:///./test.db"
-test_engine = create_engine(
-    TEST_DB_URL,
-    connect_args={"check_same_thread": False},
-    future=True,
-)
+test_engine = None
 TestingSessionLocal = sessionmaker(
-    bind=test_engine,
     autocommit=False,
     autoflush=False,
     expire_on_commit=False,
@@ -27,6 +22,8 @@ TestingSessionLocal = sessionmaker(
 
 
 def override_get_db():
+    if test_engine is None:
+        raise RuntimeError("Test database engine has not been initialized")
     db = TestingSessionLocal()
     try:
         yield db
@@ -36,17 +33,44 @@ def override_get_db():
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
+    global test_engine
+    db_dir = Path(".test-data") / "test-dbs" / uuid.uuid4().hex
+    db_dir.mkdir(parents=True, exist_ok=True)
+    db_path: Path = db_dir / "test.db"
+    test_engine = create_engine(
+        f"sqlite:///{db_path.as_posix()}",
+        connect_args={"check_same_thread": False},
+        future=True,
+    )
+    TestingSessionLocal.configure(bind=test_engine)
     app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+    test_engine.dispose()
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def reset_ares_kill_switch(monkeypatch):
+    from app.ares.kill_switch import reset_kill_switch_store, set_kill_switch
+    from app.core.settings import settings
+
+    monkeypatch.setattr(settings, "ARES_KILL_SWITCH_BACKEND", "in_memory")
+    reset_kill_switch_store()
+    set_kill_switch(False, reason="test reset", actor="pytest")
+    yield
+    monkeypatch.setattr(settings, "ARES_KILL_SWITCH_BACKEND", "in_memory")
+    reset_kill_switch_store()
 
 
 @pytest.fixture(scope="function")
 def db_session():
     session = TestingSessionLocal()
     try:
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
         yield session
     finally:
         session.close()
@@ -77,10 +101,10 @@ async def test_user(test_client):
     return {"id": data.get("id"), "email": email, "password": password}
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def auth_token(test_client):
     test_email = "auth_fixture_admin@test.com"
-    test_password = "secure123"
+    test_password = "securepassword123"
 
     create_resp = await test_client.post(
         "/users/",

@@ -1,5 +1,5 @@
 # =============================================================
-# 🧩 AuthSchema — ZENTHRA.CORE_SECURITY (v2.1 JSON MODE)
+# 🧩 AuthSchema — VAELQORIX.XDR_COMMAND (v2.1 JSON MODE)
 # =============================================================
 # Esquemas Pydantic para la autenticación de usuarios.
 # Implementación moderna compatible con JWT (Bearer Tokens).
@@ -22,7 +22,7 @@ from pydantic import BaseModel, EmailStr, Field
 # Recibe el email (como username) y la contraseña en formato JSON.
 # =============================================================
 class LoginRequest(BaseModel):
-    username: EmailStr = Field(..., examples=["analyst@zenthra.com"])
+    username: EmailStr = Field(..., examples=["analyst@vaelqorix.com"])
     password: str = Field(..., min_length=6, examples=["use-a-strong-password"])
 
 

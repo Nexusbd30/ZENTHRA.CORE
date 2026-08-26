@@ -1,12 +1,12 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
-
 
 DEFAULT_PATHS = [
     "app",
-    "ZENTHRA.CORE_SECURITY/src",
+    "VAELQORIX.XDR_COMMAND/src",
     "README.md",
     "docs",
     "tests",
@@ -31,14 +31,14 @@ TEXT_SUFFIXES = {
     ".yaml",
 }
 
-MOJIBAKE_MARKERS = ("\u00f0", "\u00c3", "\u00e2", "\ufffd")
+MOJIBAKE_MARKERS = ("\u00f0", "\u00c3", "\u00c2", "\u00e2", "\u00ef", "\ufffd")
 
 
 def iter_text_files(paths: list[str]) -> list[Path]:
     files: list[Path] = []
     for raw_path in paths:
         path = Path(raw_path)
-        if path.is_file() and path.suffix in TEXT_SUFFIXES:
+        if path.is_file():
             files.append(path)
         elif path.is_dir():
             files.extend(
@@ -59,12 +59,17 @@ def find_mojibake(paths: list[str]) -> list[tuple[Path, int, str]]:
             continue
 
         for line_number, line in enumerate(lines, start=1):
-            if any(marker in line for marker in MOJIBAKE_MARKERS):
+            if any(marker in line for marker in MOJIBAKE_MARKERS) or any(
+                0x80 <= ord(char) <= 0x9F for char in line
+            ):
                 findings.append((path, line_number, line.strip()))
     return findings
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(
         description="Detect common mojibake markers in source text files."
     )

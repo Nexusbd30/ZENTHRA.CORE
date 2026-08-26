@@ -1,5 +1,5 @@
 # =============================================================
-# 🚨 ThreatsRouter — ZENTHRA.CORE_SECURITY (v2.5 Filters+Paging SIEM)
+# 🚨 ThreatsRouter — VAELQORIX.XDR_COMMAND (v2.5 Filters+Paging SIEM)
 # =============================================================
 # ✅ Mejoras:
 #   - Compatibilidad con paginación por page/limit (además de skip/limit)
@@ -24,7 +24,7 @@ from app.models.user import User  # para tipar current_user / current_admin
 from app.schemas.threat_schema import ThreatCreate, ThreatResponse, ThreatUpdate
 from app.services.threat_service import ThreatService
 
-AUDIT_LOG = logging.getLogger("zenthra.threats_audit")
+AUDIT_LOG = logging.getLogger("vaelqorix.threats_audit")
 
 router = APIRouter(
     prefix="/threats",

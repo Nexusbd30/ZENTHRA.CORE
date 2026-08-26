@@ -1,5 +1,5 @@
 # =============================================================
-# 📦 Threat Schemas — ZENTHRA.CORE_SECURITY
+# 📦 Threat Schemas — VAELQORIX.XDR_COMMAND
 # =============================================================
 # Esquemas Pydantic para:
 # - Crear amenazas (ThreatCreate)

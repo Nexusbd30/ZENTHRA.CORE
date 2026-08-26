@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ingestion
@@ -20,8 +20,10 @@ spec:
           type: RuntimeDefault
       containers:
       - name: ingestion
-        image: ghcr.io/your-org/nexus:1.0.0
+        image: ghcr.io/vaelqorix/vaelqorix-api:stable
         imagePullPolicy: IfNotPresent
+        command: ["uvicorn"]
+        args: ["app.entrypoints.ingestion:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
         - containerPort: 8000
           name: http
@@ -58,3 +60,15 @@ spec:
           readOnlyRootFilesystem: true
           capabilities:
             drop: ["ALL"]
+        volumeMounts:
+        - name: runtime-logs
+          mountPath: /app/logs
+        - name: secret-files
+          mountPath: /run/secrets/aresx
+          readOnly: true
+      volumes:
+      - name: runtime-logs
+        emptyDir: {}
+      - name: secret-files
+        secret:
+          secretName: aresx-secrets

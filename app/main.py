@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from logging.handlers import RotatingFileHandler
+from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,31 +17,56 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
 from app.ares.router import router as ares_router
+from app.cases.router import router as cases_router
+from app.code_intelligence.router import router as code_intelligence_router
+from app.compliance.router import router as compliance_router
+from app.connectors.router import router as connectors_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
 from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
 from app.db.session import SessionLocal, get_db
+from app.detection.router import router as detection_router
+from app.dns_firewall.router import router as dns_firewall_router
 from app.health.router import router as system_health_router
+from app.identity.router import router as identity_router
+from app.ingestion.aresx_router import router as aresx_ingest_router
 from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
 from app.models.user import User
+from app.platform.router import router as platform_router
+from app.playbooks.router import router as playbooks_router
 from app.redqueen.router import router as redqueen_router
-from app.routers import auth, monitoring, monitoring_correlation, monitoring_health, threats, users
+from app.routers import (
+    audit,
+    auth,
+    monitoring,
+    monitoring_correlation,
+    monitoring_health,
+    threats,
+    users,
+)
+from app.runtime.router import router as runtime_router
+from app.secops.router import router as secops_router
+from app.sensors.router import router as sensors_router
 from app.services.correlation_engine import correlation_engine
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
 os.makedirs("logs", exist_ok=True)
 
 log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
-log_handler = RotatingFileHandler(
-    "logs/app.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8"
-)
+log_handler: logging.Handler
+try:
+    log_handler = RotatingFileHandler(
+        "logs/app.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8"
+    )
+except PermissionError:
+    log_handler = logging.StreamHandler()
 log_handler.setFormatter(log_formatter)
 
-logger = logging.getLogger("zenthra")
+logger = logging.getLogger("vaelqorix")
 logger.setLevel(getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 if not logger.handlers:
     logger.addHandler(log_handler)
@@ -49,7 +75,7 @@ logger.propagate = False
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
-    description="ZENTHRA.CORE_SECURITY API",
+    description="VAELQORIX.XDR_COMMAND API",
 )
 register_error_handlers(app)
 
@@ -97,8 +123,8 @@ correlation_lock = asyncio.Lock()
 
 
 async def correlation_worker():
-    await asyncio.sleep(int(settings.ZENTHRA_CORRELATION_STARTUP_DELAY_SEC))
-    interval = int(settings.ZENTHRA_CORRELATION_INTERVAL_SEC)
+    await asyncio.sleep(int(settings.VAELQORIX_CORRELATION_STARTUP_DELAY_SEC))
+    interval = int(settings.VAELQORIX_CORRELATION_INTERVAL_SEC)
     logger.info("Correlation worker ON (interval=%ss)", interval)
 
     while True:
@@ -126,10 +152,22 @@ async def correlation_worker():
 
 @app.on_event("startup")
 async def startup():
-    logger.info("ZENTHRA iniciado")
-    logger.info("ENV=%s DB=%s", settings.ENV, settings.SQLALCHEMY_DATABASE_URI)
+    logger.info("VAELQORIX iniciado")
+    db_url = urlparse(settings.SQLALCHEMY_DATABASE_URI)
+    logger.info(
+        "ENV=%s DB=%s://%s:%s/%s",
+        settings.ENV,
+        db_url.scheme,
+        db_url.hostname,
+        db_url.port,
+        db_url.path.lstrip("/"),
+    )
 
-    if settings.ZENTHRA_CORRELATION_ENABLED:
+    correlation_enabled = (
+        settings.VAELQORIX_CORRELATION_ENABLED
+        or bool(getattr(settings, "ZENTHRA_CORRELATION_ENABLED", False))
+    )
+    if correlation_enabled:
         global correlation_task
         correlation_task = asyncio.create_task(correlation_worker())
         logger.info("Correlation scheduler started")
@@ -146,7 +184,7 @@ def create_default_admin_dev():
             if db.query(User).first():
                 return
 
-            bootstrap_email = getattr(settings, "BOOTSTRAP_ADMIN_EMAIL", "admin@zenthra.dev")
+            bootstrap_email = getattr(settings, "BOOTSTRAP_ADMIN_EMAIL", "admin@vaelqorix.dev")
             bootstrap_password = getattr(settings, "BOOTSTRAP_ADMIN_PASSWORD", None)
             if not bootstrap_password:
                 logger.warning(
@@ -155,7 +193,7 @@ def create_default_admin_dev():
                 return
 
             admin = User(
-                full_name="ZENTHRA SuperAdmin",
+                full_name="VAELQORIX SuperAdmin",
                 email=bootstrap_email,
                 hashed_password=get_password_hash(bootstrap_password),
                 role="admin",
@@ -184,6 +222,7 @@ async def shutdown():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(threats.router)
+app.include_router(audit.router)
 app.include_router(monitoring.router)
 app.include_router(monitoring_health.router)
 app.include_router(monitoring_correlation.router)
@@ -191,9 +230,22 @@ app.include_router(monitoring.hooks_router)
 app.include_router(metrics_router)
 
 app.include_router(system_health_router)
+app.include_router(aresx_ingest_router)
 app.include_router(ingestion_router)
+app.include_router(identity_router)
+app.include_router(secops_router)
+app.include_router(platform_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
+app.include_router(code_intelligence_router)
+app.include_router(sensors_router)
+app.include_router(detection_router)
+app.include_router(dns_firewall_router)
+app.include_router(connectors_router)
+app.include_router(playbooks_router)
+app.include_router(cases_router)
+app.include_router(runtime_router)
+app.include_router(compliance_router)
 
 
 @app.get("/", include_in_schema=False)
@@ -240,8 +292,8 @@ def debug_config(current_admin=Depends(get_current_admin)):
     return {
         "ENV": settings.ENV,
         "DB_DRIVER": settings.SQLALCHEMY_DATABASE_URI.split(":", 1)[0],
-        "CORRELATION_ENABLED": settings.ZENTHRA_CORRELATION_ENABLED,
-        "CORRELATION_INTERVAL_SEC": settings.ZENTHRA_CORRELATION_INTERVAL_SEC,
+        "CORRELATION_ENABLED": settings.VAELQORIX_CORRELATION_ENABLED,
+        "CORRELATION_INTERVAL_SEC": settings.VAELQORIX_CORRELATION_INTERVAL_SEC,
     }
 
 

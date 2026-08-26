@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
+import jwt
 import pytest
-from jose import jwt
 
 from app.core.security import ALGORITHM, create_access_token
 

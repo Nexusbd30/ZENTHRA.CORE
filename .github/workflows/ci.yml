@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -25,7 +25,7 @@ jobs:
     - name: Mypy
       run: mypy app
     - name: Pytest
-      run: pytest --cov=app --cov-report=xml --cov-fail-under=65
+      run: pytest --cov=app --cov-report=xml --cov-fail-under=90
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -37,17 +37,22 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ZENTHRA.CORE_SECURITY
+        working-directory: VAELQORIX.XDR_COMMAND
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
-        cache: "npm"
-        cache-dependency-path: ZENTHRA.CORE_SECURITY/package-lock.json
+    - name: Enable pnpm
+      run: corepack enable
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "pnpm"
+        cache-dependency-path: VAELQORIX.XDR_COMMAND/pnpm-lock.yaml
     - name: Install frontend deps
-      run: npm ci
+      run: pnpm install --frozen-lockfile
     - name: ESLint
-      run: npm run lint
+      run: pnpm run lint
     - name: Build
-      run: npm run build
+      run: pnpm run build

@@ -1,10 +1,10 @@
-import pytest
+﻿import pytest
 
 from app.core.settings import settings
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -80,6 +80,30 @@ async def test_ingestion_wazuh_adapter_creates_threat(test_client, monkeypatch):
     assert body["threat"]["source"] == "wazuh/edr"
     assert body["threat"]["level"] == "high"
     assert body["threat"]["target_service"] == "linux-prod-01"
+
+
+@pytest.mark.asyncio
+async def test_ingestion_sentinel_adapter_creates_threat(test_client, monkeypatch):
+    resp = await test_client.post(
+        "/api/v1/ingestion/events/sentinel",
+        headers=monitor_headers(monkeypatch),
+        json={
+            "incidentNumber": "42",
+            "title": "Suspicious OAuth consent",
+            "severity": "High",
+            "compromisedEntity": "alice@corp.com",
+            "sourceIp": "203.0.113.77",
+            "description": "Consent grant from suspicious IP",
+        },
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["adapter"] == "sentinel"
+    assert body["status"] == "created"
+    assert body["threat"]["source"] == "sentinel/siem"
+    assert body["threat"]["level"] == "high"
+    assert body["threat"]["target_service"] == "alice@corp.com"
 
 
 @pytest.mark.asyncio

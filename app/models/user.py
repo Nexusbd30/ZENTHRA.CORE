@@ -1,5 +1,5 @@
 # =============================================================
-# 👤 UserModel — ZENTHRA.CORE_SECURITY (v2.1 Hardened Stable)
+# 👤 UserModel — VAELQORIX.XDR_COMMAND (v2.1 Hardened Stable)
 # =============================================================
 # Representa a los usuarios registrados dentro del sistema.
 #
@@ -24,11 +24,11 @@ from app.models.base import Base
 
 class User(Base):
     """
-    🧠 Modelo de base de datos para los usuarios del sistema ZENTHRA.
+    🧠 Modelo de base de datos para los usuarios del sistema VAELQORIX.
 
     Cada usuario puede estar asociado a múltiples amenazas (ThreatModel),
     creadas manualmente o generadas por el motor de correlación
-    ZENTHRA.CORE_SECURITY.
+    VAELQORIX.XDR_COMMAND.
     """
 
     __tablename__ = "users"

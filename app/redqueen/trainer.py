@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from collections import Counter, defaultdict
@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.intelligence.governance import LLM_DECISION_TRACE_SCHEMA, LLM_GOVERNANCE_SCHEMA
 from app.models.execution_result import ExecutionResult
 from app.models.verdict import Verdict
 
@@ -20,6 +21,14 @@ def _json_list(raw: str) -> list[str]:
     return [str(item) for item in value if item]
 
 
+def _json_dict(raw: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw or "{}")
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
 def _confidence_bucket(confidence: float) -> str:
     if confidence >= 0.85:
         return "high"
@@ -30,6 +39,66 @@ def _confidence_bucket(confidence: float) -> str:
 
 def _rate(success: int, total: int) -> float:
     return round(success / total, 4) if total else 0.0
+
+
+def _build_ai_governance_report(
+    verdicts: dict[str, Verdict],
+    latest_results: dict[str, ExecutionResult],
+) -> dict[str, Any]:
+    total = 0
+    approved = 0
+    contract_present = 0
+    traceable_results = 0
+    missing_governance = 0
+    guardrails: Counter[str] = Counter()
+    final_sources: Counter[str] = Counter()
+
+    for verdict_id, verdict in verdicts.items():
+        result = latest_results.get(verdict_id)
+        if result is None:
+            continue
+        total += 1
+        controls = _json_dict(verdict.execution_controls)
+        governance = controls.get("llm_governance")
+        if isinstance(governance, dict):
+            contract_present += 1
+            if governance.get("approved_for_ares") is True:
+                approved += 1
+            for guardrail in governance.get("present_guardrails", []):
+                guardrails[str(guardrail)] += 1
+        else:
+            missing_governance += 1
+
+        contract = controls.get("llm_contract")
+        if isinstance(contract, dict):
+            final_sources[str(contract.get("final_action_source") or "unknown")] += 1
+
+        if result.result_hash:
+            traceable_results += 1
+
+    recommendations: list[str] = []
+    if missing_governance:
+        recommendations.append("backfill_llm_governance_for_legacy_verdicts")
+    if total and _rate(approved, total) < 1.0:
+        recommendations.append("block_or_review_unapproved_llm_contracts")
+    if total and _rate(traceable_results, total) < 1.0:
+        recommendations.append("enforce_result_hash_for_ai_evidence")
+    if not total:
+        recommendations.append("collect_more_execution_feedback")
+
+    return {
+        "schema": "vaelqorix.ai_evaluation.v1",
+        "llm_governance_schema": LLM_GOVERNANCE_SCHEMA,
+        "decision_trace_schema": LLM_DECISION_TRACE_SCHEMA,
+        "sample_count": total,
+        "contract_presence_rate": _rate(contract_present, total),
+        "approved_for_ares_rate": _rate(approved, total),
+        "traceable_result_rate": _rate(traceable_results, total),
+        "missing_governance_count": missing_governance,
+        "guardrail_counts": dict(sorted(guardrails.items())),
+        "final_action_sources": dict(sorted(final_sources.items())),
+        "recommendations": recommendations,
+    }
 
 
 def build_training_report(db: Session, *, limit: int = 100) -> dict[str, Any]:
@@ -48,6 +117,7 @@ def build_training_report(db: Session, *, limit: int = 100) -> dict[str, Any]:
             "action_performance": {},
             "confidence_buckets": {},
             "failure_factors": [],
+            "ai_governance": _build_ai_governance_report({}, {}),
             "recommendations": ["collect_more_execution_feedback"],
         }
 
@@ -120,5 +190,6 @@ def build_training_report(db: Session, *, limit: int = 100) -> dict[str, Any]:
             {"factor": factor, "count": count}
             for factor, count in failure_factors.most_common(10)
         ],
+        "ai_governance": _build_ai_governance_report(verdict_by_id, latest_result),
         "recommendations": list(dict.fromkeys(recommendations)),
     }

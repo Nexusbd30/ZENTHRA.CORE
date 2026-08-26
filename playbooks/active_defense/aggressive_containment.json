@@ -1,0 +1,64 @@
+{
+  "playbook_id": "active_defense.aggressive_containment",
+  "version": "1.0.0",
+  "name": "Aggressive Containment",
+  "description": "Legal active defense playbook for owned infrastructure containment.",
+  "triggers": ["aggressive_containment", "network_isolate", "endpoint_isolate"],
+  "labels": {
+    "domain": "xdr",
+    "governance": "human-gated"
+  },
+  "steps": [
+    {
+      "step_id": "preserve-evidence",
+      "connector": "soar",
+      "action": "preserve_bridge_evidence",
+      "parameters": {
+        "chain_of_custody": true
+      },
+      "retries": 1
+    },
+    {
+      "step_id": "identity-burn",
+      "connector": "iam",
+      "action": "revoke_sessions_and_tokens",
+      "when": {
+        "min": {
+          "risk_score": 70
+        }
+      },
+      "retries": 2
+    },
+    {
+      "step_id": "perimeter-block",
+      "connector": "firewall",
+      "action": "block_observed_indicators",
+      "requires_approval": true,
+      "rollback": "remove_temporary_blocks",
+      "retries": 1
+    },
+    {
+      "step_id": "endpoint-isolate",
+      "connector": "edr",
+      "action": "isolate_confirmed_endpoint",
+      "when": {
+        "contains": {
+          "signals": "endpoint_compromise"
+        }
+      },
+      "requires_approval": true,
+      "rollback": "release_endpoint_isolation"
+    },
+    {
+      "step_id": "deception-grid",
+      "connector": "deception",
+      "action": "activate_honeytokens_and_canaries",
+      "rollback": "deactivate_deception_assets"
+    },
+    {
+      "step_id": "legal-pack",
+      "connector": "case",
+      "action": "export_legal_escalation_pack"
+    }
+  ]
+}

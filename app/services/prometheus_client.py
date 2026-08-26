@@ -1,5 +1,5 @@
 # =============================================================
-# 📡 PrometheusClient — ZENTHRA (v1.4 SIEM-Ready Stable)
+# 📡 PrometheusClient — VAELQORIX (v1.4 SIEM-Ready Stable)
 # =============================================================
 # ✅ Compatibilidad:
 #   - query(expr) -> List[dict]
@@ -20,7 +20,7 @@ import requests
 
 from app.core.settings import settings
 
-logger = logging.getLogger("zenthra.prometheus")
+logger = logging.getLogger("vaelqorix.prometheus")
 
 
 class PrometheusClient:

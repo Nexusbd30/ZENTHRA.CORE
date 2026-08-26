@@ -6,17 +6,26 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.ares.advisor import review_plan
+from app.ares.aggressive_containment import build_aggressive_containment
 from app.ares.approval import verify_approval_payload
 from app.ares.executor import execute_plan
+from app.ares.internal_firewall import evaluate_internal_firewall
 from app.ares.memory import read_ares_memory
 from app.ares.monitor import evaluate_ares_health
+from app.ares.os_business_shield import build_os_business_shield
 from app.ares.planner import build_plan
 from app.ares.reporter import build_execution_result
+from app.ares.response_fabric import build_response_fabric
 from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
 from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
+from app.core.signing import sign_payload
+from app.dns_firewall.service import prepare_dns_execution, update_execution_state
+from app.identity.service import summarize_identity_activity
+from app.intelligence.rag import rag_factors, rag_payload, retrieve_defensive_context
 from app.models.approval_record import ApprovalRecord
 from app.models.execution_result import ExecutionResult
+from app.models.threat_event import ThreatEvent
 from app.models.threat_model import ThreatModel
 from app.models.verdict import Verdict
 from app.redqueen.decision_engine import generate_verdict
@@ -63,14 +72,32 @@ class AutonomyService:
         verdict = Verdict(
             verdict_id=str(verdict_data.get("verdict_id")),
             timestamp=datetime.fromisoformat(str(verdict_data.get("timestamp")).replace("Z", "+00:00")),
+            threat_event_id=str(verdict_data.get("threat_event_id", "")),
+            status=str(verdict_data.get("status", "pending")),
+            severity=str(verdict_data.get("severity", "medium")),
             target=str(verdict_data.get("target", "unknown")),
             action_type=str(verdict_data.get("action_type", "observe")),
+            recommended_actions=json.dumps(
+                verdict_data.get("recommended_actions", []), ensure_ascii=False
+            ),
+            primary_action=str(verdict_data.get("primary_action") or verdict_data.get("action_type", "")),
             risk_score=float(verdict_data.get("risk_score", 0.0)),
             confidence=float(verdict_data.get("confidence", 0.0)),
+            confidence_score=float(
+                verdict_data.get("confidence_score", verdict_data.get("confidence", 0.0))
+            ),
             factors=json.dumps(verdict_data.get("factors", []), ensure_ascii=False),
+            xai_explanation=json.dumps(
+                verdict_data.get("xai_explanation", {}), ensure_ascii=False
+            ),
             justification_xai=str(verdict_data.get("justification_xai", "")),
             policy_check=bool(verdict_data.get("policy_check", False)),
             requires_human=bool(verdict_data.get("requires_human", False)),
+            requires_human_approval=bool(
+                verdict_data.get("requires_human_approval", verdict_data.get("requires_human", False))
+            ),
+            policy_rule=str(verdict_data.get("policy_rule", "")),
+            ttl_seconds=int(verdict_data.get("ttl_seconds", 3600)),
             execution_controls=json.dumps(
                 verdict_data.get("execution_controls", {}), ensure_ascii=False
             ),
@@ -83,9 +110,18 @@ class AutonomyService:
         model = ExecutionResult(
             verdict_id=str(result_data.get("verdict_id", "")),
             ares_id=str(result_data.get("ares_id", "ares")),
+            action_type=str(result_data.get("action_type", "")),
+            target_entity=str(result_data.get("target_entity", "")),
+            target_system=str(result_data.get("target_system", "")),
             status=str(result_data.get("status", "unknown")),
             duration_ms=int(result_data.get("duration_ms", 0)),
+            pre_state=json.dumps(result_data.get("pre_state", {}), ensure_ascii=False),
+            post_state=json.dumps(result_data.get("post_state", {}), ensure_ascii=False),
             evidence=json.dumps(result_data.get("evidence", []), ensure_ascii=False),
+            rollback_payload=json.dumps(
+                result_data.get("rollback_payload", {}), ensure_ascii=False
+            ),
+            rl_reward=float(result_data.get("rl_reward", 0.0)),
             error_code=str(result_data.get("error_code", "")),
             result_hash=str(result_data.get("result_hash", "")),
             timestamp=datetime.fromisoformat(str(result_data.get("timestamp")).replace("Z", "+00:00")),
@@ -254,6 +290,380 @@ class AutonomyService:
         }
 
     @staticmethod
+    def _risk_level(score_0_100: float) -> str:
+        if score_0_100 >= 82:
+            return "critical"
+        if score_0_100 >= 60:
+            return "high"
+        if score_0_100 >= 35:
+            return "medium"
+        return "low"
+
+    @staticmethod
+    def _identity_activity_risk_boost(activity: dict) -> float:
+        event_count = int(activity.get("event_count", 0) or 0)
+        raw_event_types = activity.get("event_types")
+        raw_signals = activity.get("signals")
+        event_types = raw_event_types if isinstance(raw_event_types, list) else []
+        signals = raw_signals if isinstance(raw_signals, list) else []
+        if event_count <= 1:
+            return 0.0
+        boost = min(9.0, float(event_count - 1) * 3.0)
+        boost += min(4.5, float(len(signals)) * 1.5)
+        if len(event_types) >= 2:
+            boost += 3.0
+        return round(min(15.0, boost), 2)
+
+    @staticmethod
+    def _rag_domain(perception: dict, controls: dict | None = None) -> str:
+        controls = controls if isinstance(controls, dict) else {}
+        source = str(perception.get("source") or "").lower()
+        entity_type = str(perception.get("entity_type") or "").lower()
+        if controls.get("identity_contract") or source.startswith("identity:") or entity_type == "user":
+            return "identity"
+        if (
+            controls.get("devsecops_contract")
+            or source.startswith("devsecops:")
+            or source.startswith("secops:identity_pipeline_correlation")
+            or source.startswith("secops:integration_security_abuse")
+            or entity_type in {"repository", "pipeline", "artifact"}
+        ):
+            return "devsecops"
+        return "generic"
+
+    @staticmethod
+    def _enrich_with_rag(
+        *,
+        perception: dict,
+        factors: list[str],
+        controls: dict | None = None,
+    ) -> tuple[list[str], dict]:
+        controls = controls if isinstance(controls, dict) else {}
+        if controls.get("rag_disabled") is True:
+            return factors, {}
+        domain = AutonomyService._rag_domain(perception, controls)
+        query = " ".join(
+            str(item)
+            for item in [
+                perception.get("source"),
+                perception.get("event_type"),
+                perception.get("target"),
+                perception.get("risk_level"),
+            ]
+            if item
+        )
+        context = retrieve_defensive_context(query=query, domain=domain, factors=factors)
+        payload = rag_payload(context)
+        enriched = list(dict.fromkeys([*factors, *rag_factors(context)]))
+        if payload.get("references"):
+            enriched.append("rag_context_present")
+        return enriched, payload
+
+    @staticmethod
+    def _threat_event_perception(event: ThreatEvent, db: Session | None = None) -> dict:
+        try:
+            mitre_tags = json.loads(event.mitre_tags or "[]")
+        except json.JSONDecodeError:
+            mitre_tags = []
+        try:
+            normalized_payload = json.loads(event.normalized_payload or event.normalized or "{}")
+        except json.JSONDecodeError:
+            normalized_payload = {}
+
+        severity_score = max(0.0, min(100.0, float(event.severity or 0) * 10.0))
+        mitre_score = min(25.0, len(mitre_tags) * 8.0)
+        high_impact = {
+            "T1078",
+            "T1110",
+            "T1003",
+            "T1055",
+            "T1059",
+            "T1486",
+            "T1041",
+        }
+        high_impact_hits = sorted(set(str(tag).upper() for tag in mitre_tags) & high_impact)
+        entity_bonus = 8.0 if event.entity_type in {"user", "host"} else 3.0
+        network_bonus = 5.0 if event.src_ip or event.dst_ip else 0.0
+        rule_risk_score = max(
+            0.0,
+            min(
+                100.0,
+                (severity_score * 0.55)
+                + mitre_score
+                + entity_bonus
+                + network_bonus
+                + (len(high_impact_hits) * 6.0),
+            ),
+        )
+        persisted_risk_score = max(0.0, min(100.0, float(event.risk_score or 0.0)))
+        risk_score = max(rule_risk_score, persisted_risk_score)
+        factors = [
+            f"source:{event.source}",
+            f"event_type:{event.event_type}",
+            f"severity:{event.severity}",
+            f"entity_type:{event.entity_type or 'unknown'}",
+            *[f"mitre:{tag}" for tag in mitre_tags],
+            *[f"high_impact:{tag}" for tag in high_impact_hits],
+        ]
+        if persisted_risk_score > rule_risk_score:
+            factors.append(f"source_risk_score:{persisted_risk_score}")
+        activity: dict = {}
+        identity_context = normalized_payload.get("identity_context")
+        if isinstance(identity_context, dict):
+            subject = identity_context.get("subject")
+            session = identity_context.get("session")
+            geo = identity_context.get("geo")
+            signals = identity_context.get("signals")
+            if isinstance(subject, dict):
+                provider = subject.get("provider")
+                if provider:
+                    factors.append(f"identity_provider:{provider}")
+                if subject.get("privileged"):
+                    factors.append("identity_privileged:true")
+            if isinstance(session, dict):
+                if session.get("mfa_present") is False:
+                    factors.append("identity_mfa:absent")
+                if session.get("ip_address"):
+                    factors.append("identity_session:ip_present")
+                if session.get("device_id"):
+                    factors.append("identity_session:device_present")
+            if isinstance(geo, dict):
+                country = geo.get("country")
+                if country:
+                    factors.append(f"identity_geo_country:{country}")
+            if isinstance(signals, list):
+                factors.extend(f"identity_signal:{item}" for item in signals if item)
+        if db is not None and event.entity_type == "user" and event.entity_id:
+            activity = summarize_identity_activity(db, entity_id=event.entity_id, limit=10)
+            if activity["event_count"] > 1:
+                factors.append(f"identity_recent_events:{activity['event_count']}")
+            for event_type in activity["event_types"][:5]:
+                factors.append(f"identity_recent_event_type:{event_type}")
+            for signal in activity["signals"][:8]:
+                factors.append(f"identity_recent_signal:{signal}")
+            activity_boost = AutonomyService._identity_activity_risk_boost(activity)
+            if activity_boost:
+                risk_score = min(100.0, risk_score + activity_boost)
+                factors.append(f"identity_activity_risk_boost:{activity_boost}")
+        devsecops_context = normalized_payload.get("devsecops_context")
+        devsecops_identity_activity: dict = {}
+        if isinstance(devsecops_context, dict):
+            pipeline = devsecops_context.get("pipeline")
+            actor = devsecops_context.get("actor")
+            finding = devsecops_context.get("finding")
+            controls = devsecops_context.get("controls")
+            signals = devsecops_context.get("signals")
+            if isinstance(pipeline, dict):
+                provider = pipeline.get("provider")
+                repository = pipeline.get("repository")
+                environment = pipeline.get("environment")
+                pipeline_id = pipeline.get("pipeline_id")
+                artifact = pipeline.get("artifact")
+                if provider:
+                    factors.append(f"devsecops_provider:{provider}")
+                if repository:
+                    factors.append(f"devsecops_repository:{repository}")
+                if environment:
+                    factors.append(f"devsecops_environment:{environment}")
+                if pipeline_id:
+                    factors.append(f"devsecops_pipeline:{pipeline_id}")
+                if artifact:
+                    factors.append(f"devsecops_artifact:{artifact}")
+            if isinstance(actor, dict):
+                identity_id = actor.get("identity_id")
+                if identity_id:
+                    factors.append(f"devsecops_actor:{identity_id}")
+                    if db is not None:
+                        identity_entity_id = (
+                            str(identity_id)
+                            if str(identity_id).startswith("user:")
+                            else f"user:{identity_id}"
+                        )
+                        devsecops_identity_activity = summarize_identity_activity(
+                            db,
+                            entity_id=identity_entity_id,
+                            limit=10,
+                        )
+                        if devsecops_identity_activity["event_count"]:
+                            factors.append(
+                                "devsecops_identity_correlation:true"
+                            )
+                            factors.append(
+                                "devsecops_identity_events:"
+                                f"{devsecops_identity_activity['event_count']}"
+                            )
+                            factors.append(
+                                "devsecops_identity_risk_level:"
+                                f"{devsecops_identity_activity['risk_level']}"
+                            )
+                            for signal in devsecops_identity_activity["signals"][:8]:
+                                factors.append(f"devsecops_identity_signal:{signal}")
+                            boost = min(
+                                15.0,
+                                max(
+                                    5.0,
+                                    float(devsecops_identity_activity["max_risk_score"]) * 0.12,
+                                ),
+                            )
+                            risk_score = min(100.0, risk_score + boost)
+                            factors.append(f"devsecops_identity_risk_boost:{round(boost, 2)}")
+                if actor.get("privileged"):
+                    factors.append("devsecops_privileged_actor:true")
+            if isinstance(finding, dict):
+                critical_count = int(finding.get("critical_count") or 0)
+                high_count = int(finding.get("high_count") or 0)
+                if critical_count:
+                    factors.append(f"devsecops_critical_findings:{critical_count}")
+                if high_count:
+                    factors.append(f"devsecops_high_findings:{high_count}")
+                if finding.get("secret_detected"):
+                    factors.append("devsecops_secret_detected:true")
+                cve_ids = finding.get("cve_ids")
+                if isinstance(cve_ids, list):
+                    factors.extend(f"devsecops_cve:{item}" for item in cve_ids[:8] if item)
+            if isinstance(controls, dict):
+                if controls.get("production_target"):
+                    factors.append("devsecops_production_target:true")
+                if controls.get("deployment_blocked"):
+                    factors.append("devsecops_deployment_blocked:true")
+            if isinstance(signals, list):
+                factors.extend(f"devsecops_signal:{item}" for item in signals if item)
+        return {
+            "event_id": event.id,
+            "source_event_id": event.event_id,
+            "source": event.source,
+            "target": event.entity_id or "unknown:unknown",
+            "event_type": event.event_type,
+            "severity": event.severity,
+            "entity_id": event.entity_id,
+            "entity_type": event.entity_type,
+            "mitre_tags": mitre_tags,
+            "normalized_payload": normalized_payload,
+            "identity_activity": activity,
+            "devsecops_context": devsecops_context if isinstance(devsecops_context, dict) else {},
+            "devsecops_identity_activity": devsecops_identity_activity,
+            "risk_score": round(risk_score, 2),
+            "risk_level": AutonomyService._risk_level(risk_score),
+            "factors": list(dict.fromkeys(factors)),
+        }
+
+    @staticmethod
+    def issue_verdict_from_threat_event(
+        db: Session,
+        *,
+        event_id: str,
+        execution_controls: dict | None = None,
+    ) -> dict:
+        event = (
+            db.query(ThreatEvent)
+            .filter((ThreatEvent.id == event_id) | (ThreatEvent.event_id == event_id))
+            .first()
+        )
+        if not isinstance(event, ThreatEvent):
+            return {"status": "not_found", "event_id": event_id}
+
+        perception = AutonomyService._threat_event_perception(event, db=db)
+        base_controls = {
+            **(execution_controls or {}),
+            "threat_event_id": event.id,
+            "perception": perception,
+            "aresx_contract": "threat_event.v1",
+        }
+        mcp_context = normalize_mcp_context(
+            base_controls.get("mcp_context")
+            if isinstance(base_controls.get("mcp_context"), dict)
+            else {},
+            target=str(perception["target"]),
+        )
+        perception_factors = [
+            *[str(item) for item in perception["factors"]],
+            *mcp_risk_factors(mcp_context),
+        ]
+        enriched_factors, rag_context = AutonomyService._enrich_with_rag(
+            perception=perception,
+            factors=list(dict.fromkeys(perception_factors)),
+            controls=base_controls,
+        )
+        controls = {
+            **base_controls,
+            "mcp_context": mcp_context,
+            "rag_context": rag_context,
+            "rag_references": [
+                item.get("doc_id")
+                for item in rag_context.get("references", [])
+                if isinstance(item, dict) and item.get("doc_id")
+            ],
+        }
+        verdict = generate_verdict(
+            target=str(perception["target"]),
+            risk_score=float(perception["risk_score"]),
+            factors=enriched_factors,
+            execution_controls=controls,
+        )
+        recommended_action = {
+            "action_type": verdict.get("action_type", "observe"),
+            "target": perception["target"],
+            "parameters": {
+                "source": event.source,
+                "event_id": event.event_id,
+                "entity_type": event.entity_type,
+            },
+            "priority": 1,
+        }
+        verdict.update(
+            {
+                "threat_event_id": event.id,
+                "status": "approved" if not verdict.get("requires_human") else "pending",
+                "severity": perception["risk_level"],
+                "recommended_actions": [recommended_action],
+                "primary_action": verdict.get("action_type", "observe"),
+                "confidence_score": verdict.get("confidence", 0.0),
+                "requires_human_approval": verdict.get("requires_human", False),
+                "policy_rule": str(
+                    verdict.get("execution_controls", {})
+                    .get("policy_result", {})
+                    .get("code", "")
+                ),
+                "ttl_seconds": 3600,
+                "xai_explanation": {
+                    "method": "heuristic",
+                    "summary": verdict.get("justification_xai", ""),
+                    "top_factors": perception["factors"][:5],
+                },
+            }
+        )
+        verdict["signature"] = sign_payload({k: v for k, v in verdict.items() if k != "signature"})
+        AutonomyService.persist_verdict(db, verdict)
+        risk_memory = record_risk_memory(db, verdict=verdict)
+        audit_autonomy_event(
+            db,
+            verdict_id=str(verdict.get("verdict_id", "")),
+            actor="redqueen",
+            action="aresx_verdict_emitted",
+            result={
+                "threat_event_id": event.id,
+                "source": event.source,
+                "event_id": event.event_id,
+                "risk_score": verdict.get("risk_score"),
+                "action_type": verdict.get("action_type"),
+                "requires_human": verdict.get("requires_human"),
+            },
+        )
+        return {
+            "status": "ok",
+            "event_id": event.id,
+            "source_event_id": event.event_id,
+            "perception": perception,
+            "risk": {
+                "risk_score": perception["risk_score"],
+                "risk_level": perception["risk_level"],
+                "scoring_model": "redqueen.aresx_event_rules.v1",
+            },
+            "risk_memory": risk_memory,
+            "verdict": verdict,
+        }
+
+    @staticmethod
     def execute_verdict(
         db: Session,
         *,
@@ -332,9 +742,103 @@ class AutonomyService:
                 AutonomyService.persist_approval(db, approval_evidence)
 
         plan = build_plan(verdict)
+        anticipation = controls.get("redqueen_attack_anticipation")
+        verdict_controls = verdict.get("execution_controls")
+        if not isinstance(anticipation, dict) and isinstance(verdict_controls, dict):
+            anticipation = verdict_controls.get("redqueen_attack_anticipation")
+        plan["os_business_shield"] = build_os_business_shield(
+            target=str(verdict.get("target") or ""),
+            action_type=str(verdict.get("action_type") or "observe"),
+            anticipation=anticipation if isinstance(anticipation, dict) else {},
+            controls=controls,
+        )
+        bridge_trace = controls.get("redqueen_bridge_trace")
+        if not isinstance(bridge_trace, dict) and isinstance(verdict_controls, dict):
+            bridge_trace = verdict_controls.get("redqueen_bridge_trace")
+        plan["aggressive_containment"] = build_aggressive_containment(
+            verdict=verdict,
+            bridge_trace=bridge_trace if isinstance(bridge_trace, dict) else {},
+            controls=controls,
+        )
+        plan["enterprise_active_defense"] = plan["aggressive_containment"].get(
+            "enterprise_active_defense",
+            {},
+        )
+        strategic_anticipation = controls.get("redqueen_strategic_anticipation")
+        if not isinstance(strategic_anticipation, dict) and isinstance(verdict_controls, dict):
+            strategic_anticipation = verdict_controls.get("redqueen_strategic_anticipation")
+        plan["response_fabric"] = build_response_fabric(
+            verdict=verdict,
+            strategic_anticipation=strategic_anticipation if isinstance(strategic_anticipation, dict) else {},
+            enterprise_active_defense=plan["enterprise_active_defense"],
+            controls=controls,
+        )
         advisor_review = review_plan(verdict=verdict, plan=plan, controls=controls)
         plan["advisor_review"] = advisor_review
+        firewall_decision = evaluate_internal_firewall(
+            verdict=verdict,
+            plan=plan,
+            advisor_review=advisor_review,
+            controls=controls,
+        )
+        plan["internal_firewall"] = {
+            "allowed": firewall_decision.allowed,
+            "code": firewall_decision.code,
+            "detail": firewall_decision.detail,
+            "severity": firewall_decision.severity,
+            "evidence": firewall_decision.evidence,
+        }
+        if not firewall_decision.allowed:
+            execution = {
+                "status": "failed",
+                "duration_ms": 0,
+                "executed_steps": [],
+                "rollback_events": [],
+                "error": firewall_decision.detail,
+            }
+            result = build_execution_result(verdict=verdict, execution=execution)
+            AutonomyService.persist_execution_result(db, result)
+            audit_autonomy_event(
+                db,
+                verdict_id=str(verdict.get("verdict_id", "")),
+                actor="ares_firewall",
+                action="execution_blocked",
+                result=plan["internal_firewall"],
+            )
+            return {
+                "status": "rejected",
+                "code": firewall_decision.code,
+                "detail": firewall_decision.detail,
+                "verdict_id": verdict.get("verdict_id"),
+                "plan": plan,
+                "result": result,
+            }
+        if str(verdict.get("action_type") or "") == "dns_firewall_block" and not dry_run:
+            controls["verdict_id"] = str(verdict.get("verdict_id") or "")
+            controls["_dns_firewall_db"] = db
+            prepared_dns = prepare_dns_execution(db, verdict=verdict, controls=controls)
+            if prepared_dns.get("status") in {"applied", "verified"}:
+                return {
+                    "status": "already_executed",
+                    "verdict_id": verdict.get("verdict_id"),
+                    "dns_firewall": prepared_dns,
+                }
+
         execution = execute_plan(plan, controls=controls)
+        if str(verdict.get("action_type") or "") == "dns_firewall_block":
+            execution_id = str(controls.get("dns_firewall_execution_id") or "")
+            if execution_id and not dry_run and execution.get("status") != "success":
+                rollback_events = execution.get("rollback_events") or []
+                rollback_succeeded = bool(rollback_events) and all(
+                    str(event.get("status") or "") == "ok" for event in rollback_events
+                )
+                update_execution_state(
+                    db,
+                    execution_id=execution_id,
+                    status="rolled_back" if rollback_succeeded else "failed",
+                    evidence=execution,
+                    error_code="ares_execution_rolled_back" if rollback_succeeded else "ares_execution_failed",
+                )
         result = build_execution_result(verdict=verdict, execution=execution)
         AutonomyService.persist_execution_result(db, result)
         audit_autonomy_event(

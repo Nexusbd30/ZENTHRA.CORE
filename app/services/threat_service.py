@@ -1,5 +1,5 @@
 # =============================================================
-# 🧠 ThreatService — ZENTHRA.CORE_SECURITY
+# 🧠 ThreatService — VAELQORIX.XDR_COMMAND
 # =============================================================
 # Servicio de dominio para gestionar amenazas (Threats).
 #
@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from app.repositories.threat_repository import ThreatRepository
 from app.schemas.threat_schema import ThreatCreate, ThreatResponse, ThreatUpdate
 
-LOG = logging.getLogger("zenthra.threats_service")
+LOG = logging.getLogger("vaelqorix.threats_service")
 
 
 class ThreatService:

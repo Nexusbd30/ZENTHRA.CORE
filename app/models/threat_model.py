@@ -1,5 +1,5 @@
 # =============================================================
-# 🚨 ThreatModel — ZENTHRA.CORE_SECURITY (v3.3 SIEM Stable)
+# 🚨 ThreatModel — VAELQORIX.XDR_COMMAND (v3.3 SIEM Stable)
 # =============================================================
 # ✅ Incluye:
 #   - fingerprint: dedupe fuerte (alertname|instance|job|service)

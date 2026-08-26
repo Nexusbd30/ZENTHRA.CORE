@@ -1,5 +1,5 @@
 # =============================================================
-# 🌐 NetworkMonitor — ZENTHRA.CORE_SECURITY (v1.3 - Corrección Deadlock)
+# 🌐 NetworkMonitor — VAELQORIX.XDR_COMMAND (v1.3 - Corrección Deadlock)
 # =============================================================
 # v1.3: Añade un 'sleep' inicial en _monitor_loop para evitar
 #       un deadlock con Uvicorn durante el arranque.
@@ -17,25 +17,25 @@ import requests
 SIMULATED_THREATS = [
     {
         "title": "Simulación: Escaneo de puertos detectado",
-        "source": "Zenthra-Simulator",
+        "source": "Vaelqorix-Simulator",
         "description": "Se detectó un barrido Nmap simulado en el puerto 22 (SSH) desde la IP 192.168.1.101.",
         "level": "medium",
     },
     {
         "title": "Simulación: Intento de Fuerza Bruta",
-        "source": "Zenthra-Simulator",
+        "source": "Vaelqorix-Simulator",
         "description": "Múltiples intentos de inicio de sesión fallidos en el servicio 'admin-panel' desde la IP 10.0.5.23.",
         "level": "high",
     },
     {
         "title": "Simulación: Conexión a IP maliciosa",
-        "source": "Zenthra-Simulator",
+        "source": "Vaelqorix-Simulator",
         "description": "Tráfico saliente detectado hacia la IP 185.12.33.4 (conocida por C2 Botnet).",
         "level": "critical",
     },
     {
         "title": "Simulación: Actividad de red anómala",
-        "source": "Zenthra-Simulator",
+        "source": "Vaelqorix-Simulator",
         "description": "Pico de tráfico inusual (TX 45MB/s) detectado fuera de horario laboral.",
         "level": "low",
     },
@@ -110,8 +110,9 @@ class NetworkMonitor:
 
         # Inicializa contadores para el modo real
         if not self.simulate:
-            self.last_bytes_sent = psutil.net_io_counters().bytes_sent
-            self.last_bytes_recv = psutil.net_io_counters().bytes_recv
+            counters = psutil.net_io_counters()
+            self.last_bytes_sent = counters.bytes_sent
+            self.last_bytes_recv = counters.bytes_recv
 
         while self.running:
             if self.simulate:

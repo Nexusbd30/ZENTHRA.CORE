@@ -1,4 +1,4 @@
-import hashlib
+﻿import hashlib
 import json
 
 import httpx
@@ -46,7 +46,7 @@ class _FakeAsyncClient:
 
 @pytest.mark.asyncio
 async def test_monitoring_query_proxies_payload(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     fake_payload = {"status": "success", "data": {"result": [{"metric": {"job": "api"}}]}}
     monkeypatch.setattr(
         monitoring.httpx,
@@ -65,7 +65,7 @@ async def test_monitoring_query_proxies_payload(test_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_monitoring_range_returns_502_on_network_error(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     monkeypatch.setattr(
         monitoring.httpx,
         "AsyncClient",
@@ -83,7 +83,7 @@ async def test_monitoring_range_returns_502_on_network_error(test_client, monkey
 
 @pytest.mark.asyncio
 async def test_monitoring_alerts_realtime_returns_empty_list_on_error(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     monkeypatch.setattr(
         monitoring.httpx,
         "AsyncClient",
@@ -101,7 +101,7 @@ async def test_monitoring_alerts_realtime_returns_empty_list_on_error(test_clien
 
 @pytest.mark.asyncio
 async def test_monitoring_windows_nics_returns_prometheus_labels(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     fake_payload = {
         "status": "success",
         "data": {
@@ -136,7 +136,7 @@ async def test_monitoring_windows_nics_returns_prometheus_labels(test_client, mo
 
 @pytest.mark.asyncio
 async def test_monitoring_gpu_summary_returns_unavailable_when_no_exporter(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     empty_payload = {"status": "success", "data": {"result": []}}
     monkeypatch.setattr(
         monitoring.httpx,
@@ -182,7 +182,7 @@ async def test_alertmanager_hook_hashes_payload_from_localhost(test_client, db_s
 
 @pytest.mark.asyncio
 async def test_monitoring_response_logs_returns_persisted_webhook(test_client, db_session, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     row = ResponseLog(
         source="alertmanager",
         source_ip="127.0.0.1",
@@ -207,7 +207,7 @@ async def test_monitoring_response_logs_returns_persisted_webhook(test_client, d
 
 @pytest.mark.asyncio
 async def test_monitoring_production_readiness_reports_lab_modes(test_client, monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     monkeypatch.setattr(settings, "AI_PROVIDER", "local_stub")
     monkeypatch.setattr(settings, "ACTION_EXECUTION_MODE", "mock")
 

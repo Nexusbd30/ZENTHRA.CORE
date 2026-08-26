@@ -1,5 +1,5 @@
 # ==============================================================
-# 👥 USERS ROUTER — ZENTHRA.CORE_SECURITY (v3.0 Hardened)
+# 👥 USERS ROUTER — VAELQORIX.XDR_COMMAND (v3.0 Hardened)
 # ==============================================================
 # Endpoints clave:
 #   - POST   /users/                    → crear usuario  (actualmente público)
@@ -27,6 +27,7 @@ from app.core.security import (
     get_current_active_user,
     get_current_admin,
 )
+from app.core.settings import settings
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user_schema import (
@@ -70,6 +71,12 @@ def create_user(
     💡 Si quieres modo totalmente cerrado (solo admin crea cuentas),
        descomenta la dependencia get_current_admin y elimina el comentario.
     """
+    if not settings.VAELQORIX_PUBLIC_REGISTRATION_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registro publico deshabilitado. Solicita una invitacion o alta administrativa.",
+        )
+
     db_user = UserService.get_user_by_email(db, user.email)
     if db_user:
         raise HTTPException(

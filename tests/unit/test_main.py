@@ -1,10 +1,10 @@
-import pytest
+﻿import pytest
 
 from app.core.settings import settings
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -45,7 +45,11 @@ async def test_redqueen_stub_status(test_client, monkeypatch):
         headers=monitor_headers(monkeypatch),
     )
     assert resp.status_code == 200
-    assert resp.json()["role"] == "brain"
+    data = resp.json()
+    assert data["role"] == "autonomous_defense_brain"
+    assert data["autonomy_target"] == 80
+    assert data["thinking_model"]["redqueen_control_percent"] == 80
+    assert data["thinking_model"]["human_control_percent"] == 20
 
 
 @pytest.mark.asyncio
@@ -55,7 +59,7 @@ async def test_ares_stub_status(test_client, monkeypatch):
         headers=monitor_headers(monkeypatch),
     )
     assert resp.status_code == 200
-    assert resp.json()["role"] == "executor"
+    assert resp.json()["role"] == "executor_of_redqueen_orders"
 
 
 @pytest.mark.asyncio

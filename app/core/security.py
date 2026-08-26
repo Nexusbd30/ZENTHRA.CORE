@@ -1,5 +1,5 @@
 ﻿# =============================================================
-# 🧠 ZENTHRA.CORE_SECURITY — Security Module (v2.8 RBAC Hardened)
+# 🧠 VAELQORIX.XDR_COMMAND — Security Module (v2.8 RBAC Hardened)
 # =============================================================
 # Módulo central de seguridad JWT en modo JSON.
 #
@@ -17,11 +17,14 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import Depends, Header, HTTPException, status
-from jose import JWTError, jwt
+from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from app.core.enterprise_security import build_security_context, has_capability
+from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.db.session import get_db
 from app.services.user_service import UserService
@@ -31,6 +34,13 @@ from app.services.user_service import UserService
 # =============================================================
 
 ALGORITHM = "HS256"
+
+
+def _configured_secret(name: str, default: object) -> str:
+    if hasattr(default, "get_secret_value"):
+        default = default.get_secret_value()
+    value = get_secret(name, str(default) if default is not None else None)
+    return str(value or "")
 
 
 # =============================================================
@@ -71,9 +81,7 @@ def create_access_token(
     )
     to_encode.update({"exp": expire})
 
-    secret = settings.SECRET_KEY
-    if hasattr(secret, "get_secret_value"):
-        secret = secret.get_secret_value()
+    secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
 
     return jwt.encode(to_encode, secret, algorithm=ALGORITHM)
 
@@ -112,15 +120,13 @@ def get_current_user(
     )
 
     try:
-        secret = settings.SECRET_KEY
-        if hasattr(secret, "get_secret_value"):
-            secret = secret.get_secret_value()
+        secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
 
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError as err:
+    except InvalidTokenError as err:
         raise credentials_exception from err
 
     user = UserService.get_user_by_email(db, email=email)
@@ -208,19 +214,17 @@ def require_admin_or_monitor_token(
         )
 
     token = authorization.split(" ", 1)[1].strip()
-    monitor_token = settings.ZENTHRA_MONITOR_TOKEN
+    monitor_token = get_secret("VAELQORIX_MONITOR_TOKEN", settings.VAELQORIX_MONITOR_TOKEN)
     if monitor_token and secrets.compare_digest(token, monitor_token):
         return {"auth_type": "monitor_token", "role": "internal"}
 
     try:
-        secret = settings.SECRET_KEY
-        if hasattr(secret, "get_secret_value"):
-            secret = secret.get_secret_value()
+        secret = _configured_secret("SECRET_KEY", settings.SECRET_KEY)
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if not email:
-            raise JWTError("missing subject")
-    except JWTError as err:
+            raise InvalidTokenError("missing subject")
+    except InvalidTokenError as err:
         if monitor_token:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -255,3 +259,52 @@ def require_admin_or_monitor_token(
 
     return user
 
+
+def require_enterprise_capability(capability: str):
+    def capability_checker(
+        auth_context=Depends(require_admin_or_monitor_token),
+        x_tenant_id: str | None = Header(default=None),
+        x_request_id: str | None = Header(default=None),
+    ):
+        if str(settings.ENTERPRISE_TENANT_MODE or "").strip().lower() == "strict" and not str(
+            x_tenant_id or ""
+        ).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="X-Tenant-ID requerido en modo multi-tenant estricto",
+            )
+
+        if isinstance(auth_context, dict):
+            context = build_security_context(
+                actor=str(auth_context.get("auth_type", "internal")),
+                role=str(auth_context.get("role", "internal")),
+                tenant_id=x_tenant_id,
+            )
+            return {
+                "actor": context.actor,
+                "role": context.role,
+                "tenant_id": context.tenant_id,
+                "capability": capability,
+                "request_id": x_request_id or "n/a",
+            }
+
+        role = getattr(auth_context, "role", "user")
+        if not has_capability(role, capability):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Capability requerida: {capability}",
+            )
+        context = build_security_context(
+            actor=getattr(auth_context, "email", "user"),
+            role=role,
+            tenant_id=x_tenant_id,
+        )
+        return {
+            "actor": context.actor,
+            "role": context.role,
+            "tenant_id": context.tenant_id,
+            "capability": capability,
+            "request_id": x_request_id or "n/a",
+        }
+
+    return capability_checker

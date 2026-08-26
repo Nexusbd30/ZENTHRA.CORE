@@ -1,14 +1,24 @@
 ﻿from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from app.ares.aggressive_containment import build_aggressive_containment
 from app.ares.approval import build_approval_payload
+from app.ares.enterprise_active_defense import build_enterprise_active_defense
+from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.ares.kill_switch import kill_switch_state
+from app.ares.os_business_shield import build_os_business_shield
+from app.ares.response_fabric import build_response_fabric
+from app.core.audit import audit_autonomy_event
 from app.core.security import require_admin_or_monitor_token
 from app.db.audit_store import list_audit_records, verify_audit_chain
 from app.db.session import get_db
+from app.models.execution_result import ExecutionResult
 from app.schemas.autonomy_schema import (
     ApprovalListResponse,
     AresStatusResponse,
@@ -48,20 +58,153 @@ class ThreatLifecycleRequest(BaseModel):
     approval_evidence: dict | None = None
 
 
+class KillSwitchChangeRequest(BaseModel):
+    reason: str = Field(..., min_length=1)
+    actor: str = Field(default="admin", min_length=1)
+
+
 class ApprovalRequest(BaseModel):
     verdict: dict
     approver: str = Field(..., min_length=1)
     reason: str = ""
 
 
+class RollbackRequest(BaseModel):
+    reason: str = Field(..., min_length=1)
+    actor: str = Field(default="admin", min_length=1)
+
+
+class ShieldPlanRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    action_type: str = Field(default="system_harden", min_length=1)
+    anticipation: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+class ContainmentPlanRequest(BaseModel):
+    verdict: dict = Field(default_factory=dict)
+    bridge_trace: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+class EnterpriseActiveDefenseRequest(BaseModel):
+    verdict: dict = Field(default_factory=dict)
+    bridge_trace: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+class ResponseFabricRequest(BaseModel):
+    verdict: dict = Field(default_factory=dict)
+    strategic_anticipation: dict = Field(default_factory=dict)
+    enterprise_active_defense: dict = Field(default_factory=dict)
+    execution_controls: dict = Field(default_factory=dict)
+
+
+def _json_loads(value: str | None, fallback):
+    if not value:
+        return fallback
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return fallback
+
+
+def _execution_payload(row: ExecutionResult) -> dict:
+    return {
+        "id": row.id,
+        "verdict_id": row.verdict_id,
+        "ares_id": row.ares_id,
+        "action_type": row.action_type,
+        "target_entity": row.target_entity,
+        "target_system": row.target_system,
+        "status": row.status,
+        "duration_ms": row.duration_ms,
+        "pre_state": _json_loads(row.pre_state, {}),
+        "post_state": _json_loads(row.post_state, {}),
+        "evidence": _json_loads(row.evidence, []),
+        "rollback_payload": _json_loads(row.rollback_payload, {}),
+        "rl_reward": row.rl_reward,
+        "error_code": row.error_code,
+        "result_hash": row.result_hash,
+        "timestamp": row.timestamp.isoformat(),
+    }
+
+
 @router.get("/status", response_model=AresStatusResponse)
 def ares_status():
     return {
         "module": "ares",
-        "role": "executor",
+        "role": "executor_of_redqueen_orders",
         "phase": "phase-2-core",
+        "internal_firewall": {
+            "schema": "vaelqorix.ares.internal_firewall.v1",
+            "status": "enabled",
+            "blocks": [
+                "mcp_action_denied",
+                "mcp_tool_denied",
+                "firewall_action_denied",
+                "firewall_action_not_allowed",
+                "protected_target_without_owner_approval",
+                "advisor_marked_unsafe_when_enforced",
+            ],
+        },
+        "os_business_shield": {
+            "schema": "vaelqorix.ares.os_business_shield.v1",
+            "status": "enabled",
+            "purpose": "preventive_defense_for_operating_system_and_business_services",
+        },
+        "aggressive_containment": {
+            "schema": "vaelqorix.ares.aggressive_containment.v1",
+            "status": "enabled",
+            "purpose": "authorized_active_defense_to_neutralize_observed_intrusions",
+        },
+        "enterprise_active_defense": {
+            "schema": "vaelqorix.ares.enterprise_active_defense.v1",
+            "status": "enabled",
+            "purpose": "enterprise_grade_blocking_deception_sinkhole_and_legal_evidence",
+        },
+        "response_fabric": {
+            "schema": "vaelqorix.ares.response_fabric.v1",
+            "status": "enabled",
+            "purpose": "route_next_best_actions_across_ready_enterprise_connectors",
+        },
         "kill_switch": kill_switch_state(),
     }
+
+
+@router.get("/kill-switch", response_model=KillSwitchResponse)
+def get_kill_switch():
+    return {"status": "ok", "kill_switch": kill_switch_state()}
+
+
+@router.post("/kill-switch/activate", response_model=KillSwitchResponse)
+def activate_kill_switch(payload: KillSwitchChangeRequest, db: Session = Depends(get_db)):
+    from app.ares.kill_switch import set_kill_switch
+
+    set_kill_switch(True, reason=payload.reason, actor=payload.actor)
+    audit_autonomy_event(
+        db,
+        verdict_id="kill-switch",
+        actor=payload.actor,
+        action="kill_switch_activated",
+        result={"reason": payload.reason, "state": kill_switch_state()},
+    )
+    return {"status": "ok", "kill_switch": kill_switch_state()}
+
+
+@router.post("/kill-switch/deactivate", response_model=KillSwitchResponse)
+def deactivate_kill_switch(payload: KillSwitchChangeRequest, db: Session = Depends(get_db)):
+    from app.ares.kill_switch import set_kill_switch
+
+    set_kill_switch(False, reason=payload.reason, actor=payload.actor)
+    audit_autonomy_event(
+        db,
+        verdict_id="kill-switch",
+        actor=payload.actor,
+        action="kill_switch_deactivated",
+        result={"reason": payload.reason, "state": kill_switch_state()},
+    )
+    return {"status": "ok", "kill_switch": kill_switch_state()}
 
 
 @router.post("/kill-switch/{mode}", response_model=KillSwitchResponse)
@@ -98,7 +241,7 @@ def get_operation_flow():
             },
             {
                 "key": "redqueen_verdict",
-                "label": "RedQueen causal verdict",
+                "label": "RedQueen intrusion-control verdict",
                 "endpoint": "/api/v1/redqueen/verdict/from-threat/{threat_id}",
                 "owner": "redqueen",
                 "ui_surface": "RedQueen Brain",
@@ -106,7 +249,7 @@ def get_operation_flow():
             },
             {
                 "key": "ares_plan",
-                "label": "ARES validation and execution plan",
+                "label": "ARES validation and execution of RedQueen order",
                 "endpoint": "/api/v1/ares/lifecycle/from-threat/{threat_id}",
                 "owner": "ares",
                 "ui_surface": "ARES Shield",
@@ -136,9 +279,48 @@ def get_operation_flow():
         },
         "notes": [
             "Use dry_run for operator previews.",
+            "RedQueen decides independently; ARES is the only execution path for operational actions.",
             "Disruptive actions require traceability and may require signed human approval.",
         ],
     }
+
+
+@router.post("/shield/plan")
+def build_shield_plan(payload: ShieldPlanRequest):
+    return build_os_business_shield(
+        target=payload.target,
+        action_type=payload.action_type,
+        anticipation=payload.anticipation,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/containment/plan")
+def build_containment_plan(payload: ContainmentPlanRequest):
+    return build_aggressive_containment(
+        verdict=payload.verdict,
+        bridge_trace=payload.bridge_trace,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/active-defense/plan")
+def build_active_defense_plan(payload: EnterpriseActiveDefenseRequest):
+    return build_enterprise_active_defense(
+        verdict=payload.verdict,
+        bridge_trace=payload.bridge_trace,
+        controls=payload.execution_controls,
+    )
+
+
+@router.post("/response-fabric/plan")
+def build_response_fabric_plan(payload: ResponseFabricRequest):
+    return build_response_fabric(
+        verdict=payload.verdict,
+        strategic_anticipation=payload.strategic_anticipation,
+        enterprise_active_defense=payload.enterprise_active_defense,
+        controls=payload.execution_controls,
+    )
 
 
 @router.post("/execute")
@@ -211,6 +393,97 @@ def run_lifecycle_from_threat(
     }
 
 
+@router.post("/lifecycle/from-event/{event_id}")
+def run_lifecycle_from_event(
+    event_id: str,
+    payload: ThreatLifecycleRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    payload = payload or ThreatLifecycleRequest()
+    verdict_response = AutonomyService.issue_verdict_from_threat_event(
+        db,
+        event_id=event_id,
+        execution_controls=payload.execution_controls,
+    )
+    if verdict_response.get("status") == "not_found":
+        return verdict_response
+
+    verdict = verdict_response["verdict"]
+    execution_response = AutonomyService.execute_verdict(
+        db,
+        verdict=verdict,
+        human_approved=payload.human_approved,
+        approval_evidence=payload.approval_evidence,
+    )
+
+    return {
+        **verdict_response,
+        "execution": execution_response,
+    }
+
+
+@router.get("/executions")
+def list_executions(
+    verdict_id: str | None = None,
+    status: str | None = None,
+    target_entity: str | None = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    query = (
+        select(ExecutionResult)
+        .order_by(desc(ExecutionResult.timestamp))
+        .limit(max(1, min(limit, 200)))
+    )
+    if verdict_id:
+        query = query.where(ExecutionResult.verdict_id == verdict_id)
+    if status:
+        query = query.where(ExecutionResult.status == status)
+    if target_entity:
+        query = query.where(ExecutionResult.target_entity == target_entity)
+    rows = list(db.scalars(query).all())
+    return {
+        "count": len(rows),
+        "items": [_execution_payload(row) for row in rows],
+    }
+
+
+@router.get("/executions/{execution_id}")
+def read_execution(execution_id: str, db: Session = Depends(get_db)):
+    row = db.get(ExecutionResult, execution_id)
+    if not row:
+        return {"status": "not_found", "execution_id": execution_id}
+    return _execution_payload(row)
+
+
+@router.post("/executions/{execution_id}/rollback")
+def rollback_execution(
+    execution_id: str,
+    payload: RollbackRequest,
+    db: Session = Depends(get_db),
+):
+    row = db.get(ExecutionResult, execution_id)
+    if not row:
+        return {"status": "not_found", "execution_id": execution_id}
+    row.status = "rolled_back"
+    row.rollback_payload = json.dumps(
+        {"reason": payload.reason, "actor": payload.actor},
+        sort_keys=True,
+    )
+    row.rl_reward = -0.4
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    audit_autonomy_event(
+        db,
+        verdict_id=row.verdict_id,
+        actor=payload.actor,
+        action="execution_rolled_back",
+        result={"execution_id": row.id, "reason": payload.reason},
+    )
+    return _execution_payload(row)
+
+
 @router.get("/results/{verdict_id}", response_model=ExecutionResultsResponse)
 def list_results(verdict_id: str, db: Session = Depends(get_db)):
     rows = AutonomyService.get_execution_results(db, verdict_id)
@@ -229,6 +502,11 @@ def list_results(verdict_id: str, db: Session = Depends(get_db)):
             for r in rows
         ],
     }
+
+
+@router.get("/evidence/{verdict_id}")
+def get_ai_evidence_bundle(verdict_id: str, db: Session = Depends(get_db)):
+    return build_ares_ai_evidence_bundle(db, verdict_id=verdict_id)
 
 
 @router.get("/memory/{target}")

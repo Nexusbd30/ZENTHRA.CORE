@@ -1,0 +1,25 @@
+{
+  "name": "CortexFlow",
+  "type": "enterprise_agent_runtime",
+  "status": "mapped_to_existing_backend",
+  "responsibilities": [
+    "reasoning",
+    "planning",
+    "agent_lifecycle",
+    "context_building",
+    "tool_routing",
+    "response_generation",
+    "memory_coordination"
+  ],
+  "current_backend_mapping": [
+    "app.redqueen",
+    "app.ares",
+    "app.intelligence"
+  ],
+  "mvp_agents": [
+    "DevSecOps Agent",
+    "Documentation Agent",
+    "Incident Agent",
+    "Security Agent"
+  ]
+}

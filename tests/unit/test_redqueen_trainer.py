@@ -1,5 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -11,7 +12,7 @@ from app.redqueen.trainer import build_training_report
 
 
 def autonomy_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -23,8 +24,10 @@ def _add_feedback(
     status: str,
     confidence: float = 0.9,
     factors: str = '["ueba:privileged_account"]',
-    minutes_ago: int = 1,
+    execution_controls: dict | None = None,
+    minutes_ago: int = 0,
 ):
+    controls = execution_controls if execution_controls is not None else {}
     db_session.add(
         Verdict(
             verdict_id=verdict_id,
@@ -37,7 +40,7 @@ def _add_feedback(
             justification_xai="test",
             policy_check=True,
             requires_human=True,
-            execution_controls="{}",
+            execution_controls=json.dumps(controls),
             signature="sig",
         )
     )
@@ -77,7 +80,7 @@ def test_redqueen_trainer_builds_feedback_report(db_session):
         confidence=0.7,
     )
 
-    report = build_training_report(db_session)
+    report = build_training_report(db_session, limit=3)
 
     assert report["status"] == "ok"
     assert report["sample_count"] >= 3
@@ -86,6 +89,8 @@ def test_redqueen_trainer_builds_feedback_report(db_session):
     assert "ueba:privileged_account" in {
         item["factor"] for item in report["failure_factors"]
     }
+    assert report["ai_governance"]["schema"] == "vaelqorix.ai_evaluation.v1"
+    assert report["ai_governance"]["sample_count"] >= 3
 
 
 @pytest.mark.asyncio
@@ -113,3 +118,49 @@ async def test_redqueen_training_report_endpoint(test_client, db_session, monkey
     assert body["status"] == "ok"
     assert "trainer_endpoint_isolate" in body["action_performance"]
     assert "review_action_policy:trainer_endpoint_isolate" in body["recommendations"]
+
+
+def test_redqueen_trainer_reports_enterprise_ai_governance(db_session):
+    governance_controls = {
+        "llm_contract": {
+            "schema": "redqueen.llm_decision.v1",
+            "final_action_source": "guardrail",
+        },
+        "llm_governance": {
+            "schema": "vaelqorix.llm_governance.v1",
+            "approved_for_ares": True,
+            "present_guardrails": [
+                "domain_action_validation",
+                "minimum_action_enforcement",
+            ],
+        },
+    }
+    _add_feedback(
+        db_session,
+        verdict_id="trainer-governance-1",
+        action_type="block_deployment",
+        status="success",
+        execution_controls=governance_controls,
+    )
+    _add_feedback(
+        db_session,
+        verdict_id="trainer-governance-2",
+        action_type="network_isolate",
+        status="failed",
+        execution_controls={},
+    )
+
+    report = build_training_report(db_session, limit=2)
+    ai_governance = report["ai_governance"]
+
+    assert ai_governance["schema"] == "vaelqorix.ai_evaluation.v1"
+    assert ai_governance["llm_governance_schema"] == "vaelqorix.llm_governance.v1"
+    assert ai_governance["decision_trace_schema"] == "vaelqorix.llm_decision_trace.v1"
+    assert ai_governance["sample_count"] == 2
+    assert ai_governance["contract_presence_rate"] == 0.5
+    assert ai_governance["approved_for_ares_rate"] == 0.5
+    assert ai_governance["traceable_result_rate"] == 1.0
+    assert ai_governance["missing_governance_count"] == 1
+    assert ai_governance["guardrail_counts"]["minimum_action_enforcement"] == 1
+    assert ai_governance["final_action_sources"]["guardrail"] == 1
+    assert "backfill_llm_governance_for_legacy_verdicts" in ai_governance["recommendations"]

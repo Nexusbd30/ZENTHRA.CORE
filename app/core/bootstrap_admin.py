@@ -1,6 +1,6 @@
 # app/core/bootstrap_admin.py
 # ==========================================================
-# 👑 Bootstrap Admin — ZENTHRA.CORE_SECURITY
+# 👑 Bootstrap Admin — VAELQORIX.XDR_COMMAND
 # ==========================================================
 # Responsabilidad:
 #   - Crear un usuario administrador inicial de forma SEGURA
@@ -44,7 +44,7 @@ from app.models.user import User
 # ----------------------------------------------------------
 # 📝 Logger de la aplicación
 # ----------------------------------------------------------
-logger = logging.getLogger("zenthra")
+logger = logging.getLogger("vaelqorix")
 
 
 def bootstrap_admin(db: Session) -> None:
@@ -124,7 +124,7 @@ def bootstrap_admin(db: Session) -> None:
     # 🆕 Crear usuario administrador nuevo
     # ------------------------------------------------------
     admin = User(
-        full_name="ZENTHRA SuperAdmin",
+        full_name="VAELQORIX SuperAdmin",
         email=email,
         hashed_password=get_password_hash(password),
         role="admin",

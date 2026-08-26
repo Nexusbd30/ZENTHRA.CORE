@@ -1,21 +1,22 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import secrets
 from typing import Optional
 
 from fastapi import Header, HTTPException, status
 
+from app.core.secrets import get_secret
 from app.core.settings import settings
 
 
 def require_internal_bearer(
     authorization: Optional[str] = Header(default=None),
 ) -> None:
-    expected = settings.ZENTHRA_MONITOR_TOKEN
+    expected = get_secret("VAELQORIX_MONITOR_TOKEN", settings.VAELQORIX_MONITOR_TOKEN)
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="ZENTHRA_MONITOR_TOKEN no configurado en el servidor",
+            detail="VAELQORIX_MONITOR_TOKEN no configurado en el servidor",
         )
 
     if not authorization or not authorization.startswith("Bearer "):

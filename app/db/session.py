@@ -1,6 +1,6 @@
 # =============================================================
 # 🗄️ session.py — DB Engine & Sessions (v3.19 Alembic-SAFE)
-# ZENTHRA.CORE_SECURITY · Capa de Persistencia
+# VAELQORIX.XDR_COMMAND · Capa de Persistencia
 # =============================================================
 # Centraliza:
 #   - Creación del engine de SQLAlchemy (SQLite / PostgreSQL)
@@ -69,6 +69,7 @@ else:
     # PostgreSQL (PROD / DEV avanzado)
     engine_kwargs.update(
         {
+            "connect_args": {"connect_timeout": 5},
             "pool_pre_ping": True,   # detecta y recicla conexiones rotas
             "pool_size": 10,         # conexiones persistentes
             "max_overflow": 20,      # conexiones extra en picos

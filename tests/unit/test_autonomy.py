@@ -1,10 +1,11 @@
-import pytest
+﻿import pytest
 
 from app.core.settings import settings
+from app.core.signing import sign_payload
 
 
 def autonomy_headers(monkeypatch):
-    monkeypatch.setattr(settings, "ZENTHRA_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
     return {"Authorization": "Bearer monitor-test-token"}
 
 
@@ -332,6 +333,92 @@ async def test_ares_rejects_action_outside_mcp_allowlist(test_client, monkeypatc
     data = execute_resp.json()
     assert data["status"] == "rejected"
     assert data["code"] == "mcp_action_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_ares_rejects_identity_action_not_supported_by_provider(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "user:alice@corp.com",
+            "risk_score": 91,
+            "factors": ["identity_compromise"],
+            "execution_controls": {
+                "change_ticket": "TEST-IDP-CAP-001",
+                "identity_provider": "active_directory",
+                "identity_contract": "identity_signal.v1",
+            },
+        },
+    )
+    verdict = verdict_resp.json()
+    verdict["action_type"] = "identity_lockdown"
+    verdict["primary_action"] = "identity_lockdown"
+    verdict["signature"] = sign_payload({k: v for k, v in verdict.items() if k != "signature"})
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+
+    assert execute_resp.status_code == 200
+    data = execute_resp.json()
+    assert data["status"] == "rejected"
+    assert data["code"] == "identity_provider_unsupported_action"
+    assert "active_directory" in data["detail"]
+
+
+@pytest.mark.asyncio
+async def test_redqueen_adjusts_identity_action_to_provider_capabilities(test_client, monkeypatch):
+    headers = autonomy_headers(monkeypatch)
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"identity_lockdown","confidence":0.90,'
+            '"reasoning":"identity containment requested","factors":["token_reuse"]}'
+        ),
+    )
+
+    verdict_resp = await test_client.post(
+        "/api/v1/redqueen/verdict",
+        headers=headers,
+        json={
+            "target": "user:alice@corp.com",
+            "risk_score": 91,
+            "factors": ["identity_compromise"],
+            "execution_controls": {
+                "change_ticket": "TEST-IDP-ADJUST-001",
+                "dry_run": True,
+                "identity_provider": "active_directory",
+                "identity_contract": "identity_signal.v1",
+            },
+        },
+    )
+    verdict = verdict_resp.json()
+
+    assert verdict["action_type"] == "degrade_privileges"
+    assert verdict["execution_controls"]["provider_action_adjusted"] is True
+    assert verdict["execution_controls"]["provider_original_action_type"] == "identity_lockdown"
+
+    execute_resp = await test_client.post(
+        "/api/v1/ares/execute",
+        headers=headers,
+        json={"verdict": verdict, "human_approved": True},
+    )
+    assert execute_resp.status_code == 200
+    executed = execute_resp.json()
+    assert executed["status"] == "executed"
+    traces = [
+        item for item in executed["result"]["evidence"] if item.get("kind") == "intelligence_trace"
+    ]
+    assert traces
+    assert traces[0]["provider_action_adjusted"] is True
+    assert traces[0]["provider_original_action_type"] == "identity_lockdown"
+    assert traces[0]["provider_adjustment_reason"] == (
+        "identity_provider_capability_adjustment:active_directory"
+    )
 
 
 def test_autonomy_openapi_exposes_frontend_contracts():

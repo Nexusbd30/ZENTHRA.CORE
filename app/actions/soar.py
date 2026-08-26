@@ -9,12 +9,17 @@ class SoarAction(BaseAction):
     action_type = "soar_delegate"
 
     def execute_step(self, step: dict, controls: dict) -> ActionResult:
+        step_payload = step.get("payload", {})
+        step_payload = step_payload if isinstance(step_payload, dict) else {}
         payload = {
-            "target": step.get("payload", {}).get("target", "unknown"),
+            **step_payload,
+            "target": step_payload.get("target", "unknown"),
             "step": step.get("step", "soar_step"),
             "change_ticket": controls.get("change_ticket"),
             "threat_id": controls.get("threat_id"),
             "dry_run": bool(controls.get("dry_run", False)),
+            "redqueen_bridge_trace": controls.get("redqueen_bridge_trace", {}),
+            "countermeasure_level": controls.get("countermeasure_level", "aggressive_defensive"),
         }
         result = dispatch_command(
             url=settings.SOAR_CONTROL_URL,

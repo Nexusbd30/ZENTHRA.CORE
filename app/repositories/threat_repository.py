@@ -1,5 +1,5 @@
 # =============================================================
-# 🧱 ThreatRepository — ZENTHRA.CORE_SECURITY (v1.2 Filters+Sort SIEM)
+# 🧱 ThreatRepository — VAELQORIX.XDR_COMMAND (v1.2 Filters+Sort SIEM)
 # =============================================================
 # ✅ Añade:
 #   - get_all_filtered(...): source / active / fingerprint / title

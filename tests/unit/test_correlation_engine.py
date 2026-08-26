@@ -79,3 +79,9 @@ def test_correlation_engine_creates_composite_incident(db_session):
 
     fingerprints = {row.fingerprint for row in db_session.query(ThreatModel).all()}
     assert "composite|BackendDegradation|HighErrorRate|HighLatencyP95" in fingerprints
+
+    second = engine.run_correlation(db_session)
+    assert second["created_count"] == 0
+    assert second["updated_count"] == 3
+    assert second["deduped_count"] == 0
+    assert "BackendDegradation" in second["rules_triggered"]

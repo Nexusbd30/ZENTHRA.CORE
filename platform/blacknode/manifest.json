@@ -1,0 +1,33 @@
+{
+  "name": "BlackNode",
+  "type": "security_governance_risk_layer",
+  "status": "mapped_to_existing_backend",
+  "responsibilities": [
+    "authentication",
+    "authorization",
+    "rbac",
+    "policy_enforcement",
+    "audit_trails",
+    "prompt_injection_protection",
+    "risk_scoring",
+    "approval_enforcement"
+  ],
+  "current_backend_mapping": [
+    "app.core.security",
+    "app.core.enterprise_security",
+    "app.middlewares.audit_middleware",
+    "app.models.audit_record",
+    "app.ares.approval"
+  ],
+  "mvp_allowed_tool_levels": [
+    "read_only",
+    "analysis",
+    "drafting"
+  ],
+  "mvp_blocked_tool_levels": [
+    "destructive",
+    "financial_execution",
+    "cloud_mutation",
+    "production_delete"
+  ]
+}

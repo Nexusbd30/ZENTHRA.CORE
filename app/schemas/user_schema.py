@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     """
     email: EmailStr = Field(..., description="Correo electrónico único del usuario.")
     full_name: Optional[str] = Field(None, description="Nombre completo del usuario (opcional).")
-    password: str = Field(..., min_length=6, description="Contraseña del usuario.")
+    password: str = Field(..., min_length=10, description="Contraseña del usuario.")
     role: str = Field(default="user", description="Rol del usuario (admin o user).")
     is_active: bool = Field(default=True, description="Indica si el usuario está activo.")
 
@@ -27,7 +27,7 @@ class ResetPasswordRequest(BaseModel):
     Esquema para resetear la contraseña de un usuario.
     """
     email: EmailStr = Field(..., description="Correo del usuario que solicita el reseteo.")
-    new_password: str = Field(..., min_length=6, description="Nueva contraseña en texto plano.")
+    new_password: str = Field(..., min_length=10, description="Nueva contraseña en texto plano.")
 
 
 class UserUpdate(BaseModel):
@@ -37,7 +37,7 @@ class UserUpdate(BaseModel):
     """
     email: Optional[EmailStr] = Field(None, description="Nuevo email del usuario.")
     full_name: Optional[str] = Field(None, description="Nuevo nombre del usuario.")
-    password: Optional[str] = Field(None, min_length=6, description="Nueva contraseña.")
+    password: Optional[str] = Field(None, min_length=10, description="Nueva contraseña.")
     role: Optional[str] = Field(None, description="Rol del usuario (admin/user).")
     is_active: Optional[bool] = Field(None, description="Estado activo/inactivo del usuario.")
 

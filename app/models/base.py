@@ -1,5 +1,5 @@
 # =============================================================
-# 🧱 Base ORM — ZENTHRA.CORE_SECURITY
+# 🧱 Base ORM — VAELQORIX.XDR_COMMAND
 # =============================================================
 # Punto central para la base declarativa de SQLAlchemy.
 #
