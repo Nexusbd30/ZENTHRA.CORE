@@ -20,7 +20,7 @@ def test_redqueen_bridge_trace_extracts_origin_and_blocks():
                     },
                     "devsecops_context": {
                         "pipeline": {
-                            "repository": "nexus/platform",
+                            "repository": "vaelqorix/platform",
                             "pipeline_id": "deploy-prod",
                         }
                     },
@@ -133,7 +133,7 @@ def test_enterprise_active_defense_builds_vendor_grade_controls():
                     },
                     "devsecops_context": {
                         "pipeline": {
-                            "repository": "nexus/customer-portal",
+                            "repository": "vaelqorix/customer-portal",
                             "pipeline_id": "release-prod",
                             "runner_id": "runner-prod-3",
                         }
