@@ -139,6 +139,7 @@ class Settings(BaseSettings):
     ARES_KILL_SWITCH_KEY: str = "ares:kill_switch"
 
     NETWORK_CONTROL_URL: str | None = None
+    DNS_FIREWALL_CONTROL_URL: str | None = None
     IDENTITY_CONTROL_URL: str | None = None
     ENTRA_GRAPH_ENABLED: bool = False
     ENTRA_GRAPH_BASE_URL: str = "https://graph.microsoft.com/v1.0"

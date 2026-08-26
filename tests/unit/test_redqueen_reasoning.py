@@ -101,6 +101,34 @@ def test_verdict_records_mcp_action_policy_when_action_is_blocked(monkeypatch):
     assert verdict["execution_controls"]["mcp_action_policy"]["code"] == "mcp_action_blocked"
 
 
+def test_redqueen_can_authorize_dns_firewall_block_for_network_domain(monkeypatch):
+    monkeypatch.setattr(
+        "app.redqueen.decision_engine.ai_provider.complete",
+        lambda *_args, **_kwargs: (
+            '{"action_type":"dns_firewall_block","confidence":0.91,'
+            '"reasoning":"block command and control domain",'
+            '"factors":["dns_callback","command_and_control"]}'
+        ),
+    )
+
+    verdict = generate_verdict(
+        target="malware.example",
+        risk_score=72,
+        factors=["dns_callback"],
+        execution_controls={
+            "perception": {
+                "entity_type": "network",
+                "source": "network_sensor:dns",
+            },
+        },
+    )
+
+    assert verdict["action_type"] == "dns_firewall_block"
+    assert verdict["execution_controls"]["action_domain"] == "network"
+    assert verdict["execution_controls"]["llm_governance"]["approved_for_ares"] is True
+    assert verdict["causal_chain"]["action"] == "dns_firewall_block"
+
+
 def test_verdict_records_mcp_tool_policy_for_declared_tools(monkeypatch):
     monkeypatch.setattr(
         "app.redqueen.decision_engine.ai_provider.complete",

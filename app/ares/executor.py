@@ -8,11 +8,12 @@ from app.actions.crypto import CryptoAction
 from app.actions.devsecops import DevSecOpsAction
 from app.actions.endpoint import EndpointAction
 from app.actions.identity import IdentityAction
-from app.actions.network import NetworkAction
+from app.actions.network import DnsFirewallAction, NetworkAction
 from app.actions.soar import SoarAction
 
 ACTION_EXECUTORS: dict[str, BaseAction] = {
     "network_isolate": NetworkAction(),
+    "dns_firewall_block": DnsFirewallAction(),
     "identity_lockdown": IdentityAction(),
     "require_mfa": IdentityAction(),
     "revoke_session": IdentityAction(),

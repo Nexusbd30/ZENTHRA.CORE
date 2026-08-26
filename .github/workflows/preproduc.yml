@@ -151,6 +151,7 @@ jobs:
           --from-literal=VAELQORIX_CORRELATION_STARTUP_DELAY_SEC=10 \
           --from-literal=BOOTSTRAP_ADMIN_ENABLED=false \
           --from-literal=ACTION_EXECUTION_MODE="$ACTION_EXECUTION_MODE" \
+          --from-literal=DNS_FIREWALL_CONTROL_URL="$DNS_FIREWALL_CONTROL_URL" \
           --from-literal=AI_PROVIDER="$AI_PROVIDER" \
           --from-literal=AI_BASE_URL="$AI_BASE_URL" \
           --from-literal=AI_MODEL="$AI_MODEL" \

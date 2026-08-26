@@ -4,6 +4,7 @@ from typing import Any
 
 DISRUPTIVE_ACTIONS = {
     "network_isolate",
+    "dns_firewall_block",
     "identity_lockdown",
     "endpoint_isolate",
     "crypto_rotate",
@@ -65,6 +66,31 @@ def build_plan(verdict: dict) -> dict:
                 "confirm_isolation",
                 target=target,
                 impact="verifies containment state",
+                rollback=None,
+                criticality=2,
+            ),
+        ]
+    elif action_type == "dns_firewall_block":
+        steps = [
+            _step(
+                "resolve_dns_indicator",
+                target=target,
+                impact="DNS indicator validation only",
+                rollback=None,
+                criticality=1,
+            ),
+            _step(
+                "apply_dns_firewall_block",
+                target=target,
+                impact="blocks or sinkholes malicious DNS resolution for the target indicator",
+                rollback="dns_firewall_rollback",
+                criticality=4,
+                requires_confirmation=True,
+            ),
+            _step(
+                "verify_dns_firewall_block",
+                target=target,
+                impact="verifies DNS containment state",
                 rollback=None,
                 criticality=2,
             ),

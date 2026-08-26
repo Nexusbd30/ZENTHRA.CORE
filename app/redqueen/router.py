@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
+from app.ares.approval import build_approval_payload
 from app.core.security import require_admin_or_monitor_token
 from app.core.settings import settings
 from app.db.session import get_db
@@ -75,6 +76,11 @@ class StrategicAnticipationRequest(BaseModel):
     anticipation: dict = Field(default_factory=dict)
     bridge_trace: dict = Field(default_factory=dict)
     execution_controls: dict = Field(default_factory=dict)
+
+
+class VerdictApprovalRequest(BaseModel):
+    approver: str = Field(default="", max_length=120)
+    reason: str = Field(default="", max_length=2000)
 
 
 def _json_loads(value: str | None, fallback):
@@ -238,10 +244,27 @@ def read_aresx_verdict(verdict_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/verdicts/{verdict_id}/approve")
-def approve_aresx_verdict(verdict_id: str, db: Session = Depends(get_db)):
+def approve_aresx_verdict(
+    verdict_id: str,
+    db: Session = Depends(get_db),
+    payload: VerdictApprovalRequest | None = None,
+    auth_context=Depends(require_admin_or_monitor_token),
+):
     verdict = db.get(Verdict, verdict_id)
     if not verdict:
         return {"status": "not_found", "verdict_id": verdict_id}
+    payload = payload or VerdictApprovalRequest()
+    authenticated_actor = (
+        str(auth_context.get("auth_type") or "internal")
+        if isinstance(auth_context, dict)
+        else str(getattr(auth_context, "email", "admin"))
+    )
+    approval = build_approval_payload(
+        verdict=_verdict_payload(verdict),
+        approver=(payload.approver or authenticated_actor).strip(),
+        reason=payload.reason,
+    )
+    AutonomyService.persist_approval(db, approval)
     verdict.status = "approved"
     verdict.requires_human = False
     verdict.requires_human_approval = False

@@ -36,6 +36,7 @@ ALLOWED_ACTIONS = {
     "endpoint_isolate",
     "identity_lockdown",
     "network_isolate",
+    "dns_firewall_block",
     "system_harden",
     "aggressive_containment",
 }
@@ -54,6 +55,7 @@ ACTION_SEVERITY = {
     "endpoint_isolate": 2,
     "identity_lockdown": 3,
     "network_isolate": 4,
+    "dns_firewall_block": 3,
     "system_harden": 2,
     "aggressive_containment": 4,
 }
@@ -69,7 +71,13 @@ DOMAIN_ACTIONS = {
         "aggressive_containment",
     },
     "endpoint": {"observe", "soar_delegate", "endpoint_isolate", "aggressive_containment"},
-    "network": {"observe", "soar_delegate", "network_isolate", "aggressive_containment"},
+    "network": {
+        "observe",
+        "soar_delegate",
+        "dns_firewall_block",
+        "network_isolate",
+        "aggressive_containment",
+    },
     "crypto": {"observe", "soar_delegate", "crypto_rotate"},
     "devsecops": {
         "observe",

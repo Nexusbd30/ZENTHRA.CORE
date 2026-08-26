@@ -20,6 +20,7 @@ from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
 from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
 from app.core.signing import sign_payload
+from app.dns_firewall.service import prepare_dns_execution, update_execution_state
 from app.identity.service import summarize_identity_activity
 from app.intelligence.rag import rag_factors, rag_payload, retrieve_defensive_context
 from app.models.approval_record import ApprovalRecord
@@ -812,7 +813,32 @@ class AutonomyService:
                 "plan": plan,
                 "result": result,
             }
+        if str(verdict.get("action_type") or "") == "dns_firewall_block" and not dry_run:
+            controls["verdict_id"] = str(verdict.get("verdict_id") or "")
+            controls["_dns_firewall_db"] = db
+            prepared_dns = prepare_dns_execution(db, verdict=verdict, controls=controls)
+            if prepared_dns.get("status") in {"applied", "verified"}:
+                return {
+                    "status": "already_executed",
+                    "verdict_id": verdict.get("verdict_id"),
+                    "dns_firewall": prepared_dns,
+                }
+
         execution = execute_plan(plan, controls=controls)
+        if str(verdict.get("action_type") or "") == "dns_firewall_block":
+            execution_id = str(controls.get("dns_firewall_execution_id") or "")
+            if execution_id and not dry_run and execution.get("status") != "success":
+                rollback_events = execution.get("rollback_events") or []
+                rollback_succeeded = bool(rollback_events) and all(
+                    str(event.get("status") or "") == "ok" for event in rollback_events
+                )
+                update_execution_state(
+                    db,
+                    execution_id=execution_id,
+                    status="rolled_back" if rollback_succeeded else "failed",
+                    evidence=execution,
+                    error_code="ares_execution_rolled_back" if rollback_succeeded else "ares_execution_failed",
+                )
         result = build_execution_result(verdict=verdict, execution=execution)
         AutonomyService.persist_execution_result(db, result)
         audit_autonomy_event(

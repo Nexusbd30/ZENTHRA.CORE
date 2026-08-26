@@ -28,6 +28,7 @@ from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
 from app.db.session import SessionLocal, get_db
 from app.detection.router import router as detection_router
+from app.dns_firewall.router import router as dns_firewall_router
 from app.health.router import router as system_health_router
 from app.identity.router import router as identity_router
 from app.ingestion.aresx_router import router as aresx_ingest_router
@@ -239,6 +240,7 @@ app.include_router(ares_router)
 app.include_router(code_intelligence_router)
 app.include_router(sensors_router)
 app.include_router(detection_router)
+app.include_router(dns_firewall_router)
 app.include_router(connectors_router)
 app.include_router(playbooks_router)
 app.include_router(cases_router)

@@ -32,6 +32,55 @@ def test_build_plan_adds_operational_metadata():
     assert plan["steps"][1]["rollback"] == "network_rollback"
 
 
+def test_build_plan_supports_dns_firewall_block():
+    plan = build_plan(
+        {
+            "action_type": "dns_firewall_block",
+            "target": "malware.example",
+            "risk_score": 88,
+            "causal_chain": {"action_rationale": "block command and control DNS"},
+        }
+    )
+
+    assert plan["requires_confirmation"] is True
+    assert plan["rollback_strategy"] == "transactional_reverse_order"
+    assert plan["max_criticality"] == 4
+    assert [step["step"] for step in plan["steps"]] == [
+        "resolve_dns_indicator",
+        "apply_dns_firewall_block",
+        "verify_dns_firewall_block",
+    ]
+    assert plan["steps"][1]["rollback"] == "dns_firewall_rollback"
+
+
+def test_execute_plan_delegates_dns_firewall_block(monkeypatch):
+    calls = []
+
+    def fake_dispatch(*, url, command, payload):
+        calls.append({"url": url, "command": command, "payload": payload})
+        return {"status": "ok", "command": command}
+
+    monkeypatch.setattr("app.actions.network.dispatch_command", fake_dispatch)
+    monkeypatch.setattr("app.actions.network.settings.DNS_FIREWALL_CONTROL_URL", "https://dns-control.local")
+    plan = build_plan({"action_type": "dns_firewall_block", "target": "malware.example"})
+
+    result = execute_plan(
+        plan,
+        controls={
+            "dns_firewall_provider": "umbrella",
+            "threat_id": "threat-dns-1",
+            "change_ticket": "CHG-DNS-1",
+        },
+    )
+
+    assert result["status"] == "success"
+    assert calls[1]["url"] == "https://dns-control.local"
+    assert calls[1]["command"] == "apply_dns_firewall_block"
+    assert calls[1]["payload"]["target"] == "malware.example"
+    assert calls[1]["payload"]["provider"] == "umbrella"
+    assert calls[1]["payload"]["threat_id"] == "threat-dns-1"
+
+
 def test_execute_plan_delegates_soar_steps(monkeypatch):
     calls = []
 
