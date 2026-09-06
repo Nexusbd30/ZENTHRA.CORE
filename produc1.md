@@ -126,14 +126,16 @@ Completed before hardware setup:
 - Attack Analysis UI path extended from verdict generation into ARES dry-run execution and evidence preview.
 - Frontend API helper for `POST /api/v1/ares/execute`.
 - RedQueen Brain lifecycle endpoint added at `POST /api/v1/brain/lifecycle`.
+- RedQueen operator chatbot endpoint added at `POST /api/v1/brain/chat`.
 - Brain lifecycle connects ARESX ingest, attack analysis, RedQueen verdict, ARES dry-run execution, and evidence in one backend contract.
 - AI command center now exposes the brain lifecycle chain and a `Run Brain` dry-run control.
+- AI command center now includes a RedQueen Chat panel that can request verdicts or route ARESX dry-run orders through the governed brain endpoint.
 - Backend and frontend tests updated for the new contract.
 
 Current verified gates:
 
 ```text
-Backend full suite: 390 passed
+Backend full suite: 392 passed
 Backend coverage: 99%
 Backend Ruff: passed
 Frontend tests: 34 passed, 3 skipped

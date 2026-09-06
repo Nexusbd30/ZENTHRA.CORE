@@ -2,6 +2,7 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  MessageSquare,
   Power,
   RefreshCw,
   RotateCcw,
@@ -13,6 +14,7 @@ import {
 import {
   activateAresKillSwitch,
   approveAresXVerdict,
+  chatWithRedQueen,
   deactivateAresKillSwitch,
   getAresKillSwitch,
   getAresXIngestStats,
@@ -53,6 +55,13 @@ export default function AIPage() {
   const [capabilityMap, setCapabilityMap] = useState(null);
   const [brainStatus, setBrainStatus] = useState(null);
   const [brainRun, setBrainRun] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "redqueen",
+      content: "RedQueen online. Send owned telemetry or ask for a governed ARESX dry-run order.",
+    },
+  ]);
   const [selectedVerdictId, setSelectedVerdictId] = useState("");
 
   const load = useCallback(async () => {
@@ -189,6 +198,49 @@ export default function AIPage() {
       await load();
     } catch (err) {
       setError(err?.message || "No se pudo ejecutar el brain lifecycle.");
+    } finally {
+      setActionBusy("");
+    }
+  };
+
+  const sendRedQueenChat = async () => {
+    const message = chatInput.trim();
+    if (!message) return;
+    setActionBusy("redqueen-chat");
+    setError("");
+    setChatInput("");
+    setChatMessages((items) => [...items, { role: "operator", content: message }]);
+    try {
+      const result = await chatWithRedQueen({
+        message,
+        source: "manual",
+        target: selectedVerdict?.target || "chat:operator-request",
+        riskScore: Number(selectedVerdict?.risk_score || 50),
+        factors: ["operator_chat"],
+        executionControls: {
+          dry_run: true,
+          change_ticket: "CHAT-DRY-RUN",
+          dns_firewall_provider: "sandbox",
+        },
+      });
+      setChatMessages((items) => [
+        ...items,
+        {
+          role: "redqueen",
+          content: result.message,
+          result,
+        },
+      ]);
+      if (result.result?.status === "completed") {
+        setBrainRun(result.result);
+      }
+      await load();
+    } catch (err) {
+      setError(err?.message || "RedQueen chatbot failed.");
+      setChatMessages((items) => [
+        ...items,
+        { role: "redqueen", content: "Chat command rejected or failed before execution." },
+      ]);
     } finally {
       setActionBusy("");
     }
@@ -388,6 +440,74 @@ export default function AIPage() {
               <ShieldCheck className="h-4 w-4" />
               Run Brain
             </button>
+          </div>
+        </div>
+
+        <div className="col-span-12 bg-[#0f141a]">
+          <PanelHeader title="RedQueen Chat" right="ARESX dry-run orders" />
+          <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="max-h-80 overflow-y-auto border border-white/5 bg-[#151a21] p-4">
+              <div className="space-y-3">
+                {chatMessages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`border px-3 py-3 ${
+                      message.role === "operator"
+                        ? "ml-auto max-w-[84%] border-[#8ff5ff]/30 bg-[#8ff5ff]/10"
+                        : "mr-auto max-w-[88%] border-white/10 bg-[#0f141a]"
+                    }`}
+                  >
+                    <div className="mb-1 font-label text-[10px] uppercase tracking-widest text-slate-500">
+                      {message.role}
+                    </div>
+                    <div className="text-sm leading-6 text-slate-200">{message.content}</div>
+                    {message.result?.result ? (
+                      <pre className="mt-3 max-h-44 overflow-auto bg-[#080c12] p-3 text-xs text-slate-300">
+                        {JSON.stringify(
+                          {
+                            intent: message.result.intent,
+                            boundary: message.result.safety_boundary,
+                            verdict: message.result.result.verdict?.verdict_id,
+                            action: message.result.result.verdict?.action_type,
+                            execution: message.result.result.execution?.status,
+                          },
+                          null,
+                          2
+                        )}
+                      </pre>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border border-white/5 bg-[#151a21] p-4">
+              <label className="font-label text-[10px] uppercase tracking-widest text-slate-500" htmlFor="redqueen-chat-input">
+                Operator Command
+              </label>
+              <textarea
+                id="redqueen-chat-input"
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                    event.preventDefault();
+                    sendRedQueenChat();
+                  }
+                }}
+                className="mt-3 min-h-32 w-full resize-none border border-white/10 bg-[#0f141a] p-3 text-sm leading-6 text-slate-200 outline-none focus:border-[#8ff5ff]/60"
+                placeholder="Ask RedQueen to analyze owned telemetry, issue a verdict, or prepare an ARESX dry-run order."
+              />
+              <button
+                type="button"
+                onClick={sendRedQueenChat}
+                disabled={!chatInput.trim() || actionBusy === "redqueen-chat"}
+                title="Send command to RedQueen"
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 border border-[#8ff5ff]/40 bg-[#8ff5ff]/10 px-4 font-label text-[10px] uppercase tracking-widest text-[#8ff5ff] hover:border-[#8ff5ff] disabled:opacity-40"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Send To RedQueen
+              </button>
+            </div>
           </div>
         </div>
 

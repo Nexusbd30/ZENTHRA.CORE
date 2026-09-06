@@ -203,6 +203,7 @@ describe("vaelqorixApi helpers", () => {
     await mod.getAutonomyCapabilities();
     await mod.getBrainStatus();
     await mod.runBrainLifecycle({ source: "qradar", payload: { id: "e1" } });
+    await mod.chatWithRedQueen({ message: "issue verdict", target: "host:runner" });
     await mod.getEntityProfile("host/name");
     await mod.getAresStatus();
     await mod.getAresOperationFlow();

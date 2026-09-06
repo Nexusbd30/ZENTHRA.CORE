@@ -616,6 +616,27 @@ export const runBrainLifecycle = async ({
   return data;
 };
 
+export const chatWithRedQueen = async ({
+  message,
+  source = "manual",
+  payload = {},
+  target = "",
+  riskScore = 50,
+  factors = [],
+  executionControls = { dry_run: true },
+}) => {
+  const { data } = await vaelqorixApi.post("/api/v1/brain/chat", {
+    message,
+    source,
+    payload,
+    target,
+    risk_score: riskScore,
+    factors,
+    execution_controls: executionControls,
+  });
+  return data;
+};
+
 export const getEntityProfile = async (entityId) => {
   const { data } = await vaelqorixApi.get(
     `/api/v1/redqueen/entities/${encodeURIComponent(entityId)}/profile`

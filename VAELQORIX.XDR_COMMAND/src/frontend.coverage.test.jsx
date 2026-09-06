@@ -105,6 +105,7 @@ const api = vi.hoisted(() => ({
   getAutonomyCapabilities: vi.fn(),
   getBrainStatus: vi.fn(),
   runBrainLifecycle: vi.fn(),
+  chatWithRedQueen: vi.fn(),
   getAresOperationFlow: vi.fn(),
   setAresKillSwitch: vi.fn(),
   getAresKillSwitch: vi.fn(),
@@ -744,6 +745,19 @@ describe("frontend coverage", () => {
     },
     execution: { status: "executed" },
   });
+  api.chatWithRedQueen.mockResolvedValue({
+    status: "ok",
+    intent: "redqueen_verdict",
+    safety_boundary: "dry_run_only",
+    message: "RedQueen verdict generated in dry-run context.",
+    result: {
+      verdict: {
+        verdict_id: "chat-verdict-1",
+        action_type: "soar_delegate",
+      },
+      execution: { status: "executed" },
+    },
+  });
   api.getAutonomyCapabilities.mockResolvedValue({
       schema: "vaelqorix.autonomy_control.capability_map.v1",
       capabilities: [
@@ -1089,6 +1103,11 @@ describe("frontend coverage", () => {
     );
 
     await waitFor(() => expect(document.body.textContent).toMatch(/RedQueen|ARES|Threat|Credential|Security|Logs|Monitoring|Diagnostics|Data/i));
+    fireEvent.change(screen.getByPlaceholderText(/Ask RedQueen/i), {
+      target: { value: "RedQueen verdict for suspicious host" },
+    });
+    fireEvent.click(screen.getByText("Send To RedQueen"));
+    await waitFor(() => expect(api.chatWithRedQueen).toHaveBeenCalled());
     const buttons = Array.from(document.querySelectorAll("button")).slice(0, 12);
     buttons.forEach((button) => fireEvent.click(button));
   });

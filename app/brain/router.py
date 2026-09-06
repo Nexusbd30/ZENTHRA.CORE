@@ -31,6 +31,25 @@ class BrainLifecycleRequest(BaseModel):
     approval_evidence: dict[str, Any] | None = None
 
 
+class BrainChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    source: str = Field(default="manual", min_length=1)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    target: str = Field(default="", max_length=255)
+    risk_score: float = Field(default=50.0, ge=0, le=100)
+    factors: list[str] = Field(default_factory=list, max_length=50)
+    execution_controls: dict[str, Any] = Field(default_factory=dict)
+
+
+def _chat_intent(message: str, payload: dict[str, Any]) -> str:
+    normalized = message.lower()
+    if payload or any(term in normalized for term in ("ingest", "aresx", "event", "analyze")):
+        return "brain_lifecycle"
+    if any(term in normalized for term in ("verdict", "redqueen", "score", "risk")):
+        return "redqueen_verdict"
+    return "guidance"
+
+
 @router.get("/status")
 def brain_status():
     return {
@@ -47,6 +66,77 @@ def brain_status():
         ],
         "default_execution_mode": "dry_run",
         "safety_boundary": "authorized_owned_telemetry_only",
+    }
+
+
+@router.post("/chat")
+def chat_with_redqueen(payload: BrainChatRequest, db: Session = Depends(get_db)):
+    intent = _chat_intent(payload.message, payload.payload)
+    controls = {
+        "dry_run": True,
+        "source": "redqueen-chatbot",
+        "chat_message": payload.message,
+        "brain_chat": True,
+        **payload.execution_controls,
+    }
+    controls["dry_run"] = True
+
+    if intent == "brain_lifecycle":
+        order_payload = payload.payload or {
+            "id": f"chat-{abs(hash(payload.message))}",
+            "description": payload.message,
+            "magnitude": max(1, min(10, round(payload.risk_score / 10))),
+            "target": payload.target or "chat:operator-request",
+        }
+        result = run_brain_lifecycle(
+            BrainLifecycleRequest(
+                source=payload.source,
+                payload=order_payload,
+                execution_controls=controls,
+                human_approved=False,
+            ),
+            db,
+        )
+        return {
+            "status": "ok",
+            "role": "redqueen",
+            "intent": intent,
+            "message": "ARESX order accepted as governed dry-run. ARES execution remains operator-gated.",
+            "safety_boundary": "dry_run_only",
+            "result": result,
+        }
+
+    if intent == "redqueen_verdict":
+        verdict = AutonomyService.issue_verdict(
+            db,
+            target=payload.target or "chat:operator-request",
+            risk_score=payload.risk_score,
+            factors=[
+                *payload.factors,
+                "source:redqueen_chatbot",
+                "operator_chat_requested_verdict",
+            ],
+            execution_controls=controls,
+        )
+        return {
+            "status": "ok",
+            "role": "redqueen",
+            "intent": intent,
+            "message": "RedQueen verdict generated in dry-run context. Send it to ARES only through governed execution.",
+            "safety_boundary": "dry_run_only",
+            "result": {"verdict": verdict},
+        }
+
+    return {
+        "status": "ok",
+        "role": "redqueen",
+        "intent": intent,
+        "message": (
+            "Provide owned telemetry or request a verdict. I can route ARESX events, generate "
+            "RedQueen verdicts, and trigger ARES dry-run execution with audit evidence."
+        ),
+        "safety_boundary": "authorized_owned_telemetry_only",
+        "result": {},
     }
 
 

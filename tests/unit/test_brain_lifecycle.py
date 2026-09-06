@@ -54,3 +54,50 @@ async def test_brain_status_exposes_layer_chain(test_client, auth_token):
         "ares_dry_run_execution",
         "evidence",
     ]
+
+
+@pytest.mark.asyncio
+async def test_brain_chat_routes_aresx_order_as_dry_run(test_client, auth_token):
+    response = await test_client.post(
+        "/api/v1/brain/chat",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "message": "Analyze this ARESX event and prepare ARES order",
+            "source": "qradar",
+            "payload": {
+                "id": "brain-chat-event-1",
+                "description": "Suspicious credential access T1110",
+                "magnitude": 8,
+                "username": "chat.operator@corp.local",
+            },
+            "execution_controls": {"dry_run": False},
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["intent"] == "brain_lifecycle"
+    assert data["safety_boundary"] == "dry_run_only"
+    assert data["result"]["mode"] == "dry_run"
+    assert data["result"]["verdict"]["execution_controls"]["dry_run"] is True
+    assert data["result"]["verdict"]["execution_controls"]["brain_chat"] is True
+
+
+@pytest.mark.asyncio
+async def test_brain_chat_can_generate_redqueen_verdict(test_client, auth_token):
+    response = await test_client.post(
+        "/api/v1/brain/chat",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "message": "RedQueen verdict for suspicious host",
+            "target": "host:runner-01",
+            "risk_score": 72,
+            "factors": ["operator_requested"],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["intent"] == "redqueen_verdict"
+    assert data["result"]["verdict"]["target"] == "host:runner-01"
+    assert data["result"]["verdict"]["execution_controls"]["dry_run"] is True
