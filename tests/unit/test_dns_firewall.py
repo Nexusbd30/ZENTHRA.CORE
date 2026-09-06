@@ -4,7 +4,13 @@ import pytest
 
 from app.ares.executor import execute_plan
 from app.ares.planner import build_plan
-from app.dns_firewall.contracts import DnsTargetError, normalize_target, stable_idempotency_key
+from app.dns_firewall.contracts import (
+    DnsBlockRequest,
+    DnsTargetError,
+    normalize_target,
+    stable_idempotency_key,
+)
+from app.dns_firewall.providers import SandboxDnsFirewallProvider
 from app.dns_firewall.service import create_pending_rule, list_rules, preflight_target
 
 
@@ -88,7 +94,7 @@ def test_ares_execution_updates_persistent_dns_state(db_session, monkeypatch):
         calls.append((url, command, payload))
         return {"status": "ok", "request_id": f"req-{len(calls)}"}
 
-    monkeypatch.setattr("app.actions.network.dispatch_command", fake_dispatch)
+    monkeypatch.setattr("app.dns_firewall.providers.dispatch_command", fake_dispatch)
     rule, execution = create_pending_rule(
         db_session,
         tenant_id="tenant-a",
@@ -119,4 +125,32 @@ def test_ares_execution_updates_persistent_dns_state(db_session, monkeypatch):
     assert result["status"] == "success"
     assert execution.status == "verified"
     assert rule.status == "verified"
+    assert rule.provider_rule_id
     assert calls[1][2]["idempotency_key"] == execution.idempotency_key
+
+
+def test_sandbox_dns_provider_applies_verifies_and_removes_idempotently():
+    provider = SandboxDnsFirewallProvider()
+    provider.reset()
+    request = DnsBlockRequest(
+        tenant_id="tenant-a",
+        target=normalize_target("malware.example"),
+        action="block",
+        idempotency_key="idem-1",
+        verdict_id="verdict-dns-1",
+        change_ticket="CHG-DNS-1",
+    )
+
+    first = provider.apply_block(request)
+    second = provider.apply_block(request)
+    verified = provider.verify_block(request, first.provider_rule_id)
+    removed = provider.remove_block(request, first.provider_rule_id)
+    verify_after_remove = provider.verify_block(request, first.provider_rule_id)
+
+    assert first.status == "applied"
+    assert second.status == "applied"
+    assert second.evidence["idempotent_replay"] is True
+    assert second.provider_rule_id == first.provider_rule_id
+    assert verified.status == "verified"
+    assert removed.status == "removed"
+    assert verify_after_remove.status == "verification_failed"

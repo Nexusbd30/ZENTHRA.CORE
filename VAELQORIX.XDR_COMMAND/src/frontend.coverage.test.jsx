@@ -34,6 +34,7 @@ import { useNotification } from "./hooks/useNotification";
 import DashboardLayout from "./layouts/DashboardLayout";
 import AIPage from "./modules/ai/AIPage";
 import AlertsPage from "./modules/alerts/AlertsPage";
+import AttackAnalysisPage from "./modules/attack-analysis/AttackAnalysisPage";
 import PrivateRoute from "./modules/auth/PrivateRoute";
 import DataCenterPage from "./modules/datacenter/DataCenterPage";
 import DiagnosticsPage from "./modules/diagnostics/DiagnosticsPage";
@@ -100,14 +101,25 @@ const api = vi.hoisted(() => ({
   getRedQueenStats: vi.fn(),
   getEntityProfile: vi.fn(),
   getAresStatus: vi.fn(),
+  getAutonomyMaturity: vi.fn(),
+  getAutonomyCapabilities: vi.fn(),
   getAresOperationFlow: vi.fn(),
   setAresKillSwitch: vi.fn(),
   getAresKillSwitch: vi.fn(),
   activateAresKillSwitch: vi.fn(),
   deactivateAresKillSwitch: vi.fn(),
   runAresLifecycle: vi.fn(),
+  executeAresVerdict: vi.fn(),
   runAresLifecycleFromThreat: vi.fn(),
   getAresResults: vi.fn(),
+  runAresHunterTrace: vi.fn(),
+  getAttackAnalysisStatus: vi.fn(),
+  listAttackAnalyses: vi.fn(),
+  getAttackAnalysisEntity: vi.fn(),
+  issueAttackAnalysisVerdict: vi.fn(),
+  getCtfLabStatus: vi.fn(),
+  listCtfLabScenarios: vi.fn(),
+  replayCtfLabScenario: vi.fn(),
   listAresExecutions: vi.fn(),
   getAresExecution: vi.fn(),
   rollbackAresExecution: vi.fn(),
@@ -237,6 +249,11 @@ function resetApiMocks() {
   api.activateAresKillSwitch.mockResolvedValue({ active: true });
   api.deactivateAresKillSwitch.mockResolvedValue({ active: false });
   api.runAresLifecycle.mockResolvedValue({ execution_id: "x1" });
+  api.executeAresVerdict.mockResolvedValue({
+    status: "executed",
+    execution: { mode: "dry_run" },
+    result: { result_hash: "hash-1" },
+  });
   api.runAresLifecycleFromThreat.mockResolvedValue({ execution_id: "x2" });
   api.getAresResults.mockResolvedValue({ verdict_id: "v1" });
   api.listAresExecutions.mockResolvedValue([{ execution_id: "x1" }]);
@@ -248,6 +265,92 @@ function resetApiMocks() {
   api.listAresXAuditRecords.mockResolvedValue([{ id: "audit1" }]);
   api.verifyAresXAudit.mockResolvedValue({ valid: true });
   api.getWindowsNICs.mockResolvedValue(["Ethernet0"]);
+  api.getAttackAnalysisStatus.mockResolvedValue({
+    status: "enabled",
+    capabilities: ["timeline_reconstruction"],
+  });
+  api.listAttackAnalyses.mockResolvedValue({
+    items: [
+      {
+        entity_id: "host:prod-runner",
+        event_count: 3,
+        attack_reality_score: 78,
+        classification: "probable_attack",
+        confidence: 0.86,
+        severity: 8,
+        kill_chain_stages: ["initial_access", "execution"],
+        recommended_action: "soar_delegate",
+      },
+    ],
+  });
+  api.getAttackAnalysisEntity.mockResolvedValue({
+    entity_id: "host:prod-runner",
+    event_count: 3,
+    attack_reality_score: 78,
+    classification: "probable_attack",
+    confidence: 0.86,
+    recommended_action: "soar_delegate",
+    requires_human_review: true,
+    evidence: ["event_count:3", "kill_chain_stage:execution"],
+    false_positive_signals: [],
+    kill_chain_stages: ["initial_access", "execution"],
+    timeline: [
+      {
+        id: "evt-1",
+        occurred_at: "2026-01-01T00:00:00Z",
+        event_type: "suspicious_login",
+        summary: "suspicious login",
+        source: "wazuh",
+        stage: "initial_access",
+        mitre_tags: ["T1078"],
+        severity: 8,
+      },
+    ],
+    causal_chain: { action_rationale: "contain suspicious path" },
+    attack_anticipation: { next_steps: [] },
+    strategic_anticipation: { forecast: [] },
+  });
+  api.issueAttackAnalysisVerdict.mockResolvedValue({
+    status: "ok",
+    verdict: {
+      verdict_id: "verdict-analysis-1",
+      action_type: "soar_delegate",
+      target: "host:prod-runner",
+      risk_score: 78,
+      execution_controls: { dry_run: true },
+    },
+  });
+  api.listCtfLabScenarios.mockResolvedValue({
+    items: [
+      {
+        id: "identity_credential_foothold",
+        name: "Identity foothold",
+        objective: "Replay identity foothold telemetry.",
+      },
+    ],
+  });
+  api.replayCtfLabScenario.mockResolvedValue({
+    scenario_id: "identity_credential_foothold",
+    status: "passed",
+    target: "host:prod-runner",
+    actual_classification: "probable_attack",
+    synthetic_events_inserted: 3,
+    hunter_presence_state: "present",
+    hunter_trace: { expulsion_readiness: "operator_gated" },
+    scorecard: { detection_passed: true },
+    analysis: {
+      timeline: [],
+      evidence: [],
+      false_positive_signals: [],
+      causal_chain: {},
+      attack_anticipation: {},
+      strategic_anticipation: {},
+    },
+  });
+  api.runAresHunterTrace.mockResolvedValue({
+    presence_state: "present",
+    expulsion_readiness: "operator_gated",
+  });
 }
 
 function renderApp(ui, { route = "/", auth = true } = {}) {
@@ -592,6 +695,66 @@ describe("frontend coverage", () => {
   it("covers AI page command center controls and degraded loads", async () => {
     api.getRedQueenStatus.mockResolvedValue({ phase: "online", role: "brain" });
     api.getAresStatus.mockResolvedValue({ phase: "armed" });
+    api.getAutonomyMaturity.mockResolvedValue({
+      overall_score: 81,
+      overall_level: "L3 preproduction_ready",
+      concept: "RedQueen decides and ARES executes",
+      shared_rectification: ["connect real providers"],
+      redqueen: {
+        module: "redqueen",
+        maturity_score: 77,
+        maturity_level: "L3 preproduction_ready",
+        concept: "defensive brain",
+        strengths: ["signed verdicts"],
+        weaknesses: ["needs labels"],
+        rectification_priority: ["add dataset"],
+      },
+      ares: {
+        module: "ares",
+        maturity_score: 84,
+        maturity_level: "L3 preproduction_ready",
+        concept: "execution control",
+        strengths: ["kill switch"],
+        weaknesses: ["needs providers"],
+        rectification_priority: ["validate Redis"],
+      },
+    });
+    api.getAutonomyCapabilities.mockResolvedValue({
+      schema: "vaelqorix.autonomy_control.capability_map.v1",
+      capabilities: [
+        {
+          key: "defensive_ctf_lab",
+          label: "CTF defensivo / lab",
+          status: "ready_to_build",
+          maturity: 82,
+          decision: "Puede operar ahora en laboratorio controlado.",
+          enabled_capabilities: ["create replayable defensive scenarios"],
+          required_guardrails: ["owned isolated lab only"],
+          rectification: ["add CTF scenario registry"],
+        },
+        {
+          key: "technical_grc",
+          label: "GRC tecnico",
+          status: "foundation_ready",
+          maturity: 68,
+          decision: "La base tecnica existe.",
+          enabled_capabilities: ["map technical controls"],
+          required_guardrails: ["framework mapping must be explicit"],
+          rectification: ["map controls to frameworks"],
+        },
+        {
+          key: "authorized_pentesting",
+          label: "Pentesting real autorizado",
+          status: "blocked_until_guardrails",
+          maturity: 41,
+          decision: "No debe operar de forma autonoma contra objetivos reales todavia.",
+          enabled_capabilities: ["prepare scope"],
+          required_guardrails: ["signed authorization and target allowlist"],
+          rectification: ["build pentest scope validator"],
+        },
+      ],
+      non_negotiable_boundaries: ["no public targets"],
+    });
     api.getAresKillSwitch.mockResolvedValue({ kill_switch: { active: false } });
     api.getRedQueenStats.mockResolvedValue({ total_verdicts: 2, human_required: 1 });
     api.getAresXIngestStats.mockResolvedValue({ total: 7, window: "24h" });
@@ -885,6 +1048,7 @@ describe("frontend coverage", () => {
       <>
         <AIPage />
         <AlertsPage />
+        <AttackAnalysisPage />
         <DataCenterPage />
         <DiagnosticsPage />
         <LogsPage />

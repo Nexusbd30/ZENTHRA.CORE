@@ -197,6 +197,8 @@ describe("vaelqorixApi helpers", () => {
     await mod.approveAresXVerdict("verdict-1");
     await mod.rejectAresXVerdict("verdict-1");
     await mod.getRedQueenStats();
+    await mod.getAutonomyMaturity();
+    await mod.getAutonomyCapabilities();
     await mod.getEntityProfile("host/name");
     await mod.getAresStatus();
     await mod.getAresOperationFlow();
@@ -205,8 +207,19 @@ describe("vaelqorixApi helpers", () => {
     await mod.activateAresKillSwitch({ reason: "incident" });
     await mod.deactivateAresKillSwitch({ reason: "clear" });
     await mod.runAresLifecycle({ verdict_id: "v1" });
+    await mod.executeAresVerdict({ verdict_id: "v1" }, { humanApproved: true });
     await mod.runAresLifecycleFromThreat("threat-1");
     await mod.getAresResults("verdict-1");
+    await mod.runAresHunterTrace({
+      target: "host:prod-runner",
+      verdictId: "verdict-1",
+      executionControls: { ctf_mode: true },
+    });
+    await mod.getCtfLabStatus();
+    await mod.listCtfLabScenarios();
+    await mod.replayCtfLabScenario("identity_credential_foothold", {
+      runLabel: "api-test",
+    });
     await mod.listAresExecutions({
       verdictId: "verdict-1",
       status: "done",

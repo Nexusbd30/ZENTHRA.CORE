@@ -31,6 +31,7 @@ nuevo logo.jpeg
 node_modules/
 VAELQORIX.XDR_COMMAND/node_modules/
 VAELQORIX.XDR_COMMAND/dist/
+VAELQORIX.XDR_COMMAND/coverage/
 VAELQORIX.XDR_COMMAND/.vite/
 VAELQORIX.XDR_COMMAND/.agents/
 VAELQORIX.XDR_COMMAND/skills-lock.json

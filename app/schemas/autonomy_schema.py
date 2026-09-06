@@ -26,6 +26,7 @@ class AresStatusResponse(BaseModel):
     aggressive_containment: dict[str, Any] | None = None
     enterprise_active_defense: dict[str, Any] | None = None
     response_fabric: dict[str, Any] | None = None
+    hunter_trace: dict[str, Any] | None = None
     kill_switch: dict[str, Any]
 
 

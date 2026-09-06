@@ -68,6 +68,9 @@ const isAutonomyPath = (config) => {
     return (
       url.pathname.startsWith("/api/v1/redqueen/") ||
       url.pathname.startsWith("/api/v1/ares/") ||
+      url.pathname.startsWith("/api/v1/attack-analysis/") ||
+      url.pathname.startsWith("/api/v1/control/") ||
+      url.pathname.startsWith("/api/v1/ctf-lab/") ||
       url.pathname.startsWith("/api/v1/audit/") ||
       url.pathname.startsWith("/api/v1/ingest/")
     );
@@ -76,6 +79,9 @@ const isAutonomyPath = (config) => {
     return (
       url.startsWith("/api/v1/redqueen/") ||
       url.startsWith("/api/v1/ares/") ||
+      url.startsWith("/api/v1/attack-analysis/") ||
+      url.startsWith("/api/v1/control/") ||
+      url.startsWith("/api/v1/ctf-lab/") ||
       url.startsWith("/api/v1/audit/") ||
       url.startsWith("/api/v1/ingest/")
     );
@@ -576,6 +582,16 @@ export const getRedQueenStats = async () => {
   return data;
 };
 
+export const getAutonomyMaturity = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/control/maturity");
+  return data;
+};
+
+export const getAutonomyCapabilities = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/control/capabilities");
+  return data;
+};
+
 export const getEntityProfile = async (entityId) => {
   const { data } = await vaelqorixApi.get(
     `/api/v1/redqueen/entities/${encodeURIComponent(entityId)}/profile`
@@ -630,6 +646,18 @@ export const deactivateAresKillSwitch = async ({ reason, actor = "frontend" }) =
 
 export const runAresLifecycle = async (payload) => {
   const { data } = await vaelqorixApi.post("/api/v1/ares/lifecycle", payload);
+  return data;
+};
+
+export const executeAresVerdict = async (
+  verdict,
+  { humanApproved = false, approvalEvidence = null } = {}
+) => {
+  const { data } = await vaelqorixApi.post("/api/v1/ares/execute", {
+    verdict,
+    human_approved: humanApproved,
+    approval_evidence: approvalEvidence,
+  });
   return data;
 };
 
@@ -699,6 +727,18 @@ export const verifyAresAudit = async () => {
   return data;
 };
 
+export const runAresHunterTrace = async ({
+  target,
+  verdictId,
+  limit = 100,
+  executionControls = {},
+}) => {
+  const payload = { target, limit, execution_controls: executionControls };
+  if (verdictId) payload.verdict_id = verdictId;
+  const { data } = await vaelqorixApi.post("/api/v1/ares/hunter-trace", payload);
+  return data;
+};
+
 export const listAresXAuditRecords = async ({
   verdictId,
   eventType,
@@ -717,6 +757,55 @@ export const verifyAresXAudit = async ({ fromSequence = 1 } = {}) => {
   const { data } = await vaelqorixApi.post("/api/v1/audit/verify", {
     from_sequence: fromSequence,
   });
+  return data;
+};
+
+export const getAttackAnalysisStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/attack-analysis/status");
+  return data;
+};
+
+export const getCtfLabStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/ctf-lab/status");
+  return data;
+};
+
+export const listCtfLabScenarios = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/ctf-lab/scenarios");
+  return data;
+};
+
+export const replayCtfLabScenario = async (scenarioId, { runLabel = "" } = {}) => {
+  const { data } = await vaelqorixApi.post(
+    `/api/v1/ctf-lab/scenarios/${encodeURIComponent(scenarioId)}/replay`,
+    { run_label: runLabel }
+  );
+  return data;
+};
+
+export const listAttackAnalyses = async ({ entityId, limit = 100 } = {}) => {
+  const params = { limit };
+  if (entityId) params.entity_id = entityId;
+  const { data } = await vaelqorixApi.get("/api/v1/attack-analysis/entities", { params });
+  return data;
+};
+
+export const getAttackAnalysisEntity = async (entityId, { limit = 100 } = {}) => {
+  const { data } = await vaelqorixApi.get(
+    `/api/v1/attack-analysis/entities/${encodeURIComponent(entityId)}`,
+    { params: { limit } }
+  );
+  return data;
+};
+
+export const issueAttackAnalysisVerdict = async (
+  entityId,
+  { executionControls = { dry_run: true } } = {}
+) => {
+  const { data } = await vaelqorixApi.post(
+    `/api/v1/attack-analysis/entities/${encodeURIComponent(entityId)}/verdict`,
+    { execution_controls: executionControls }
+  );
   return data;
 };
 

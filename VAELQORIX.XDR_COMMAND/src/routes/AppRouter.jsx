@@ -22,6 +22,7 @@ import MonitoringPage from "@/modules/monitoring/MonitoringPage";
 import DiagnosticsPage from "@/modules/diagnostics/DiagnosticsPage";
 import SecurityPage from "@/modules/security/SecurityPage";
 import SecOpsPage from "@/modules/secops/SecOpsPage";
+import AttackAnalysisPage from "@/modules/attack-analysis/AttackAnalysisPage";
 import AlertsPage from "@/modules/alerts/AlertsPage"; // NUEVO
 import LogsPage from "@/modules/logs/LogsPage";
 
@@ -61,6 +62,7 @@ export default function AppRouter() {
         <Route path="monitoring" element={<MonitoringPage />} />
         <Route path="diagnostics" element={<DiagnosticsPage />} />
         <Route path="secops" element={<SecOpsPage />} />
+        <Route path="attack-analysis" element={<AttackAnalysisPage />} />
         <Route path="security" element={<SecurityPage />} />
         {/* Pagina dedicada de alertas */}
         <Route path="alerts" element={<AlertsPage />} />

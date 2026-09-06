@@ -17,6 +17,8 @@ import {
   getAresKillSwitch,
   getAresXIngestStats,
   getAresStatus,
+  getAutonomyCapabilities,
+  getAutonomyMaturity,
   getRedQueenStats,
   getRedQueenStatus,
   ingestAresXEvent,
@@ -45,6 +47,8 @@ export default function AIPage() {
   const [executions, setExecutions] = useState([]);
   const [audit, setAudit] = useState([]);
   const [auditVerify, setAuditVerify] = useState(null);
+  const [maturity, setMaturity] = useState(null);
+  const [capabilityMap, setCapabilityMap] = useState(null);
   const [selectedVerdictId, setSelectedVerdictId] = useState("");
 
   const load = useCallback(async () => {
@@ -61,6 +65,8 @@ export default function AIPage() {
         executionsResult,
         auditResult,
         verifyResult,
+        maturityResult,
+        capabilityResult,
       ] = await Promise.allSettled([
         getRedQueenStatus(),
         getAresStatus(),
@@ -72,6 +78,8 @@ export default function AIPage() {
         listAresExecutions({ limit: 20 }),
         listAresXAuditRecords({ limit: 20 }),
         verifyAresXAudit(),
+        getAutonomyMaturity(),
+        getAutonomyCapabilities(),
       ]);
 
       setRedQueenStatus(valueOrNull(redQueenResult));
@@ -84,6 +92,8 @@ export default function AIPage() {
       setExecutions(valueOrNull(executionsResult)?.items || []);
       setAudit(valueOrNull(auditResult)?.items || []);
       setAuditVerify(valueOrNull(verifyResult));
+      setMaturity(valueOrNull(maturityResult));
+      setCapabilityMap(valueOrNull(capabilityResult));
 
       const rejected = [
         redQueenResult,
@@ -96,6 +106,8 @@ export default function AIPage() {
         executionsResult,
         auditResult,
         verifyResult,
+        maturityResult,
+        capabilityResult,
       ].find((result) => result.status === "rejected");
       if (rejected) {
         setError(rejected.reason?.message || "No se pudo cargar una parte del panel.");
@@ -285,6 +297,76 @@ export default function AIPage() {
       </section>
 
       <section className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 bg-[#0f141a]">
+          <PanelHeader
+            title="Maturity Control"
+            right={maturity?.overall_level || "evaluating"}
+          />
+          <div className="grid gap-5 p-5 xl:grid-cols-[280px_minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="border border-white/5 bg-[#151a21] p-5">
+              <p className="font-label text-[10px] uppercase tracking-widest text-slate-500">
+                Overall
+              </p>
+              <div className="mt-4 flex items-end gap-3">
+                <span className="font-headline text-5xl font-bold text-white">
+                  {maturity?.overall_score ?? "..."}
+                </span>
+                <span className="mb-2 font-label text-[10px] uppercase tracking-widest text-slate-500">
+                  /100
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                {maturity?.concept || "Cargando control de madurez..."}
+              </p>
+            </div>
+            <MaturityModule module={maturity?.redqueen} fallbackTitle="RedQueen" />
+            <MaturityModule module={maturity?.ares} fallbackTitle="ARES" />
+          </div>
+          {maturity?.shared_rectification?.length ? (
+            <div className="border-t border-white/5 px-5 pb-5">
+              <p className="mb-3 font-label text-[10px] uppercase tracking-widest text-slate-500">
+                Rectificacion compartida
+              </p>
+              <div className="grid gap-2 md:grid-cols-2">
+                {maturity.shared_rectification.map((item) => (
+                  <div key={item} className="border border-white/5 bg-[#151a21] px-3 py-2 text-xs text-slate-300">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="col-span-12 bg-[#0f141a]">
+          <PanelHeader
+            title="Capability Control"
+            right={capabilityMap?.schema ? "CTF / GRC / Pentest" : "loading"}
+          />
+          <div className="grid gap-5 p-5 xl:grid-cols-3">
+            {(capabilityMap?.capabilities || []).map((capability) => (
+              <CapabilityCard key={capability.key} capability={capability} />
+            ))}
+            {!capabilityMap?.capabilities?.length ? (
+              <p className="text-sm text-slate-500">Cargando mapa de capacidades...</p>
+            ) : null}
+          </div>
+          {capabilityMap?.non_negotiable_boundaries?.length ? (
+            <div className="border-t border-white/5 px-5 pb-5">
+              <p className="mb-3 font-label text-[10px] uppercase tracking-widest text-slate-500">
+                Limites no negociables
+              </p>
+              <div className="grid gap-2 md:grid-cols-2">
+                {capabilityMap.non_negotiable_boundaries.map((item) => (
+                  <div key={item} className="border border-white/5 bg-[#151a21] px-3 py-2 text-xs text-slate-300">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
         <div className="col-span-12 bg-[#0f141a]">
           <PanelHeader title="Ingestion Pipeline" right={ingestStats?.window || "all"} />
           <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-3">
@@ -566,6 +648,108 @@ function PanelHeader({ title, right }) {
       <span className="font-label text-[10px] uppercase tracking-widest text-slate-500">
         {right}
       </span>
+    </div>
+  );
+}
+
+function CapabilityCard({ capability }) {
+  const statusClass =
+    capability.status === "ready_to_build"
+      ? "border-[#8ff5ff]/50 text-[#8ff5ff]"
+      : capability.status === "foundation_ready"
+        ? "border-amber-300/50 text-amber-300"
+        : "border-[#ff716c]/50 text-[#ff716c]";
+  return (
+    <div className="border border-white/5 bg-[#151a21] p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="font-label text-[10px] uppercase tracking-widest text-slate-500">
+            {capability.label}
+          </p>
+          <p className={`mt-2 border-l-2 pl-3 font-label text-[10px] uppercase tracking-widest ${statusClass}`}>
+            {capability.status}
+          </p>
+        </div>
+        <span className="font-headline text-3xl font-bold text-white">
+          {capability.maturity}
+        </span>
+      </div>
+      <p className="mb-4 text-sm leading-6 text-slate-300">{capability.decision}</p>
+      <CapabilityList title="Puede hacer" items={capability.enabled_capabilities} />
+      <CapabilityList title="Guardrails" items={capability.required_guardrails} />
+      <CapabilityList title="Rectificar" items={capability.rectification} />
+    </div>
+  );
+}
+
+function CapabilityList({ title, items = [] }) {
+  return (
+    <div className="mt-4">
+      <p className="mb-2 font-label text-[10px] uppercase tracking-widest text-slate-500">
+        {title}
+      </p>
+      <div className="space-y-2">
+        {items.slice(0, 4).map((item) => (
+          <div key={item} className="border border-white/5 bg-[#0f141a] px-3 py-2 text-xs leading-5 text-slate-300">
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MaturityModule({ module, fallbackTitle }) {
+  const title = module?.module || fallbackTitle;
+  const score = module?.maturity_score ?? "...";
+  return (
+    <div className="border border-white/5 bg-[#151a21] p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="font-label text-[10px] uppercase tracking-widest text-slate-500">
+            {title}
+          </p>
+          <p className="mt-1 text-sm text-slate-300">{module?.maturity_level || "loading"}</p>
+        </div>
+        <span className="font-headline text-3xl font-bold text-white">{score}</span>
+      </div>
+      <p className="mb-4 min-h-12 text-sm leading-6 text-slate-300">
+        {module?.concept || "Cargando concepto del modulo."}
+      </p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <MaturityList title="Fuertes" items={module?.strengths} tone="good" />
+        <MaturityList title="Debiles" items={module?.weaknesses} tone="risk" />
+      </div>
+      <div className="mt-4">
+        <p className="mb-2 font-label text-[10px] uppercase tracking-widest text-slate-500">
+          Rectificar primero
+        </p>
+        <div className="space-y-2">
+          {(module?.rectification_priority || []).slice(0, 4).map((item) => (
+            <div key={item} className="border border-white/5 bg-[#0f141a] px-3 py-2 text-xs text-slate-300">
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MaturityList({ title, items = [], tone }) {
+  const color = tone === "good" ? "text-[#8ff5ff]" : "text-amber-300";
+  return (
+    <div>
+      <p className={`mb-2 font-label text-[10px] uppercase tracking-widest ${color}`}>
+        {title}
+      </p>
+      <div className="space-y-2">
+        {items.slice(0, 4).map((item) => (
+          <div key={item} className="text-xs leading-5 text-slate-400">
+            {item}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

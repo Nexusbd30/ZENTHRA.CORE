@@ -60,7 +60,7 @@ def test_execute_plan_delegates_dns_firewall_block(monkeypatch):
         calls.append({"url": url, "command": command, "payload": payload})
         return {"status": "ok", "command": command}
 
-    monkeypatch.setattr("app.actions.network.dispatch_command", fake_dispatch)
+    monkeypatch.setattr("app.dns_firewall.providers.dispatch_command", fake_dispatch)
     monkeypatch.setattr("app.actions.network.settings.DNS_FIREWALL_CONTROL_URL", "https://dns-control.local")
     plan = build_plan({"action_type": "dns_firewall_block", "target": "malware.example"})
 
@@ -74,11 +74,14 @@ def test_execute_plan_delegates_dns_firewall_block(monkeypatch):
     )
 
     assert result["status"] == "success"
-    assert calls[1]["url"] == "https://dns-control.local"
-    assert calls[1]["command"] == "apply_dns_firewall_block"
-    assert calls[1]["payload"]["target"] == "malware.example"
-    assert calls[1]["payload"]["provider"] == "umbrella"
-    assert calls[1]["payload"]["threat_id"] == "threat-dns-1"
+    assert [call["command"] for call in calls] == [
+        "dns_firewall_block",
+        "dns_firewall_verify",
+    ]
+    assert calls[0]["url"] == "https://dns-control.local"
+    assert calls[0]["payload"]["target"] == "malware.example"
+    assert calls[0]["payload"]["change_ticket"] == "CHG-DNS-1"
+    assert result["executed_steps"][2]["detail"] == "dns firewall block verified by provider read-back"
 
 
 def test_execute_plan_delegates_soar_steps(monkeypatch):

@@ -11,6 +11,7 @@ from app.ares.aggressive_containment import build_aggressive_containment
 from app.ares.approval import build_approval_payload
 from app.ares.enterprise_active_defense import build_enterprise_active_defense
 from app.ares.evidence import build_ares_ai_evidence_bundle
+from app.ares.hunter_trace import build_hunter_trace
 from app.ares.kill_switch import kill_switch_state
 from app.ares.os_business_shield import build_os_business_shield
 from app.ares.response_fabric import build_response_fabric
@@ -100,6 +101,13 @@ class ResponseFabricRequest(BaseModel):
     execution_controls: dict = Field(default_factory=dict)
 
 
+class HunterTraceRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    verdict_id: str | None = None
+    limit: int = Field(default=100, ge=1, le=500)
+    execution_controls: dict = Field(default_factory=dict)
+
+
 def _json_loads(value: str | None, fallback):
     if not value:
         return fallback
@@ -167,6 +175,12 @@ def ares_status():
             "schema": "vaelqorix.ares.response_fabric.v1",
             "status": "enabled",
             "purpose": "route_next_best_actions_across_ready_enterprise_connectors",
+        },
+        "hunter_trace": {
+            "schema": "vaelqorix.ares.hunter_trace.v1",
+            "status": "enabled",
+            "purpose": "trace_intruder_presence_inside_owned_environment_and_prepare_eviction",
+            "safety_boundary": "owned_or_authorized_assets_only",
         },
         "kill_switch": kill_switch_state(),
     }
@@ -320,6 +334,44 @@ def build_response_fabric_plan(payload: ResponseFabricRequest):
         strategic_anticipation=payload.strategic_anticipation,
         enterprise_active_defense=payload.enterprise_active_defense,
         controls=payload.execution_controls,
+    )
+
+
+@router.get("/hunter-trace")
+def get_hunter_trace(
+    target: str,
+    verdict_id: str | None = None,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    return build_hunter_trace(db, target=target, verdict_id=verdict_id, limit=limit)
+
+
+@router.post("/hunter-trace")
+def post_hunter_trace(payload: HunterTraceRequest, db: Session = Depends(get_db)):
+    return build_hunter_trace(
+        db,
+        target=payload.target,
+        verdict_id=payload.verdict_id,
+        limit=payload.limit,
+        controls=payload.execution_controls,
+    )
+
+
+@router.get("/hunter-trace/from-verdict/{verdict_id}")
+def get_hunter_trace_from_verdict(
+    verdict_id: str,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    stored_verdict = AutonomyService.get_verdict(db, verdict_id)
+    if not stored_verdict:
+        return {"status": "not_found", "verdict_id": verdict_id}
+    return build_hunter_trace(
+        db,
+        target=stored_verdict.target,
+        verdict_id=verdict_id,
+        limit=limit,
     )
 
 

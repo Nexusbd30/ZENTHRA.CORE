@@ -1,0 +1,1 @@
+"""Defensive CTF lab package."""

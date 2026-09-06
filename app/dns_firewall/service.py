@@ -160,6 +160,7 @@ def update_execution_state(
     status: str,
     evidence: dict | None = None,
     provider_request_id: str = "",
+    provider_rule_id: str = "",
     error_code: str = "",
 ) -> None:
     execution = db.get(DnsFirewallExecution, execution_id)
@@ -178,6 +179,8 @@ def update_execution_state(
     rule = db.get(DnsFirewallRule, execution.rule_id)
     if rule:
         rule.status = status
+        if provider_rule_id:
+            rule.provider_rule_id = provider_rule_id
         rule.last_error = error_code
         db.add(rule)
         db.commit()

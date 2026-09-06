@@ -16,17 +16,21 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
+import app.models  # noqa: F401
 from app.ares.router import router as ares_router
+from app.attack_analysis.router import router as attack_analysis_router
 from app.cases.router import router as cases_router
 from app.code_intelligence.router import router as code_intelligence_router
 from app.compliance.router import router as compliance_router
 from app.connectors.router import router as connectors_router
+from app.control.router import router as control_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
 from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
-from app.db.session import SessionLocal, get_db
+from app.ctf_lab.router import router as ctf_lab_router
+from app.db.session import SessionLocal, engine, get_db
 from app.detection.router import router as detection_router
 from app.dns_firewall.router import router as dns_firewall_router
 from app.health.router import router as system_health_router
@@ -35,6 +39,7 @@ from app.ingestion.aresx_router import router as aresx_ingest_router
 from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
 from app.middlewares.request_id import RequestIdMiddleware
+from app.models.base import Base
 from app.models.user import User
 from app.platform.router import router as platform_router
 from app.playbooks.router import router as playbooks_router
@@ -174,6 +179,15 @@ async def startup():
 
 
 @app.on_event("startup")
+def create_local_sqlite_schema():
+    if settings.ENV != "development":
+        return
+    if not settings.SQLALCHEMY_DATABASE_URI.lower().startswith("sqlite"):
+        return
+    Base.metadata.create_all(bind=engine)
+
+
+@app.on_event("startup")
 def create_default_admin_dev():
     if settings.ENV != "development":
         return
@@ -237,6 +251,8 @@ app.include_router(secops_router)
 app.include_router(platform_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
+app.include_router(attack_analysis_router)
+app.include_router(ctf_lab_router)
 app.include_router(code_intelligence_router)
 app.include_router(sensors_router)
 app.include_router(detection_router)
@@ -246,6 +262,7 @@ app.include_router(playbooks_router)
 app.include_router(cases_router)
 app.include_router(runtime_router)
 app.include_router(compliance_router)
+app.include_router(control_router)
 
 
 @app.get("/", include_in_schema=False)
