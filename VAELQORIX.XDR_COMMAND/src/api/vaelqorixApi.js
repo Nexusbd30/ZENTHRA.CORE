@@ -69,6 +69,7 @@ const isAutonomyPath = (config) => {
       url.pathname.startsWith("/api/v1/redqueen/") ||
       url.pathname.startsWith("/api/v1/ares/") ||
       url.pathname.startsWith("/api/v1/attack-analysis/") ||
+      url.pathname.startsWith("/api/v1/brain/") ||
       url.pathname.startsWith("/api/v1/control/") ||
       url.pathname.startsWith("/api/v1/ctf-lab/") ||
       url.pathname.startsWith("/api/v1/audit/") ||
@@ -80,6 +81,7 @@ const isAutonomyPath = (config) => {
       url.startsWith("/api/v1/redqueen/") ||
       url.startsWith("/api/v1/ares/") ||
       url.startsWith("/api/v1/attack-analysis/") ||
+      url.startsWith("/api/v1/brain/") ||
       url.startsWith("/api/v1/control/") ||
       url.startsWith("/api/v1/ctf-lab/") ||
       url.startsWith("/api/v1/audit/") ||
@@ -589,6 +591,28 @@ export const getAutonomyMaturity = async () => {
 
 export const getAutonomyCapabilities = async () => {
   const { data } = await vaelqorixApi.get("/api/v1/control/capabilities");
+  return data;
+};
+
+export const getBrainStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/brain/status");
+  return data;
+};
+
+export const runBrainLifecycle = async ({
+  source,
+  payload,
+  executionControls = { dry_run: true },
+  humanApproved = false,
+  approvalEvidence = null,
+}) => {
+  const { data } = await vaelqorixApi.post("/api/v1/brain/lifecycle", {
+    source,
+    payload,
+    execution_controls: executionControls,
+    human_approved: humanApproved,
+    approval_evidence: approvalEvidence,
+  });
   return data;
 };
 

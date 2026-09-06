@@ -19,6 +19,7 @@ import {
   getAresStatus,
   getAutonomyCapabilities,
   getAutonomyMaturity,
+  getBrainStatus,
   getRedQueenStats,
   getRedQueenStatus,
   ingestAresXEvent,
@@ -27,6 +28,7 @@ import {
   listAresXAuditRecords,
   listRedQueenVerdicts,
   rejectAresXVerdict,
+  runBrainLifecycle,
   rollbackAresExecution,
   verifyAresXAudit,
 } from "@/api/vaelqorixApi";
@@ -49,6 +51,8 @@ export default function AIPage() {
   const [auditVerify, setAuditVerify] = useState(null);
   const [maturity, setMaturity] = useState(null);
   const [capabilityMap, setCapabilityMap] = useState(null);
+  const [brainStatus, setBrainStatus] = useState(null);
+  const [brainRun, setBrainRun] = useState(null);
   const [selectedVerdictId, setSelectedVerdictId] = useState("");
 
   const load = useCallback(async () => {
@@ -67,6 +71,7 @@ export default function AIPage() {
         verifyResult,
         maturityResult,
         capabilityResult,
+        brainResult,
       ] = await Promise.allSettled([
         getRedQueenStatus(),
         getAresStatus(),
@@ -80,6 +85,7 @@ export default function AIPage() {
         verifyAresXAudit(),
         getAutonomyMaturity(),
         getAutonomyCapabilities(),
+        getBrainStatus(),
       ]);
 
       setRedQueenStatus(valueOrNull(redQueenResult));
@@ -94,6 +100,7 @@ export default function AIPage() {
       setAuditVerify(valueOrNull(verifyResult));
       setMaturity(valueOrNull(maturityResult));
       setCapabilityMap(valueOrNull(capabilityResult));
+      setBrainStatus(valueOrNull(brainResult));
 
       const rejected = [
         redQueenResult,
@@ -108,6 +115,7 @@ export default function AIPage() {
         verifyResult,
         maturityResult,
         capabilityResult,
+        brainResult,
       ].find((result) => result.status === "rejected");
       if (rejected) {
         setError(rejected.reason?.message || "No se pudo cargar una parte del panel.");
@@ -153,6 +161,34 @@ export default function AIPage() {
       await load();
     } catch (err) {
       setError(err?.message || "No se pudo actualizar el kill switch.");
+    } finally {
+      setActionBusy("");
+    }
+  };
+
+  const runBrainControlEvent = async () => {
+    setActionBusy("brain-lifecycle");
+    setError("");
+    try {
+      const result = await runBrainLifecycle({
+        source: "qradar",
+        payload: {
+          id: `brain-${Date.now()}`,
+          description: "Credential access T1110 from RedQueen brain lifecycle",
+          magnitude: 8,
+          username: "operator.demo@corp.local",
+          source_ip: "10.10.4.22",
+        },
+        executionControls: {
+          dry_run: true,
+          change_ticket: "BRAIN-DRY-RUN",
+          dns_firewall_provider: "sandbox",
+        },
+      });
+      setBrainRun(result);
+      await load();
+    } catch (err) {
+      setError(err?.message || "No se pudo ejecutar el brain lifecycle.");
     } finally {
       setActionBusy("");
     }
@@ -294,9 +330,67 @@ export default function AIPage() {
           tone={auditVerify?.valid ? "primary" : "error"}
           icon={<AlertTriangle className="h-5 w-5" />}
         />
+        <MetricPanel
+          label="Brain Chain"
+          value={loading ? "..." : brainStatus?.status || "N/A"}
+          detail={brainStatus?.default_execution_mode || "dry_run"}
+          tone="primary"
+          icon={<ShieldCheck className="h-5 w-5" />}
+        />
       </section>
 
       <section className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 bg-[#0f141a]">
+          <PanelHeader title="RedQueen Brain Lifecycle" right={brainStatus?.schema || "vaelqorix.brain.lifecycle.v1"} />
+          <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="border border-white/5 bg-[#151a21] p-4">
+              <p className="font-label text-[10px] uppercase tracking-widest text-slate-500">
+                Layer Chain
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(brainStatus?.chain || [
+                  "aresx_ingest",
+                  "attack_analysis",
+                  "redqueen_verdict",
+                  "ares_validation",
+                  "ares_dry_run_execution",
+                  "evidence",
+                ]).map((layer) => (
+                  <span key={layer} className="bg-[#0f141a] px-2 py-1 font-label text-[10px] uppercase text-[#8ff5ff]">
+                    {layer}
+                  </span>
+                ))}
+              </div>
+              {brainRun ? (
+                <pre className="mt-4 max-h-56 overflow-auto bg-[#0f141a] p-3 text-xs text-slate-300">
+                  {JSON.stringify(
+                    {
+                      status: brainRun.status,
+                      mode: brainRun.mode,
+                      entity: brainRun.analysis?.entity_id,
+                      verdict: brainRun.verdict?.verdict_id,
+                      action: brainRun.verdict?.action_type,
+                      execution: brainRun.execution?.status,
+                    },
+                    null,
+                    2
+                  )}
+                </pre>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={runBrainControlEvent}
+              disabled={actionBusy === "brain-lifecycle"}
+              title="Run full RedQueen brain dry-run lifecycle"
+              className="inline-flex h-10 items-center justify-center gap-2 border border-[#8ff5ff]/40 bg-[#8ff5ff]/10 px-4 font-label text-[10px] uppercase tracking-widest text-[#8ff5ff] hover:border-[#8ff5ff] disabled:opacity-40"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Run Brain
+            </button>
+          </div>
+        </div>
+
         <div className="col-span-12 bg-[#0f141a]">
           <PanelHeader
             title="Maturity Control"

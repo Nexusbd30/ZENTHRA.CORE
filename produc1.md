@@ -125,12 +125,15 @@ Completed before hardware setup:
 - DNS provider rule ID persistence through the existing DNS firewall rule model.
 - Attack Analysis UI path extended from verdict generation into ARES dry-run execution and evidence preview.
 - Frontend API helper for `POST /api/v1/ares/execute`.
+- RedQueen Brain lifecycle endpoint added at `POST /api/v1/brain/lifecycle`.
+- Brain lifecycle connects ARESX ingest, attack analysis, RedQueen verdict, ARES dry-run execution, and evidence in one backend contract.
+- AI command center now exposes the brain lifecycle chain and a `Run Brain` dry-run control.
 - Backend and frontend tests updated for the new contract.
 
 Current verified gates:
 
 ```text
-Backend full suite: 388 passed
+Backend full suite: 390 passed
 Backend coverage: 99%
 Backend Ruff: passed
 Frontend tests: 34 passed, 3 skipped

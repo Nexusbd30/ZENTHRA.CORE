@@ -19,6 +19,7 @@ from starlette.responses import JSONResponse
 import app.models  # noqa: F401
 from app.ares.router import router as ares_router
 from app.attack_analysis.router import router as attack_analysis_router
+from app.brain.router import router as brain_router
 from app.cases.router import router as cases_router
 from app.code_intelligence.router import router as code_intelligence_router
 from app.compliance.router import router as compliance_router
@@ -251,6 +252,7 @@ app.include_router(secops_router)
 app.include_router(platform_router)
 app.include_router(redqueen_router)
 app.include_router(ares_router)
+app.include_router(brain_router)
 app.include_router(attack_analysis_router)
 app.include_router(ctf_lab_router)
 app.include_router(code_intelligence_router)

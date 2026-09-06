@@ -78,6 +78,8 @@ describe("vaelqorixApi token helpers and interceptors", () => {
 
     const autonomy = requestHandler({ url: "/api/v1/redqueen/status", headers: {} });
     expect(autonomy.headers.Authorization).toBe("Bearer jwt");
+    const brain = requestHandler({ url: "/api/v1/brain/status", headers: {} });
+    expect(brain.headers.Authorization).toBe("Bearer jwt");
 
     const protectedRequest = requestHandler({ url: "/users/", headers: {} });
     expect(protectedRequest.headers.Authorization).toBe("Bearer jwt");
@@ -199,6 +201,8 @@ describe("vaelqorixApi helpers", () => {
     await mod.getRedQueenStats();
     await mod.getAutonomyMaturity();
     await mod.getAutonomyCapabilities();
+    await mod.getBrainStatus();
+    await mod.runBrainLifecycle({ source: "qradar", payload: { id: "e1" } });
     await mod.getEntityProfile("host/name");
     await mod.getAresStatus();
     await mod.getAresOperationFlow();

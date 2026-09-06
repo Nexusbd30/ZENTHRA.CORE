@@ -103,6 +103,8 @@ const api = vi.hoisted(() => ({
   getAresStatus: vi.fn(),
   getAutonomyMaturity: vi.fn(),
   getAutonomyCapabilities: vi.fn(),
+  getBrainStatus: vi.fn(),
+  runBrainLifecycle: vi.fn(),
   getAresOperationFlow: vi.fn(),
   setAresKillSwitch: vi.fn(),
   getAresKillSwitch: vi.fn(),
@@ -695,7 +697,7 @@ describe("frontend coverage", () => {
   it("covers AI page command center controls and degraded loads", async () => {
     api.getRedQueenStatus.mockResolvedValue({ phase: "online", role: "brain" });
     api.getAresStatus.mockResolvedValue({ phase: "armed" });
-    api.getAutonomyMaturity.mockResolvedValue({
+  api.getAutonomyMaturity.mockResolvedValue({
       overall_score: 81,
       overall_level: "L3 preproduction_ready",
       concept: "RedQueen decides and ARES executes",
@@ -718,8 +720,31 @@ describe("frontend coverage", () => {
         weaknesses: ["needs providers"],
         rectification_priority: ["validate Redis"],
       },
-    });
-    api.getAutonomyCapabilities.mockResolvedValue({
+  });
+  api.getBrainStatus.mockResolvedValue({
+    status: "enabled",
+    schema: "vaelqorix.brain.lifecycle.v1",
+    default_execution_mode: "dry_run",
+    chain: [
+      "aresx_ingest",
+      "attack_analysis",
+      "redqueen_verdict",
+      "ares_validation",
+      "ares_dry_run_execution",
+      "evidence",
+    ],
+  });
+  api.runBrainLifecycle.mockResolvedValue({
+    status: "completed",
+    mode: "dry_run",
+    analysis: { entity_id: "user:operator.demo@corp.local" },
+    verdict: {
+      verdict_id: "brain-verdict-1",
+      action_type: "soar_delegate",
+    },
+    execution: { status: "executed" },
+  });
+  api.getAutonomyCapabilities.mockResolvedValue({
       schema: "vaelqorix.autonomy_control.capability_map.v1",
       capabilities: [
         {
