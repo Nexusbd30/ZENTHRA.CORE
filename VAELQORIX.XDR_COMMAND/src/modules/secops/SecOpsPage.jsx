@@ -100,7 +100,7 @@ export default function SecOpsPage() {
       setProviders(valueOrNull(results[4]) || []);
       setPolicies(valueOrNull(results[5]) || []);
       setSecurityEvents(valueOrNull(results[6]));
-      setVerdicts(valueOrNull(results[7]).items || []);
+      setVerdicts(valueOrNull(results[7])?.items || []);
 
       const failed = results.find((result) => result.status === "rejected");
       if (failed) {
@@ -143,8 +143,8 @@ export default function SecOpsPage() {
     () => verdicts.find((item) => item.verdict_id === selectedVerdictId) || verdicts[0] || null,
     [selectedVerdictId, verdicts]
   );
-  const lifecycleAllowed = Boolean(preflight.allowed);
-  const exportReady = Boolean(exportPreview.ready_to_send || isReadinessKeyReady(readinessItems, "soc"));
+  const lifecycleAllowed = Boolean(preflight?.allowed);
+  const exportReady = Boolean(exportPreview?.ready_to_send || isReadinessKeyReady(readinessItems, "soc"));
 
   const handlePreflight = async () => {
     setActionBusy("preflight");
@@ -247,7 +247,7 @@ export default function SecOpsPage() {
     }
   };
 
-  const loadApprovalEvidence = async (verdictId = selectedVerdict.verdict_id) => {
+  const loadApprovalEvidence = async (verdictId = selectedVerdict?.verdict_id) => {
     if (!verdictId) return;
     setActionBusy("approval-evidence");
     setError("");
@@ -309,6 +309,11 @@ export default function SecOpsPage() {
     }
   };
 
+  const safeStatus = status || { phase: "", integrates: [] };
+  const safePosture = posture || { overall: "", security_events: 0 };
+  const safeEnterpriseReadiness = enterpriseReadiness || {};
+  const safeSecurityEvents = securityEvents || { count: 0, items: [] };
+
   return (
     <div className="min-h-full text-[#eef3ff]">
       <section className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -350,21 +355,21 @@ export default function SecOpsPage() {
         <MetricTile
           icon={<ShieldCheck size={18} />}
           label="Postura SecOps"
-          value={loading ? "..." : posture.overall || "N/A"}
-          detail={`${posture.security_events || 0} security events`}
-          tone={posture.overall === "ready" ? "success" : "neutral"}
+          value={loading ? "..." : safePosture.overall || "N/A"}
+          detail={`${safePosture.security_events || 0} security events`}
+          tone={safePosture.overall === "ready" ? "success" : "neutral"}
         />
         <MetricTile
           icon={<Activity size={18} />}
           label="Control plane"
-          value={loading ? "..." : status.phase || "N/A"}
-          detail={`${status.integrates.length || 0} dominios integrados`}
+          value={loading ? "..." : safeStatus.phase || "N/A"}
+          detail={`${safeStatus.integrates?.length || 0} dominios integrados`}
         />
         <MetricTile
           icon={<Database size={18} />}
           label="Tenant policies"
           value={loading ? "..." : String(policies.length)}
-          detail={enterpriseReadiness.tenant_policy.status || "readiness pendiente"}
+          detail={safeEnterpriseReadiness.tenant_policy?.status || "readiness pendiente"}
         />
         <MetricTile
           icon={<ShieldEllipsis size={18} />}
@@ -432,9 +437,9 @@ export default function SecOpsPage() {
             </button>
             {preflight && (
               <ResultBox
-                title={preflight.allowed ? "Allowed" : "Blocked"}
+                title={preflight?.allowed ? "Allowed" : "Blocked"}
                 body={preflight.reason || preflight.mode}
-                ok={preflight.allowed}
+                ok={preflight?.allowed}
               />
             )}
             {providerReadiness && (
@@ -475,9 +480,9 @@ export default function SecOpsPage() {
             )}
             {exportPreview && (
               <ResultBox
-                title={exportPreview.ready_to_send ? "Ready to send" : "Preview only"}
+                title={exportPreview?.ready_to_send ? "Ready to send" : "Preview only"}
                 body={`${exportPreview.count || 0} items hacia ${exportPreview.destination}`}
-                ok={exportPreview.ready_to_send}
+                ok={exportPreview?.ready_to_send}
               />
             )}
             {exportDelivery && (
@@ -490,7 +495,7 @@ export default function SecOpsPage() {
           </div>
         </Panel>
 
-        <Panel className="col-span-12 xl:col-span-8" title="Security events" right={`${securityEvents.count || 0} eventos`}>
+        <Panel className="col-span-12 xl:col-span-8" title="Security events" right={`${safeSecurityEvents.count || 0} eventos`}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px] text-left">
               <thead>
@@ -504,14 +509,14 @@ export default function SecOpsPage() {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {(securityEvents.items || []).length === 0 ? (
+                {(safeSecurityEvents.items || []).length === 0 ? (
                   <tr>
                     <td className="px-4 py-8 text-[#8c909f]" colSpan={6}>
                       {loading ? "Cargando eventos..." : "No hay eventos de seguridad."}
                     </td>
                   </tr>
                 ) : (
-                  securityEvents.items.map((item) => (
+                  safeSecurityEvents.items.map((item) => (
                     <tr key={item.record_id} className="border-b border-white/5">
                       <td className="px-4 py-3">
                         <div className="truncate font-medium text-white">{item.event_type}</div>
@@ -657,7 +662,7 @@ export default function SecOpsPage() {
                   Verdict seleccionado
                 </div>
                 <div className="mt-2 truncate text-sm font-semibold text-white">
-                  {selectedVerdict.verdict_id || "N/A"}
+                  {selectedVerdict?.verdict_id || "N/A"}
                 </div>
               </div>
               <TextInput
@@ -777,12 +782,12 @@ function flattenReadiness(integrationsReadiness, enterpriseReadiness) {
       }
     });
   }
-  if (enterpriseReadiness.tenant_policy) {
+  if (enterpriseReadiness?.tenant_policy) {
     items.unshift({
       key: "tenant_policy",
       label: "tenant_policy",
-      status: enterpriseReadiness.tenant_policy.status || "unknown",
-      detail: enterpriseReadiness.tenant_policy.reason || "",
+      status: enterpriseReadiness.tenant_policy?.status || "unknown",
+      detail: enterpriseReadiness.tenant_policy?.reason || "",
     });
   }
   return items;

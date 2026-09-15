@@ -22,12 +22,16 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "8010:8000"
     environment:
-      - ENV=${ENV:-production}
+      - ENV=${ENV:-development}
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
       - VAELQORIX_MONITOR_TOKEN=${VAELQORIX_MONITOR_TOKEN:?VAELQORIX_MONITOR_TOKEN is required}
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://vaelqorix:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vaelqorix}
+      - ZENTHRA_MONITOR_TOKEN=${VAELQORIX_MONITOR_TOKEN:?VAELQORIX_MONITOR_TOKEN is required}
+      - BOOTSTRAP_ADMIN_ENABLED=${BOOTSTRAP_ADMIN_ENABLED:-true}
+      - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-admin@vaelqorix.dev}
+      - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg://${VAELQORIX_DB_USER:-vaelqorix}:${VAELQORIX_DB_PASSWORD}@postgres:5432/${VAELQORIX_DB_NAME:-vaelqorix}
       - PROMETHEUS_BASE=http://prometheus:9090
       - ALERTMANAGER_BASE=http://alertmanager:9093
       - ALERTMANAGER_ALLOWED_CIDRS=${ALERTMANAGER_ALLOWED_CIDRS:-172.16.0.0/12,127.0.0.1/32,::1/128}
@@ -42,6 +46,41 @@ services:
       - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX:-vaelqorix}
       - SECRET_BACKEND=${SECRET_BACKEND:-file}
       - SECRET_FILE_DIR=${SECRET_FILE_DIR:-/run/secrets}
+      - VAELQORIX_PUBLIC_REGISTRATION_ENABLED=${VAELQORIX_PUBLIC_REGISTRATION_ENABLED:-true}
+      - ENTERPRISE_TENANT_MODE=${ENTERPRISE_TENANT_MODE:-single_tenant}
+      - AI_ENABLED=${AI_ENABLED:-true}
+      - AI_PROVIDER=${AI_PROVIDER:-ollama}
+      - AI_MODEL=${AI_MODEL:-llama3.1:8b}
+      - AI_BASE_URL=${AI_BASE_URL:-http://host.docker.internal:11434}
+      - AI_TIMEOUT_SEC=${AI_TIMEOUT_SEC:-8}
+      - ACTION_EXECUTION_MODE=${ACTION_EXECUTION_MODE:-provider}
+      - ACTION_SHARED_TOKEN=${ACTION_SHARED_TOKEN:-}
+      - ACTION_TIMEOUT_SEC=${ACTION_TIMEOUT_SEC:-5}
+      - NETWORK_CONTROL_URL=${NETWORK_CONTROL_URL:-}
+      - DNS_FIREWALL_CONTROL_URL=${DNS_FIREWALL_CONTROL_URL:-}
+      - IDENTITY_CONTROL_URL=${IDENTITY_CONTROL_URL:-}
+      - ENDPOINT_CONTROL_URL=${ENDPOINT_CONTROL_URL:-}
+      - SOAR_CONTROL_URL=${SOAR_CONTROL_URL:-}
+      - CRYPTO_CONTROL_URL=${CRYPTO_CONTROL_URL:-}
+      - DEVSECOPS_CONTROL_URL=${DEVSECOPS_CONTROL_URL:-}
+      - SOC_WEBHOOK_URL=${SOC_WEBHOOK_URL:-}
+      - SOC_WEBHOOK_TOKEN=${SOC_WEBHOOK_TOKEN:-}
+      - SOC_WEBHOOK_HMAC_SECRET=${SOC_WEBHOOK_HMAC_SECRET:-}
+      - GITHUB_API_BASE_URL=${GITHUB_API_BASE_URL:-https://api.github.com}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_DEFAULT_OWNER=${GITHUB_DEFAULT_OWNER:-}
+      - GITHUB_TOKEN_SECRET_NAMES=${GITHUB_TOKEN_SECRET_NAMES:-}
+      - KAFKA_INGESTION_ENABLED=${KAFKA_INGESTION_ENABLED:-false}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-127.0.0.1:9092}
+      - KAFKA_INGESTION_TOPICS=${KAFKA_INGESTION_TOPICS:-vaelqorix.siem,vaelqorix.edr,vaelqorix.iam,vaelqorix.netflow}
+      - KAFKA_CONSUMER_GROUP_ID=${KAFKA_CONSUMER_GROUP_ID:-vaelqorix-core-ingestion}
+      - KAFKA_AUTO_OFFSET_RESET=${KAFKA_AUTO_OFFSET_RESET:-latest}
+      - KAFKA_POLL_TIMEOUT_SEC=${KAFKA_POLL_TIMEOUT_SEC:-1}
+      - VECTOR_STORE_ENABLED=${VECTOR_STORE_ENABLED:-true}
+      - VECTOR_STORE_PROVIDER=${VECTOR_STORE_PROVIDER:-local}
+      - VECTOR_DIMENSIONS=${VECTOR_DIMENSIONS:-64}
+      - VECTOR_COLLECTION_PREFIX=${VECTOR_COLLECTION_PREFIX:-vaelqorix}
+    command: ["sh", "-c", "alembic upgrade heads && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
       interval: 15s
@@ -79,9 +118,9 @@ services:
     ports:
       - "${VAELQORIX_POSTGRES_PORT:-56432}:5432"
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-vaelqorix}
-      - POSTGRES_USER=${POSTGRES_USER:-vaelqorix}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=${VAELQORIX_DB_NAME:-vaelqorix}
+      - POSTGRES_USER=${VAELQORIX_DB_USER:-vaelqorix}
+      - POSTGRES_PASSWORD=${VAELQORIX_DB_PASSWORD:?VAELQORIX_DB_PASSWORD is required}
 
     volumes:
       # Persistencia real

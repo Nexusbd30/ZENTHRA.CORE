@@ -1,19 +1,26 @@
 from __future__ import annotations
 
+import json
 import time
+from datetime import UTC, datetime, time as datetime_time
 from typing import Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.attack_analysis.service import AttackAnalysisService
+from app.ares.evidence import build_ares_ai_evidence_bundle
 from app.core.security import require_admin_or_monitor_token
+from app.db.audit_store import list_audit_records
 from app.db.session import get_db
 from app.ingestion.aresx_router import (
     AresXIngestEventRequest,
     ingest_event,
 )
+from app.models.execution_result import ExecutionResult
+from app.models.verdict import Verdict
 from app.services.autonomy_service import AutonomyService
 
 router = APIRouter(
@@ -43,11 +50,120 @@ class BrainChatRequest(BaseModel):
 
 def _chat_intent(message: str, payload: dict[str, Any]) -> str:
     normalized = message.lower()
+    evidence_terms = (
+        "evidence",
+        "evidencia",
+        "evidencias",
+        "audit",
+        "auditoria",
+        "auditoría",
+        "pruebas",
+    )
+    today_terms = ("today", "hoy", "24h", "ultimas", "últimas", "recientes")
+    if any(term in normalized for term in evidence_terms) and any(
+        term in normalized for term in today_terms
+    ):
+        return "evidence_today"
     if payload or any(term in normalized for term in ("ingest", "aresx", "event", "analyze")):
         return "brain_lifecycle"
     if any(term in normalized for term in ("verdict", "redqueen", "score", "risk")):
         return "redqueen_verdict"
     return "guidance"
+
+
+def _safe_json(value: str | None, fallback: Any) -> Any:
+    if not value:
+        return fallback
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return fallback
+
+
+def _today_utc_start() -> datetime:
+    return datetime.combine(datetime.now(UTC).date(), datetime_time.min, tzinfo=UTC).replace(
+        tzinfo=None
+    )
+
+
+def _evidence_today(db: Session, *, limit: int = 10) -> dict[str, Any]:
+    start = _today_utc_start()
+    verdict_rows = list(
+        db.scalars(
+            select(Verdict)
+            .where(Verdict.timestamp >= start)
+            .order_by(desc(Verdict.timestamp))
+            .limit(limit)
+        ).all()
+    )
+    execution_rows = list(
+        db.scalars(
+            select(ExecutionResult)
+            .where(ExecutionResult.timestamp >= start)
+            .order_by(desc(ExecutionResult.timestamp))
+            .limit(limit)
+        ).all()
+    )
+    audit_rows = [
+        row for row in list_audit_records(db, limit=max(limit, 50)) if row.timestamp >= start
+    ][:limit]
+
+    bundles = []
+    for verdict in verdict_rows[:3]:
+        bundles.append(build_ares_ai_evidence_bundle(db, verdict_id=verdict.verdict_id))
+
+    return {
+        "schema": "vaelqorix.brain.evidence_today.v1",
+        "since_utc": start.isoformat() + "Z",
+        "counts": {
+            "verdicts": len(verdict_rows),
+            "executions": len(execution_rows),
+            "audit_records": len(audit_rows),
+            "evidence_bundles": len(bundles),
+        },
+        "verdicts": [
+            {
+                "verdict_id": row.verdict_id,
+                "timestamp": row.timestamp.isoformat() + "Z",
+                "target": row.target,
+                "status": row.status,
+                "action_type": row.action_type,
+                "risk_score": row.risk_score,
+                "confidence": row.confidence,
+                "requires_human": row.requires_human,
+                "factors": _safe_json(row.factors, []),
+                "signature": row.signature,
+            }
+            for row in verdict_rows
+        ],
+        "executions": [
+            {
+                "id": row.id,
+                "verdict_id": row.verdict_id,
+                "timestamp": row.timestamp.isoformat() + "Z",
+                "action_type": row.action_type,
+                "target_entity": row.target_entity,
+                "target_system": row.target_system,
+                "status": row.status,
+                "duration_ms": row.duration_ms,
+                "result_hash": row.result_hash,
+                "evidence": _safe_json(row.evidence, []),
+            }
+            for row in execution_rows
+        ],
+        "audit": [
+            {
+                "record_id": row.record_id,
+                "verdict_id": row.verdict_id,
+                "timestamp": row.timestamp.isoformat() + "Z",
+                "actor": row.actor,
+                "action": row.action,
+                "hash_self": row.hash_self,
+            }
+            for row in audit_rows
+        ],
+        "bundles": bundles,
+    }
 
 
 @router.get("/status")
@@ -80,6 +196,22 @@ def chat_with_redqueen(payload: BrainChatRequest, db: Session = Depends(get_db))
         **payload.execution_controls,
     }
     controls["dry_run"] = True
+
+    if intent == "evidence_today":
+        result = _evidence_today(db)
+        counts = result["counts"]
+        return {
+            "status": "ok",
+            "role": "redqueen",
+            "intent": intent,
+            "message": (
+                f"Evidencias de hoy listas: {counts['verdicts']} verdicts, "
+                f"{counts['executions']} ejecuciones, {counts['audit_records']} registros de auditoria "
+                f"y {counts['evidence_bundles']} bundles ARES."
+            ),
+            "safety_boundary": "authorized_owned_telemetry_only",
+            "result": result,
+        }
 
     if intent == "brain_lifecycle":
         order_payload = payload.payload or {

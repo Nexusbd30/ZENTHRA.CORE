@@ -37,6 +37,45 @@ import {
 
 const REFRESH_MS = 15000;
 
+const chatResultSummary = (result) => {
+  const payload = result?.result;
+  if (!payload) return null;
+
+  if (result.intent === "evidence_today") {
+    const counts = payload.counts || {};
+    const latestVerdict = payload.verdicts?.[0];
+    const latestExecution = payload.executions?.[0];
+    const latestAudit = payload.audit?.[0];
+    return [
+      `Verdicts: ${counts.verdicts ?? 0}`,
+      `Ejecuciones: ${counts.executions ?? 0}`,
+      `Auditoria: ${counts.audit_records ?? 0}`,
+      `Bundles: ${counts.evidence_bundles ?? 0}`,
+      latestVerdict ? `Ultimo verdict: ${latestVerdict.verdict_id}` : "",
+      latestExecution ? `Ultima ejecucion: ${latestExecution.id}` : "",
+      latestAudit ? `Ultimo audit: ${latestAudit.record_id}` : "",
+    ].filter(Boolean);
+  }
+
+  if (payload.verdict) {
+    return [
+      `Verdict: ${payload.verdict.verdict_id}`,
+      `Accion: ${payload.verdict.action_type}`,
+      `Riesgo: ${payload.verdict.risk_score}`,
+    ];
+  }
+
+  if (payload.status || payload.execution) {
+    return [
+      `Estado: ${payload.status || "completed"}`,
+      payload.execution?.status ? `Ejecucion: ${payload.execution.status}` : "",
+      payload.verdict?.verdict_id ? `Verdict: ${payload.verdict.verdict_id}` : "",
+    ].filter(Boolean);
+  }
+
+  return null;
+};
+
 export default function AIPage() {
   const [loading, setLoading] = useState(true);
   const [actionBusy, setActionBusy] = useState("");
@@ -63,6 +102,14 @@ export default function AIPage() {
     },
   ]);
   const [selectedVerdictId, setSelectedVerdictId] = useState("");
+  const localOperator = useMemo(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      return stored.email || stored.full_name || "local-operator";
+    } catch {
+      return "local-operator";
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setError("");
@@ -183,10 +230,10 @@ export default function AIPage() {
         source: "qradar",
         payload: {
           id: `brain-${Date.now()}`,
-          description: "Credential access T1110 from RedQueen brain lifecycle",
+          description: "Local operator submitted RedQueen brain lifecycle event",
           magnitude: 8,
-          username: "operator.demo@corp.local",
-          source_ip: "10.10.4.22",
+          username: localOperator,
+          source_ip: window.location.hostname || "127.0.0.1",
         },
         executionControls: {
           dry_run: true,
@@ -287,10 +334,10 @@ export default function AIPage() {
         source: "qradar",
         payload: {
           id: `frontend-${Date.now()}`,
-          description: "Credential access T1110 from command center",
+          description: "Local command center submitted telemetry event",
           magnitude: 8,
-          username: "operator.demo@corp.local",
-          source_ip: "10.10.4.22",
+          username: localOperator,
+          source_ip: window.location.hostname || "127.0.0.1",
         },
       });
       await load();
@@ -461,20 +508,12 @@ export default function AIPage() {
                       {message.role}
                     </div>
                     <div className="text-sm leading-6 text-slate-200">{message.content}</div>
-                    {message.result?.result ? (
-                      <pre className="mt-3 max-h-44 overflow-auto bg-[#080c12] p-3 text-xs text-slate-300">
-                        {JSON.stringify(
-                          {
-                            intent: message.result.intent,
-                            boundary: message.result.safety_boundary,
-                            verdict: message.result.result.verdict?.verdict_id,
-                            action: message.result.result.verdict?.action_type,
-                            execution: message.result.result.execution?.status,
-                          },
-                          null,
-                          2
-                        )}
-                      </pre>
+                    {chatResultSummary(message.result) ? (
+                      <div className="mt-3 space-y-1 border border-white/5 bg-[#080c12] p-3 text-xs text-slate-300">
+                        {chatResultSummary(message.result).map((line) => (
+                          <div key={line}>{line}</div>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
                 ))}

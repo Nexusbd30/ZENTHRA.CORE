@@ -172,7 +172,7 @@ def _production_readiness_report() -> dict[str, Any]:
         },
         "ares": {
             "execution_mode": action_mode,
-            "real_mode": action_mode == "webhook",
+            "real_mode": action_mode in {"webhook", "provider", "real"},
             "shared_token_configured": bool(action_shared_token),
             "control_urls_configured": {
                 "network": bool(settings.NETWORK_CONTROL_URL),
