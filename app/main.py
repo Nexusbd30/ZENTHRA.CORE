@@ -16,7 +16,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
-import app.models  # noqa: F401
+import app.models as _models  # noqa: F401
 from app.ares.router import router as ares_router
 from app.attack_analysis.router import router as attack_analysis_router
 from app.brain.router import router as brain_router

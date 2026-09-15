@@ -37,7 +37,7 @@ LATERAL_MARKERS = {
 EXFIL_MARKERS = {"exfiltration", "data_exfiltration", "large_egress", "T1041", "T1567"}
 
 
-def _json_loads(value: str | None, fallback):
+def _json_loads(value: str | None, fallback: Any) -> Any:
     if not value:
         return fallback
     try:
@@ -51,13 +51,12 @@ def _iso(value: datetime | None) -> str | None:
 
 
 def _markers(event: ThreatEvent) -> set[str]:
-    mitre = _json_loads(event.mitre_tags, [])
-    normalized = _json_loads(event.normalized_payload or event.normalized, {})
-    if not isinstance(mitre, list):
-        mitre = []
-    if not isinstance(normalized, dict):
-        normalized = {}
-    signals = normalized.get("signals") if isinstance(normalized.get("signals"), list) else []
+    mitre_raw = _json_loads(event.mitre_tags, [])
+    normalized_raw = _json_loads(event.normalized_payload or event.normalized, {})
+    mitre: list[Any] = mitre_raw if isinstance(mitre_raw, list) else []
+    normalized: dict[str, Any] = normalized_raw if isinstance(normalized_raw, dict) else {}
+    signals_raw = normalized.get("signals")
+    signals: list[Any] = signals_raw if isinstance(signals_raw, list) else []
     stage = normalized.get("kill_chain_stage") or normalized.get("stage") or ""
     return {
         str(item)

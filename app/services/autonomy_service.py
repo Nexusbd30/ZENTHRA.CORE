@@ -828,9 +828,13 @@ class AutonomyService:
         if str(verdict.get("action_type") or "") == "dns_firewall_block":
             execution_id = str(controls.get("dns_firewall_execution_id") or "")
             if execution_id and not dry_run and execution.get("status") != "success":
-                rollback_events = execution.get("rollback_events") or []
+                rollback_events_raw = execution.get("rollback_events")
+                rollback_events = (
+                    rollback_events_raw if isinstance(rollback_events_raw, list) else []
+                )
                 rollback_succeeded = bool(rollback_events) and all(
-                    str(event.get("status") or "") == "ok" for event in rollback_events
+                    isinstance(event, dict) and str(event.get("status") or "") == "ok"
+                    for event in rollback_events
                 )
                 update_execution_state(
                     db,

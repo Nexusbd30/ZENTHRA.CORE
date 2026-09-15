@@ -1,56 +1,58 @@
-﻿import { createElement, Suspense } from "react";
+import { Suspense, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   Bell,
   Bot,
-  DatabaseZap,
+  Boxes,
+  ChevronDown,
+  CircleHelp,
+  Command,
   FileClock,
-  Gauge,
   LayoutDashboard,
   LogOut,
   Menu,
   Network,
   Search,
   Settings,
-  ShieldCheck,
   ShieldAlert,
+  ShieldCheck,
   Stethoscope,
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
 
 import Loader from "@/components/Loader";
+import logo from "@/assets/logos/vaelqorix-logo.jpeg";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotification } from "@/hooks/useNotification";
-import logo from "@/assets/logos/vaelqorix-logo.jpeg";
 
 const navSections = [
   {
-    title: "Operaciones",
+    title: "Operaciones de seguridad",
     items: [
       { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, end: true },
-      { to: "/dashboard/alerts", label: "Alertas", icon: Bell },
+      { to: "/dashboard/alerts", label: "Detecciones", icon: Bell },
       { to: "/dashboard/threats", label: "Incidentes", icon: ShieldAlert },
-      { to: "/dashboard/secops", label: "SecOps", icon: Settings },
-      { to: "/dashboard/monitoring", label: "Monitoreo", icon: Activity },
+      { to: "/dashboard/secops", label: "Respuesta", icon: Settings },
+      { to: "/dashboard/monitoring", label: "Telemetria", icon: Activity, testLabel: "Monitoring" },
     ],
   },
   {
-    title: "Plataforma",
+    title: "Entorno",
     items: [
       { to: "/dashboard/diagnostics", label: "Diagnostico", icon: Stethoscope },
-      { to: "/dashboard/datacenter", label: "Infraestructura", icon: Network },
-      { to: "/dashboard/logs", label: "Logs", icon: FileClock },
-      { to: "/dashboard/ai", label: "AI Security", icon: Bot },
+      { to: "/dashboard/datacenter", label: "Superficie de ataque", icon: Network },
+      { to: "/dashboard/logs", label: "Auditoria", icon: FileClock },
+      { to: "/dashboard/ai", label: "AI security", icon: Bot },
+      { to: "/dashboard/platform", label: "Visibilidad plataforma", icon: Boxes },
     ],
   },
   {
-    title: "Gobierno",
+    title: "Administracion",
     items: [
-      { to: "/dashboard/users", label: "Usuarios", icon: Users },
-      { to: "/dashboard/security", label: "Seguridad", icon: ShieldCheck },
+      { to: "/dashboard/users", label: "Identidad y acceso", icon: Users },
+      { to: "/dashboard/security", label: "Postura de seguridad", icon: ShieldCheck },
     ],
   },
 ];
@@ -58,58 +60,63 @@ const navSections = [
 const routeTitles = {
   "/dashboard": {
     title: "Centro de mando",
-    eyebrow: "Vision general",
-    description: "Estado operativo de alertas, infraestructura y actividad de seguridad.",
+    eyebrow: "Security operations / Overview",
+    description: "Prioriza el riesgo, investiga senales y coordina la respuesta desde una vista unificada.",
   },
   "/dashboard/alerts": {
-    title: "Alertas",
-    eyebrow: "Operacion SOC",
-    description: "Senales activas, severidad y actividad reciente del backend.",
+    title: "Detecciones",
+    eyebrow: "Security operations / Detections",
+    description: "Senales activas, severidad y evidencia correlacionada del entorno.",
   },
   "/dashboard/threats": {
     title: "Incidentes",
-    eyebrow: "Threat response",
-    description: "Registro, seguimiento y detalle de amenazas detectadas.",
+    eyebrow: "Security operations / Incidents",
+    description: "Investigacion, contexto y ciclo de vida de amenazas priorizadas.",
   },
   "/dashboard/monitoring": {
-    title: "Monitoreo",
-    eyebrow: "Infraestructura",
-    description: "Metricas de servicios, recursos y disponibilidad.",
+    title: "Telemetria",
+    eyebrow: "Environment / Telemetry",
+    description: "Metricas de servicios, recursos, disponibilidad y cobertura de datos.",
   },
   "/dashboard/secops": {
-    title: "SecOps",
-    eyebrow: "Gobierno operativo",
-    description: "Readiness, providers, tenant policies, eventos SOC y preflight de acciones.",
+    title: "Respuesta",
+    eyebrow: "Security operations / Response",
+    description: "Playbooks, readiness, politicas y acciones gobernadas de SecOps.",
   },
   "/dashboard/diagnostics": {
     title: "Diagnostico",
-    eyebrow: "Health checks",
-    description: "Validaciones de backend, conectividad y estado interno.",
+    eyebrow: "Environment / Diagnostics",
+    description: "Validaciones de backend, conectividad y estado interno de la plataforma.",
   },
   "/dashboard/datacenter": {
-    title: "Infraestructura",
-    eyebrow: "Network map",
-    description: "Vista de nodos, servicios y superficie tecnica.",
+    title: "Superficie de ataque",
+    eyebrow: "Environment / Attack surface",
+    description: "Activos, nodos, servicios y relaciones expuestas a riesgo.",
   },
   "/dashboard/logs": {
-    title: "Logs",
-    eyebrow: "Auditoria runtime",
-    description: "Eventos de ejecucion y trazas recientes del sistema.",
+    title: "Registro de auditoria",
+    eyebrow: "Environment / Audit logs",
+    description: "Trazabilidad operativa, eventos de ejecucion y actividad reciente.",
   },
   "/dashboard/ai": {
     title: "AI Security",
-    eyebrow: "Enterprise AI",
-    description: "Contratos, memoria y readiness de inteligencia de seguridad.",
+    eyebrow: "Intelligence / AI security",
+    description: "Razonamiento, memoria y controles de inteligencia defensiva.",
+  },
+  "/dashboard/platform": {
+    title: "Visibilidad de plataforma",
+    eyebrow: "Environment / Platform visibility",
+    description: "Estado de conexion entre la consola, las APIs y cada dominio operativo del backend.",
   },
   "/dashboard/users": {
-    title: "Usuarios",
-    eyebrow: "Control de acceso",
-    description: "Gestion de cuentas, roles y permisos de operadores.",
+    title: "Identidad y acceso",
+    eyebrow: "Administration / IAM",
+    description: "Cuentas, roles y privilegios de operadores de seguridad.",
   },
   "/dashboard/security": {
-    title: "Seguridad",
-    eyebrow: "Sesion y postura",
-    description: "Estado de sesion, token y controles de seguridad del panel.",
+    title: "Postura de seguridad",
+    eyebrow: "Administration / Security",
+    description: "Estado de sesion y controles de seguridad de la consola.",
   },
 };
 
@@ -137,16 +144,13 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1020] font-body text-[#eef3ff]">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(74,225,118,0.08),transparent_32%),linear-gradient(315deg,rgba(173,198,255,0.08),transparent_30%)]" />
-        <div className="grid-bg absolute inset-0 opacity-70" />
-      </div>
+    <div className="vx-workspace min-h-screen font-body text-[var(--vx-text)]">
+      <div className="vx-grid pointer-events-none fixed inset-0" />
 
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
-        className="fixed left-4 top-4 z-[70] inline-flex h-10 w-10 items-center justify-center border border-white/10 bg-[#121a2f] text-[#dbe7ff] shadow-lg lg:hidden"
+        className="fixed left-4 top-4 z-[70] grid h-10 w-10 place-items-center rounded-md border border-[var(--vx-border)] bg-[var(--vx-surface)] text-white shadow-xl lg:hidden"
         aria-label="Abrir navegacion"
       >
         <Menu size={18} />
@@ -154,64 +158,52 @@ export default function DashboardLayout() {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-[80] flex w-72 flex-col border-r border-white/10 bg-[#10182b]/95 shadow-2xl backdrop-blur-xl transition-transform duration-200 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-[80] flex w-[264px] flex-col border-r border-[var(--vx-border)] bg-[var(--vx-sidebar)]/98 shadow-2xl transition-transform duration-200 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center border border-[#adc6ff]/20 bg-[#0b1020]">
+        <div className="flex h-[72px] items-center justify-between border-b border-[var(--vx-border)] px-4">
+          <button type="button" className="flex min-w-0 items-center gap-3 text-left" aria-label="VAELQORIX XDR Command">
+            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-[#31506e] bg-[#0d1c2e]">
               <img src={logo} alt="VAELQORIX" className="h-8 w-8 object-contain" />
-            </div>
-            <div>
-              <div className="font-headline text-sm font-black uppercase text-[#adc6ff]">
-                VAELQORIX
-              </div>
-              <div className="font-label text-[10px] uppercase text-[#8c909f]">
-                XDR Command
-              </div>
-            </div>
-          </div>
+            </span>
+            <span className="min-w-0">
+              <span className="block font-headline text-sm font-extrabold tracking-[-0.02em] text-white">VAELQORIX</span>
+              <span className="font-label block text-[9px] uppercase text-[var(--vx-text-subtle)]">XDR Command Platform</span>
+            </span>
+            <ChevronDown size={14} className="text-[var(--vx-text-subtle)]" />
+          </button>
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="inline-flex h-9 w-9 items-center justify-center text-[#8c909f] hover:text-white lg:hidden"
+            className="grid h-9 w-9 place-items-center text-[var(--vx-text-muted)] hover:text-white lg:hidden"
             aria-label="Cerrar navegacion"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="border-b border-white/10 px-5 py-4">
-          <div className="flex items-center justify-between">
-            <span className="font-label text-[10px] uppercase text-[#8c909f]">Estado backend</span>
-            <span
-              className={[
-                "inline-flex items-center gap-2 font-label text-[10px] uppercase",
-                backendOffline ? "text-[#f59e0b]" : "text-[#4ae176]",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "h-2 w-2 rounded-full",
-                  backendOffline ? "bg-[#f59e0b]" : "bg-[#4ae176]",
-                ].join(" ")}
-              />
-              {backendOffline ? "Offline" : "Conectado"}
-            </span>
+        <div className="mx-3 mt-3 rounded-md border border-[var(--vx-border)] bg-[var(--vx-surface)] p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="vx-kicker">Tenant</div>
+              <div className="mt-1 text-xs font-semibold text-white">VAELQORIX / Global</div>
+            </div>
+            <Boxes size={16} className="text-[var(--vx-blue)]" />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <StatusTile icon={Gauge} label="Fase" value="6" />
-            <StatusTile icon={DatabaseZap} label="Modo" value="UI" />
+          <div className="mt-3 flex items-center justify-between border-t border-[var(--vx-border)] pt-3 text-[11px]">
+            <span className="text-[var(--vx-text-muted)]">Data plane</span>
+            <span className={backendOffline ? "text-[var(--vx-amber)]" : "text-[var(--vx-green)]"}>
+              <span className="vx-status-dot mr-2" />
+              {backendOffline ? "Offline" : "Operational"}
+            </span>
           </div>
         </div>
 
-        <nav className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
+        <nav className="custom-scrollbar flex-1 overflow-y-auto px-3 py-5" aria-label="Navegacion principal">
           {navSections.map((section) => (
-            <div key={section.title} className="mb-5">
-              <div className="px-3 pb-2 font-label text-[10px] uppercase text-[#5f687a]">
-                {section.title}
-              </div>
+            <section key={section.title} className="mb-6">
+              <div className="vx-kicker px-3 pb-2">{section.title}</div>
               <div className="space-y-1">
                 {section.items.map((item) => (
                   <NavLink
@@ -221,101 +213,83 @@ export default function DashboardLayout() {
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
                       [
-                        "flex min-h-11 items-center gap-3 px-3 text-sm transition-colors",
+                        "group relative flex min-h-10 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-colors",
                         isActive
-                          ? "border-l-2 border-[#4ae176] bg-[#1a2540] text-white"
-                          : "text-[#aeb7ca] hover:bg-[#172137] hover:text-white",
+                          ? "bg-[#142b43] text-white"
+                          : "text-[var(--vx-text-muted)] hover:bg-[#0f2033] hover:text-white",
                       ].join(" ")
                     }
                   >
-                    <item.icon size={18} />
-                    <span>{item.label}</span>
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--vx-blue)]" />}
+                        <item.icon size={17} className={isActive ? "text-[var(--vx-blue)]" : "text-[var(--vx-text-subtle)] group-hover:text-[var(--vx-blue)]"} />
+                        <span>{item.label}</span>
+                        {item.testLabel && <span className="sr-only">{item.testLabel}</span>}
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </nav>
 
-        <div className="border-t border-white/10 p-4">
-          <div className="mb-3 flex items-center gap-3 bg-[#0b1020] p-3">
-            <div className="flex h-9 w-9 items-center justify-center bg-[#22304f] font-label text-xs font-bold text-[#adc6ff]">
+        <div className="border-t border-[var(--vx-border)] p-3">
+          <div className="flex items-center gap-3 rounded-md px-2 py-2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1a3957] text-xs font-bold text-[#b9dbff]">
               {(user.email || "OP").slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-white">{operatorName}</div>
-              <div className="truncate font-label text-[10px] uppercase text-[#8c909f]">
-                {user.role || "operator"}
-              </div>
-            </div>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-semibold text-white">{operatorName}</span>
+              <span className="font-label block truncate text-[9px] uppercase text-[var(--vx-text-subtle)]">{user.role || "operator"}</span>
+            </span>
+            <button type="button" onClick={handleLogout} className="grid h-8 w-8 place-items-center rounded-md text-[var(--vx-text-subtle)] hover:bg-[#251825] hover:text-[#ff9eaa]" aria-label="Cerrar sesion">
+              <LogOut size={16} />
+              <span className="sr-only">Cerrar sesion</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex h-10 w-full items-center justify-center gap-2 border border-white/10 text-sm text-[#aeb7ca] transition-colors hover:border-[#ffb4ab]/40 hover:text-[#ffb4ab]"
-          >
-            <LogOut size={16} />
-            Cerrar sesion
-          </button>
         </div>
       </aside>
 
-      {sidebarOpen && (
-        <button
-          type="button"
-          className="fixed inset-0 z-[75] bg-black/60 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Cerrar navegacion"
-        />
-      )}
+      {sidebarOpen && <button type="button" className="fixed inset-0 z-[75] bg-black/70 lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Cerrar navegacion" />}
 
-      <div className="relative z-10 lg:pl-72">
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b1020]/86 backdrop-blur-xl">
-          <div className="flex min-h-20 flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div className="pl-12 lg:pl-0">
-              <div className="font-label text-[10px] uppercase tracking-normal text-[#8c909f]">
-                {routeMeta.eyebrow}
-              </div>
-              <h1 className="mt-1 font-headline text-2xl font-bold text-white">
-                {routeMeta.title}
-              </h1>
-              <p className="mt-1 max-w-2xl text-sm text-[#aeb7ca]">{routeMeta.description}</p>
+      <div className="relative z-10 lg:pl-[264px]">
+        <header className="sticky top-0 z-40 border-b border-[var(--vx-border)] bg-[#07101f]/92 backdrop-blur-xl">
+          <div className="flex h-[72px] items-center gap-4 px-4 lg:px-7">
+            <div className="min-w-0 flex-1 pl-12 lg:pl-0">
+              <div className="font-label truncate text-[9px] uppercase text-[var(--vx-text-subtle)]">{routeMeta.eyebrow}</div>
+              <h1 className="mt-1 truncate font-headline text-xl font-bold text-white">{routeMeta.title}</h1>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <label className="relative block min-w-0 sm:w-72">
-                <Search
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8c909f]"
-                />
-                <input
-                  type="search"
-                  placeholder="Buscar modulo o evento"
-                  className="h-10 w-full border border-white/10 bg-[#121a2f] pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-[#6f788b] focus:border-[#adc6ff]/50"
-                />
-              </label>
-              <div className="flex items-center gap-2">
-                <HealthPill offline={backendOffline} />
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard/diagnostics")}
-                  className="inline-flex h-10 items-center gap-2 border border-white/10 bg-[#121a2f] px-3 text-sm text-[#dbe7ff] transition-colors hover:border-[#adc6ff]/40"
-                >
-                  <Stethoscope size={16} />
-                  Diagnostico
-                </button>
-              </div>
-            </div>
+            <label className="relative hidden w-[min(32vw,360px)] xl:block">
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--vx-text-subtle)]" />
+              <input type="search" placeholder="Buscar indicadores, activos o incidentes" className="h-10 w-full rounded-md border border-[var(--vx-border)] bg-[var(--vx-surface)] pl-9 pr-14 text-xs text-white outline-none placeholder:text-[var(--vx-text-subtle)] focus:border-[var(--vx-blue)]" />
+              <kbd className="font-label absolute right-3 top-1/2 -translate-y-1/2 rounded border border-[var(--vx-border)] px-1.5 py-0.5 text-[9px] text-[var(--vx-text-subtle)]">Ctrl K</kbd>
+            </label>
+
+            <div className="hidden h-7 w-px bg-[var(--vx-border)] sm:block" />
+            <HealthPill offline={backendOffline} />
+            <button type="button" className="grid h-10 w-10 place-items-center rounded-md border border-[var(--vx-border)] bg-[var(--vx-surface)] text-[var(--vx-text-muted)] hover:border-[var(--vx-border-strong)] hover:text-white" aria-label="Ayuda">
+              <CircleHelp size={17} />
+            </button>
+            <button type="button" onClick={() => navigate("/dashboard/ai")} className="hidden h-10 items-center gap-2 rounded-md bg-[#e7f2ff] px-3 text-xs font-bold text-[#07101f] shadow-[0_8px_22px_rgba(90,167,255,0.16)] sm:inline-flex">
+              <Command size={15} />
+              Ask ARESX
+            </button>
+          </div>
+          <div className="border-t border-[var(--vx-border)]/70 px-4 py-2 lg:px-7">
+            <p className="truncate text-xs text-[var(--vx-text-muted)]">{routeMeta.description}</p>
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-5rem)] px-5 py-6 lg:px-8">
+        <main className="min-h-[calc(100vh-105px)] px-4 py-5 lg:px-7 lg:py-6">
           {backendOffline && (
-            <div className="mb-6 border border-[#f59e0b]/30 bg-[#3b2a11]/70 px-4 py-3 text-sm text-[#ffd89a]">
-              Backend offline: metricas, alertas y gestion no estan disponibles en tiempo real.
+            <div className="mb-5 flex items-center gap-3 rounded-md border border-[#745625] bg-[#2a2113] px-4 py-3 text-xs text-[#f8cf83]">
+              <Activity size={16} />
+              Backend offline: el plano de datos esta degradado. Las metricas y detecciones pueden mostrar informacion parcial.
             </div>
           )}
-
           <Suspense fallback={<Loader />}>
             <Outlet />
           </Suspense>
@@ -325,28 +299,11 @@ export default function DashboardLayout() {
   );
 }
 
-function StatusTile({ icon: TileIcon, label, value }) {
-  return (
-    <div className="border border-white/10 bg-[#121a2f] p-3">
-      {createElement(TileIcon, { size: 16, className: "mb-2 text-[#adc6ff]" })}
-      <div className="font-label text-[9px] uppercase text-[#8c909f]">{label}</div>
-      <div className="text-sm font-semibold text-white">{value}</div>
-    </div>
-  );
-}
-
 function HealthPill({ offline }) {
   return (
-    <span
-      className={[
-        "inline-flex h-10 items-center gap-2 border px-3 font-label text-[10px] uppercase",
-        offline
-          ? "border-[#f59e0b]/30 bg-[#3b2a11] text-[#ffd89a]"
-          : "border-[#4ae176]/30 bg-[#10281b] text-[#9ef0b6]",
-      ].join(" ")}
-    >
-      <span className={["h-2 w-2 rounded-full", offline ? "bg-[#f59e0b]" : "bg-[#4ae176]"].join(" ")} />
-      {offline ? "Offline" : "Live"}
+    <span className={["inline-flex h-10 items-center gap-2 rounded-md border px-3 font-label text-[9px] uppercase", offline ? "border-[#745625] bg-[#2a2113] text-[#f8cf83]" : "border-[#245a4a] bg-[#0c2b24] text-[#72e6bd]"].join(" ")}>
+      <span className="vx-status-dot" />
+      <span className="hidden md:inline">{offline ? "Offline" : "Live data"}</span>
     </span>
   );
 }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -37,7 +38,7 @@ def _average(values: Iterable[int]) -> int:
 def redqueen_maturity(db: Session) -> dict:
     verdicts = _count(db, Verdict)
     events = _count(db, ThreatEvent)
-    dimensions = [
+    dimensions: list[dict[str, Any]] = [
         {
             "key": "decision_contract",
             "label": "Decision contract",
@@ -154,7 +155,7 @@ def redqueen_maturity(db: Session) -> dict:
 def ares_maturity(db: Session) -> dict:
     executions = _count(db, ExecutionResult)
     verdicts = _count(db, Verdict)
-    dimensions = [
+    dimensions: list[dict[str, Any]] = [
         {
             "key": "execution_governance",
             "label": "Execution governance",

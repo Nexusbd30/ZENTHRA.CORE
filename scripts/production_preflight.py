@@ -95,6 +95,16 @@ def main() -> int:
         if name not in workflow:
             findings.append(fail(f".github/workflows/cd.yml: missing {name}"))
 
+    restricted_entrypoints = {
+        "infra/k8s/deployment-redqueen.yaml": "app.entrypoints.redqueen:app",
+        "infra/k8s/deployment-ares.yaml": "app.entrypoints.ares:app",
+        "infra/k8s/deployment-ingestion.yaml": "app.entrypoints.ingestion:app",
+    }
+    for path, entrypoint in restricted_entrypoints.items():
+        manifest = read_text(path)
+        if 'command: ["uvicorn"]' not in manifest or entrypoint not in manifest:
+            findings.append(fail(f"{path}: restricted workload must run {entrypoint}"))
+
     if findings:
         print("production preflight failed:")
         for item in findings:

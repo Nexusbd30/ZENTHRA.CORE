@@ -23,6 +23,19 @@ class CaseCreateRequest(BaseModel):
     legal_pack: dict[str, Any] = Field(default_factory=dict)
 
 
+@router.get("/status")
+def cases_status():
+    return {
+        "status": "ready",
+        "schema": "vaelqorix.cases.status.v1",
+        "capabilities": [
+            "case_creation",
+            "evidence_export",
+            "legal_pack_attachment",
+        ],
+    }
+
+
 @router.post("")
 def create_case_endpoint(payload: CaseCreateRequest):
     return create_case(

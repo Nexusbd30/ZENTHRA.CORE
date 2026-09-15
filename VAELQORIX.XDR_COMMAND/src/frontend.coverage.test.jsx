@@ -86,6 +86,7 @@ const api = vi.hoisted(() => ({
   getRuntimeLogs: vi.fn(),
   getProductionReadiness: vi.fn(),
   getResponseLogs: vi.fn(),
+  getSecOpsStatus: vi.fn(),
   getRedQueenStatus: vi.fn(),
   evaluateRedQueenPolicy: vi.fn(),
   issueRedQueenVerdict: vi.fn(),
@@ -132,6 +133,19 @@ const api = vi.hoisted(() => ({
   listAresXAuditRecords: vi.fn(),
   verifyAresXAudit: vi.fn(),
   getWindowsNICs: vi.fn(),
+  getPlatformMap: vi.fn(),
+  getPlatformReadiness: vi.fn(),
+  getIngestionStatus: vi.fn(),
+  getIdentityProviders: vi.fn(),
+  getDetectionStatus: vi.fn(),
+  getSensorsStatus: vi.fn(),
+  getConnectors: vi.fn(),
+  getPlaybooks: vi.fn(),
+  getRuntimeStatus: vi.fn(),
+  getComplianceEvidence: vi.fn(),
+  getCodeIntelligenceStatus: vi.fn(),
+  getDnsFirewallStatus: vi.fn(),
+  getCasesStatus: vi.fn(),
 }));
 
 vi.mock("@/api/vaelqorixApi", () => api);
@@ -231,6 +245,7 @@ function resetApiMocks() {
   });
   api.getProductionReadiness.mockResolvedValue({ status: "ready", checks: [] });
   api.getResponseLogs.mockResolvedValue([{ id: "r1", status: "success", source: "ares" }]);
+  api.getSecOpsStatus.mockResolvedValue({ status: "ready" });
   api.getRedQueenStatus.mockResolvedValue({ status: "ready" });
   api.evaluateRedQueenPolicy.mockResolvedValue({ decision: "approve" });
   api.issueRedQueenVerdict.mockResolvedValue({ verdict_id: "v1" });
@@ -268,6 +283,23 @@ function resetApiMocks() {
   api.listAresXAuditRecords.mockResolvedValue([{ id: "audit1" }]);
   api.verifyAresXAudit.mockResolvedValue({ valid: true });
   api.getWindowsNICs.mockResolvedValue(["Ethernet0"]);
+  api.getPlatformMap.mockResolvedValue({
+    product: "VAELQORIX Platform",
+    current_core: "FastAPI",
+    runtime: "CortexFlow / ARES",
+  });
+  api.getPlatformReadiness.mockResolvedValue({ status: "ready", passed: 4, failed: 0 });
+  api.getIngestionStatus.mockResolvedValue({ status: "ready", capabilities: ["normalize"] });
+  api.getIdentityProviders.mockResolvedValue({ status: "ready", providers: ["entra"] });
+  api.getDetectionStatus.mockResolvedValue({ status: "enabled", capabilities: ["rules"] });
+  api.getSensorsStatus.mockResolvedValue({ status: "enabled", capabilities: ["endpoint"] });
+  api.getConnectors.mockResolvedValue({ status: "ready", items: [{ provider: "defender" }] });
+  api.getPlaybooks.mockResolvedValue({ status: "ready", items: [{ id: "containment" }] });
+  api.getRuntimeStatus.mockResolvedValue({ status: "ready", capabilities: ["queue"] });
+  api.getComplianceEvidence.mockResolvedValue({ status: "ready", capabilities: ["evidence"] });
+  api.getCodeIntelligenceStatus.mockResolvedValue({ status: "ready", capabilities: ["routes"] });
+  api.getDnsFirewallStatus.mockResolvedValue({ status: "ready", capabilities: ["preflight"] });
+  api.getCasesStatus.mockResolvedValue({ status: "ready", capabilities: ["case_creation"] });
   api.getAttackAnalysisStatus.mockResolvedValue({
     status: "enabled",
     capabilities: ["timeline_reconstruction"],
@@ -890,12 +922,12 @@ describe("frontend coverage", () => {
     await screen.findByText("Vista completa de incidentes lista");
     fireEvent.click(screen.getByText("Privileged token replay").closest("button"));
     await screen.findByText(/Investigando: Privileged token replay/);
-    fireEvent.click(screen.getByText("Abrir Aegis AI"));
-    await screen.findByText("Aegis AI");
+    fireEvent.click(screen.getByText(/Abrir ARESX/));
+    await screen.findByText("ARESX");
     fireEvent.click(screen.getByText("Revisar y autorizar"));
     await screen.findByText("Contencion en cola");
-    fireEvent.change(screen.getByLabelText("Ask Aegis AI"), { target: { value: "trace identity" } });
-    fireEvent.click(screen.getByText("Aegis AI").closest("aside").querySelector("button"));
+    fireEvent.change(screen.getByLabelText("Ask ARESX"), { target: { value: "trace identity" } });
+    fireEvent.click(screen.getByText("ARESX").closest("aside").querySelector("button"));
     cleanup();
 
     api.getAlerts.mockRejectedValueOnce(new Error("alerts unavailable"));

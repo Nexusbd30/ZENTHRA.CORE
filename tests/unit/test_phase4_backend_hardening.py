@@ -125,3 +125,16 @@ def test_restricted_entrypoints_do_not_expose_cross_domain_routes():
     assert not any(path.startswith("/api/v1/ares") for path in ingestion_paths)
     assert any(path.startswith("/api/v1/redqueen") for path in redqueen_paths)
     assert not any(path.startswith("/api/v1/ingest") for path in redqueen_paths)
+
+
+def test_k8s_restricted_workloads_use_restricted_entrypoints():
+    manifests = {
+        "deployment-redqueen.yaml": "app.entrypoints.redqueen:app",
+        "deployment-ares.yaml": "app.entrypoints.ares:app",
+        "deployment-ingestion.yaml": "app.entrypoints.ingestion:app",
+    }
+
+    for manifest, expected_entrypoint in manifests.items():
+        text = Path("infra/k8s").joinpath(manifest).read_text(encoding="utf-8")
+        assert 'command: ["uvicorn"]' in text
+        assert expected_entrypoint in text

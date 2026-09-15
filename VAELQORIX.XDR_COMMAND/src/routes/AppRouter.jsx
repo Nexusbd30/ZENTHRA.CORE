@@ -25,6 +25,7 @@ import SecOpsPage from "@/modules/secops/SecOpsPage";
 import AttackAnalysisPage from "@/modules/attack-analysis/AttackAnalysisPage";
 import AlertsPage from "@/modules/alerts/AlertsPage"; // NUEVO
 import LogsPage from "@/modules/logs/LogsPage";
+import PlatformVisibilityPage from "@/modules/platform/PlatformVisibilityPage";
 
 // Proteccion de rutas
 import PrivateRoute from "@/modules/auth/PrivateRoute";
@@ -64,6 +65,7 @@ export default function AppRouter() {
         <Route path="secops" element={<SecOpsPage />} />
         <Route path="attack-analysis" element={<AttackAnalysisPage />} />
         <Route path="security" element={<SecurityPage />} />
+        <Route path="platform" element={<PlatformVisibilityPage />} />
         {/* Pagina dedicada de alertas */}
         <Route path="alerts" element={<AlertsPage />} />
       </Route>

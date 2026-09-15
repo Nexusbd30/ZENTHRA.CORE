@@ -65,28 +65,10 @@ const isMonitoringPath = (config) => {
 const isAutonomyPath = (config) => {
   try {
     const url = new URL(config.url, API_BASE_URL);
-    return (
-      url.pathname.startsWith("/api/v1/redqueen/") ||
-      url.pathname.startsWith("/api/v1/ares/") ||
-      url.pathname.startsWith("/api/v1/attack-analysis/") ||
-      url.pathname.startsWith("/api/v1/brain/") ||
-      url.pathname.startsWith("/api/v1/control/") ||
-      url.pathname.startsWith("/api/v1/ctf-lab/") ||
-      url.pathname.startsWith("/api/v1/audit/") ||
-      url.pathname.startsWith("/api/v1/ingest/")
-    );
+    return url.pathname.startsWith("/api/v1/");
   } catch {
     const url = String(config?.url || "");
-    return (
-      url.startsWith("/api/v1/redqueen/") ||
-      url.startsWith("/api/v1/ares/") ||
-      url.startsWith("/api/v1/attack-analysis/") ||
-      url.startsWith("/api/v1/brain/") ||
-      url.startsWith("/api/v1/control/") ||
-      url.startsWith("/api/v1/ctf-lab/") ||
-      url.startsWith("/api/v1/audit/") ||
-      url.startsWith("/api/v1/ingest/")
-    );
+    return url.startsWith("/api/v1/");
   }
 };
 
@@ -851,6 +833,76 @@ export const issueAttackAnalysisVerdict = async (
     `/api/v1/attack-analysis/entities/${encodeURIComponent(entityId)}/verdict`,
     { execution_controls: executionControls }
   );
+  return data;
+};
+
+// =============================================================
+// Platform visibility - read-only probes for every backend domain
+// =============================================================
+
+export const getPlatformMap = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/platform/map");
+  return data;
+};
+
+export const getPlatformReadiness = async ({ tenantId } = {}) => {
+  const headers = tenantId ? { "X-Tenant-Id": tenantId } : undefined;
+  const { data } = await vaelqorixApi.get("/api/v1/platform/readiness", { headers });
+  return data;
+};
+
+export const getIngestionStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/ingestion/status");
+  return data;
+};
+
+export const getIdentityProviders = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/identity/providers");
+  return data;
+};
+
+export const getDetectionStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/detection/status");
+  return data;
+};
+
+export const getSensorsStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/sensors/status");
+  return data;
+};
+
+export const getConnectors = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/connectors");
+  return data;
+};
+
+export const getPlaybooks = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/playbooks");
+  return data;
+};
+
+export const getRuntimeStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/runtime/status");
+  return data;
+};
+
+export const getComplianceEvidence = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/compliance/evidence");
+  return data;
+};
+
+export const getCodeIntelligenceStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/code-intelligence/status");
+  return data;
+};
+
+export const getDnsFirewallStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/dns-firewall/status");
+  return data;
+};
+
+export const getCasesStatus = async () => {
+  const { data } = await vaelqorixApi.get("/api/v1/cases/status");
   return data;
 };
 

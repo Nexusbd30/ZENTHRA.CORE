@@ -104,7 +104,7 @@ class SandboxDnsFirewallProvider:
             )
         ).hexdigest()[:32]
         provider_request_id = f"sandbox-dns-{provider_rule_id[:12]}"
-        evidence = {
+        evidence: dict[str, object] = {
             "provider": self.name,
             "provider_request_id": provider_request_id,
             "provider_rule_id": provider_rule_id,

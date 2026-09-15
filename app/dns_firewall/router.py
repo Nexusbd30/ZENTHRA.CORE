@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
+from app.core.settings import settings
 from app.db.session import get_db
 from app.dns_firewall.contracts import DnsTargetError
 from app.dns_firewall.service import create_pending_rule, list_rules, preflight_target
@@ -46,6 +47,20 @@ def _rule_payload(rule) -> dict[str, object]:
         "change_ticket": rule.change_ticket,
         "provider_rule_id": rule.provider_rule_id,
         "expires_at": rule.expires_at.isoformat() if rule.expires_at else None,
+    }
+
+
+@router.get("/status")
+def dns_firewall_status():
+    return {
+        "status": "ready",
+        "schema": "vaelqorix.dns_firewall.status.v1",
+        "provider_mode": "webhook" if settings.DNS_FIREWALL_CONTROL_URL else "sandbox_ready",
+        "capabilities": [
+            "target_preflight",
+            "pending_rule_registration",
+            "ares_governed_execution",
+        ],
     }
 
 
