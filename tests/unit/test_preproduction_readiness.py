@@ -27,7 +27,7 @@ def _valid_config() -> dict[str, str]:
         "AI_PROVIDER": "azure_openai",
         "AI_BASE_URL": "https://ai-gateway.vaelqorix.io",
         "AI_MODEL": "gpt-5-mini",
-        "VECTOR_STORE_PROVIDER": "qdrant",
+        "VECTOR_STORE_PROVIDER": "sql_local",
         "ENTRA_TENANT_ID": "tenant",
         "ENTRA_CLIENT_ID": "client",
         "ENTRA_CLIENT_SECRET": "managed-secret",

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import asyncio
 import json
@@ -28,6 +28,7 @@ from app.control.router import router as control_router
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
+from app.core.request_scope import request_scope
 from app.core.security import get_current_admin, get_password_hash
 from app.core.settings import settings
 from app.ctf_lab.router import router as ctf_lab_router
@@ -36,6 +37,7 @@ from app.detection.router import router as detection_router
 from app.dns_firewall.router import router as dns_firewall_router
 from app.health.router import router as system_health_router
 from app.identity.router import router as identity_router
+from app.identity.router import webhook_router as identity_webhook_router
 from app.ingestion.aresx_router import router as aresx_ingest_router
 from app.ingestion.router import router as ingestion_router
 from app.middlewares.audit_middleware import AuditMiddleware
@@ -79,6 +81,7 @@ if not logger.handlers:
 logger.propagate = False
 
 app = FastAPI(
+    dependencies=[Depends(request_scope)],
     title=settings.PROJECT_NAME,
     version="1.0.0",
     description="VAELQORIX.XDR_COMMAND API",
@@ -248,6 +251,8 @@ app.include_router(system_health_router)
 app.include_router(aresx_ingest_router)
 app.include_router(ingestion_router)
 app.include_router(identity_router)
+
+app.include_router(identity_webhook_router)
 app.include_router(secops_router)
 app.include_router(platform_router)
 app.include_router(redqueen_router)

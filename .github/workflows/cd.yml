@@ -75,7 +75,7 @@ jobs:
       AI_PROVIDER: ${{ vars.AI_PROVIDER }}
       AI_BASE_URL: ${{ vars.AI_BASE_URL }}
       AI_MODEL: ${{ vars.AI_MODEL }}
-      VECTOR_STORE_PROVIDER: ${{ vars.VECTOR_STORE_PROVIDER }}
+      VECTOR_STORE_PROVIDER: sql_local
     steps:
     - uses: actions/checkout@v4
 
@@ -91,7 +91,6 @@ jobs:
           CORS_ORIGINS
           ACTION_EXECUTION_MODE
           AI_PROVIDER
-          VECTOR_STORE_PROVIDER
         )
         for name in "${required[@]}"; do
           if [ -z "${!name}" ]; then
@@ -113,8 +112,8 @@ jobs:
           echo "::error::AI_PROVIDER=local_stub is not a production provider"
           exit 1
         fi
-        if [ "$VECTOR_STORE_PROVIDER" = "local" ]; then
-          echo "::error::VECTOR_STORE_PROVIDER=local is not a production vector backend"
+        if [ "$VECTOR_STORE_PROVIDER" != "sql_local" ]; then
+          echo "::error::VECTOR_STORE_PROVIDER=sql_local is the only implemented persistent backend"
           exit 1
         fi
 
@@ -170,6 +169,8 @@ jobs:
           --from-literal=ACCESS_TOKEN_EXPIRE_MINUTES=30 \
           --from-literal=VAELQORIX_PUBLIC_REGISTRATION_ENABLED=false \
           --from-literal=ENTERPRISE_TENANT_MODE=strict \
+          --from-literal=CONTROL_TOKEN_TENANT_ID=default \
+          --from-literal=CONTROL_TOKEN_CAPABILITIES=security:admin \
           --from-literal=RATE_LIMIT_BACKEND=redis \
           --from-literal=REPLAY_GUARD_BACKEND=redis \
           --from-literal=ARES_KILL_SWITCH_BACKEND=redis \
@@ -194,44 +195,26 @@ jobs:
           --from-literal=VECTOR_STORE_PROVIDER="$VECTOR_STORE_PROVIDER" \
           --dry-run=client -o yaml | kubectl apply -f -
 
+    - name: Run migrations before workloads
+      run: |
+        kubectl delete job vaelqorix-migrate --ignore-not-found=true --wait=true
+        kubectl set image --local -f infra/k8s/job-migrate.yaml migrate=${{ env.API_IMAGE }}:${{ github.sha }} -o yaml | kubectl apply -f -
+        kubectl wait --for=condition=complete job/vaelqorix-migrate --timeout=300s
+
     - name: Apply workloads
       run: |
-        kubectl apply -f infra/k8s/deployment-api.yaml
-        kubectl apply -f infra/k8s/deployment-redqueen.yaml
-        kubectl apply -f infra/k8s/deployment-ares.yaml
-        kubectl apply -f infra/k8s/deployment-ingestion.yaml
-        kubectl apply -f infra/k8s/deployment-frontend.yaml
+        kubectl set image --local -f infra/k8s/deployment-api.yaml api=${{ env.API_IMAGE }}:${{ github.sha }} -o yaml | kubectl apply -f -
+        kubectl set image --local -f infra/k8s/deployment-frontend.yaml frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} -o yaml | kubectl apply -f -
         kubectl apply -f infra/k8s/service-api.yaml
-        kubectl apply -f infra/k8s/service.yaml
-        kubectl apply -f infra/k8s/service-ares.yaml
-        kubectl apply -f infra/k8s/service-ingestion.yaml
         kubectl apply -f infra/k8s/service-frontend.yaml
         kubectl apply -f infra/k8s/hpa.yaml
         kubectl apply -f infra/k8s/pdb.yaml
         kubectl apply -f infra/k8s/networkpolicy.yaml
-        sed "s/vaelqorix.example.com/$PRODUCTION_HOSTNAME/g" infra/k8s/ingress.yaml | kubectl apply -f -
-
-    - name: Set release images
-      run: |
-        kubectl set image deployment/vaelqorix-api api=${{ env.API_IMAGE }}:${{ github.sha }}
-        kubectl set image deployment/redqueen redqueen=${{ env.API_IMAGE }}:${{ github.sha }}
-        kubectl set image deployment/ares ares=${{ env.API_IMAGE }}:${{ github.sha }}
-        kubectl set image deployment/ingestion ingestion=${{ env.API_IMAGE }}:${{ github.sha }}
-        kubectl set image deployment/vaelqorix-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-
-    - name: Run migrations
-      run: |
-        kubectl delete job vaelqorix-migrate --ignore-not-found=true
-        kubectl apply -f infra/k8s/job-migrate.yaml
-        kubectl set image job/vaelqorix-migrate migrate=${{ env.API_IMAGE }}:${{ github.sha }}
-        kubectl wait --for=condition=complete job/vaelqorix-migrate --timeout=300s
+        sed "s/vaelqorix.example.com/${PRODUCTION_HOSTNAME}/g" infra/k8s/ingress.yaml | kubectl apply -f -
 
     - name: Rollout status
       run: |
         kubectl rollout status deployment/vaelqorix-api --timeout=300s
-        kubectl rollout status deployment/redqueen --timeout=300s
-        kubectl rollout status deployment/ares --timeout=300s
-        kubectl rollout status deployment/ingestion --timeout=300s
         kubectl rollout status deployment/vaelqorix-frontend --timeout=300s
 
     - name: Production smoke test

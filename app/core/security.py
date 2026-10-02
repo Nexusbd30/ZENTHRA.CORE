@@ -1,4 +1,4 @@
-﻿# =============================================================
+# =============================================================
 # [AI] VAELQORIX.XDR_COMMAND - Security Module (v2.8 RBAC Hardened)
 # =============================================================
 # Módulo central de seguridad JWT en modo JSON.
@@ -23,7 +23,7 @@ from jwt import InvalidTokenError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from app.core.enterprise_security import build_security_context, has_capability
+from app.core.enterprise_security import has_capability
 from app.core.secrets import get_secret
 from app.core.settings import settings
 from app.db.session import get_db
@@ -260,51 +260,51 @@ def require_admin_or_monitor_token(
     return user
 
 
+def require_control_identity(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    token = get_bearer_token(authorization)
+    control_token = get_secret("VAELQORIX_CONTROL_TOKEN", settings.VAELQORIX_CONTROL_TOKEN)
+    monitor_token = get_secret("VAELQORIX_MONITOR_TOKEN", settings.VAELQORIX_MONITOR_TOKEN)
+    if monitor_token and secrets.compare_digest(token, monitor_token):
+        raise HTTPException(status_code=403, detail="Monitoring credentials cannot control actions")
+    if control_token and secrets.compare_digest(token, control_token):
+        return {"auth_type": "control_token", "role": "service", "tenant_id": settings.CONTROL_TOKEN_TENANT_ID or settings.DEFAULT_TENANT_ID,
+                "capabilities": settings.CONTROL_TOKEN_CAPABILITIES.split(",")}
+    return get_current_active_user(get_current_user(token, db))
+
+
+def require_admin_or_control_token(auth_context=Depends(require_control_identity)):
+    if isinstance(auth_context, dict):
+        if "security:admin" not in auth_context.get("capabilities", []):
+            raise HTTPException(status_code=403, detail="Control credential lacks security:admin")
+        return auth_context
+    return get_current_admin(auth_context)
+
+
 def require_enterprise_capability(capability: str):
     def capability_checker(
-        auth_context=Depends(require_admin_or_monitor_token),
+        auth_context=Depends(require_control_identity),
         x_tenant_id: str | None = Header(default=None),
         x_request_id: str | None = Header(default=None),
     ):
-        if str(settings.ENTERPRISE_TENANT_MODE or "").strip().lower() == "strict" and not str(
-            x_tenant_id or ""
-        ).strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="X-Tenant-ID requerido en modo multi-tenant estricto",
-            )
-
+        if str(settings.ENTERPRISE_TENANT_MODE or "").strip().lower() == "strict" and not x_tenant_id:
+            raise HTTPException(status_code=400, detail="X-Tenant-ID requerido en modo multi-tenant estricto")
         if isinstance(auth_context, dict):
-            context = build_security_context(
-                actor=str(auth_context.get("auth_type", "internal")),
-                role=str(auth_context.get("role", "internal")),
-                tenant_id=x_tenant_id,
-            )
-            return {
-                "actor": context.actor,
-                "role": context.role,
-                "tenant_id": context.tenant_id,
-                "capability": capability,
-                "request_id": x_request_id or "n/a",
-            }
-
-        role = getattr(auth_context, "role", "user")
-        if not has_capability(role, capability):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Capability requerida: {capability}",
-            )
-        context = build_security_context(
-            actor=getattr(auth_context, "email", "user"),
-            role=role,
-            tenant_id=x_tenant_id,
-        )
-        return {
-            "actor": context.actor,
-            "role": context.role,
-            "tenant_id": context.tenant_id,
-            "capability": capability,
-            "request_id": x_request_id or "n/a",
-        }
-
+            tenant = auth_context.get("tenant_id", settings.DEFAULT_TENANT_ID)
+            allowed = capability in auth_context.get("capabilities", [])
+            actor = str(auth_context.get("auth_type", "service"))
+            role = "service"
+        else:
+            tenant = getattr(auth_context, "tenant_id", None) or settings.DEFAULT_TENANT_ID
+            role = getattr(auth_context, "role", "user")
+            allowed = has_capability(role, capability)
+            actor = getattr(auth_context, "email", "user")
+        if x_tenant_id and x_tenant_id != tenant:
+            raise HTTPException(status_code=403, detail="Tenant membership mismatch")
+        if not allowed:
+            raise HTTPException(status_code=403, detail=f"Capability requerida: {capability}")
+        return {"actor": actor, "role": role, "tenant_id": tenant,
+                "capability": capability, "request_id": x_request_id or "n/a"}
     return capability_checker

@@ -7,7 +7,6 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from io import StringIO
 
-
 PORT = 9400
 QUERY_FIELDS = [
     "index",

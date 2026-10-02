@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.sensors.cloud_sensor import collect_cloud_findings
 from app.sensors.endpoint_agent import collect_endpoint_findings
 from app.sensors.k8s_sensor import collect_k8s_findings
@@ -14,7 +14,7 @@ from app.sensors.network_sensor import collect_network_findings
 router = APIRouter(
     prefix="/api/v1/sensors",
     tags=["sensors"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

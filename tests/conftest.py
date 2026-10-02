@@ -45,6 +45,10 @@ def setup_test_environment():
     TestingSessionLocal.configure(bind=test_engine)
     app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=test_engine)
+    from app.db import vector
+    from app.runtime import orchestrator
+    vector.SessionLocal = TestingSessionLocal
+    orchestrator.SessionLocal = TestingSessionLocal
     yield
     Base.metadata.drop_all(bind=test_engine)
     test_engine.dispose()
@@ -106,18 +110,12 @@ async def auth_token(test_client):
     test_email = "auth_fixture_admin@test.com"
     test_password = "securepassword123"
 
-    create_resp = await test_client.post(
-        "/users/",
-        json={
-            "email": test_email,
-            "password": test_password,
-            "full_name": "Token Tester",
-            "role": "admin",
-        },
-    )
-    assert create_resp.status_code in (201, 400), (
-        f"Error creando usuario auth_token: {create_resp.text}"
-    )
+    # Privileged fixtures use a trusted database path, never public registration.
+    from app.core.security import get_password_hash
+    with TestingSessionLocal() as db:
+        if not db.query(User).filter(User.email == test_email).first():
+            db.add(User(email=test_email, hashed_password=get_password_hash(test_password), role="admin"))
+            db.commit()
 
     login_resp = await test_client.post(
         "/auth/login",

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from datetime import datetime
@@ -20,6 +20,7 @@ from app.ares.validator import validate_verdict
 from app.core.audit import audit_autonomy_event
 from app.core.mcp_context import mcp_risk_factors, normalize_mcp_context
 from app.core.signing import sign_payload
+from app.core.tenant_context import current_tenant
 from app.dns_firewall.service import prepare_dns_execution, update_execution_state
 from app.identity.service import summarize_identity_activity
 from app.intelligence.rag import rag_factors, rag_payload, retrieve_defensive_context
@@ -180,7 +181,9 @@ class AutonomyService:
         factors: list[str],
         execution_controls: dict | None = None,
     ) -> dict:
-        controls = execution_controls or {}
+        controls = dict(execution_controls or {})
+        if current_tenant.get():
+            controls["tenant_id"] = current_tenant.get()
         mcp_context = normalize_mcp_context(
             controls.get("mcp_context") if isinstance(controls.get("mcp_context"), dict) else {},
             target=target,
@@ -671,8 +674,6 @@ class AutonomyService:
         human_approved: bool,
         approval_evidence: dict | None = None,
     ) -> dict:
-        AutonomyService.persist_verdict(db, verdict)
-
         validation = validate_verdict(verdict)
         if not validation.valid:
             rejection: dict[str, object] = {
@@ -694,6 +695,12 @@ class AutonomyService:
             )
             rejection["result"] = result
             return rejection
+
+        if current_tenant.get():
+            owned = AutonomyService.get_verdict(db, str(verdict.get("verdict_id", "")))
+            if owned is None or owned.signature != verdict.get("signature"):
+                return {"status": "rejected", "code": "verdict_not_owned", "detail": "Stored tenant verdict required"}
+        AutonomyService.persist_verdict(db, verdict)
 
         if verdict.get("requires_human") and not human_approved:
             audit_autonomy_event(

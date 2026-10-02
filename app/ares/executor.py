@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import time
 from datetime import UTC, datetime
@@ -41,7 +41,11 @@ class ActionTransaction:
     def rollback(self) -> list[dict]:
         rollback_events: list[dict] = []
         for payload in reversed(self.performed):
-            result = self.executor.rollback_step(payload)
+            try:
+                result = self.executor.rollback_step(payload)
+            except Exception as exc:
+                rollback_events.append({"payload": payload, "status": "failed", "detail": str(exc), "evidence": {}})
+                continue
             rollback_events.append(
                 {
                     "payload": payload,
@@ -136,7 +140,8 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             "status": "success",
             "duration_ms": duration_ms,
             "executed_steps": executed,
-            "rollback_available": True,
+            "rollback_available": bool(tx.performed),
+            "rollback_steps": tx.performed,
             "rollback_events": [],
             "advisor_review": plan.get("advisor_review", {}),
         }
@@ -147,7 +152,8 @@ def execute_plan(plan: dict, *, controls: dict | None = None) -> dict:
             "status": "failed",
             "duration_ms": duration_ms,
             "executed_steps": executed,
-            "rollback_available": True,
+            "rollback_available": bool(tx.performed),
+            "rollback_steps": tx.performed,
             "rollback_events": rollback_events,
             "error": str(exc),
             "advisor_review": plan.get("advisor_review", {}),

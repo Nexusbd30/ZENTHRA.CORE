@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import hashlib
 import json
@@ -56,7 +56,7 @@ def build_execution_result(*, verdict: dict, execution: dict, actor: str = "ares
         "pre_state": execution.get("pre_state", {}),
         "post_state": execution.get("post_state", {}),
         "evidence": evidence,
-        "rollback_payload": {"rollback_events": rollback_events},
+        "rollback_payload": {"rollback_events": rollback_events, "steps": execution.get("rollback_steps", [])},
         "rl_reward": round(reward, 2),
         "error_code": "" if status == "success" else "execution_failed",
         "timestamp": datetime.now(UTC).isoformat(),

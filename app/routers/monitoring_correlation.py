@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 from app.models.threat_model import ThreatModel
 from app.services.correlation_engine import correlation_engine
@@ -11,7 +11,7 @@ from app.services.correlation_engine import correlation_engine
 router = APIRouter(
     prefix="/monitoring/correlation",
     tags=["monitoring-correlation"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

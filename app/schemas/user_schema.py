@@ -20,6 +20,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=10, description="Contraseña del usuario.")
     role: str = Field(default="user", description="Rol del usuario (admin o user).")
     is_active: bool = Field(default=True, description="Indica si el usuario está activo.")
+    tenant_id: Optional[str] = Field(None, min_length=1, max_length=120)
 
 
 class ResetPasswordRequest(BaseModel):
@@ -56,6 +57,7 @@ class UserRead(BaseModel):
     full_name: Optional[str]
     role: str
     is_active: bool
+    tenant_id: str = "default"
 
     class Config:
         from_attributes = True  # ✅ Mapea automáticamente desde SQLAlchemy

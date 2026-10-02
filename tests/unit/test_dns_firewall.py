@@ -92,7 +92,14 @@ def test_ares_execution_updates_persistent_dns_state(db_session, monkeypatch):
 
     def fake_dispatch(*, url, command, payload):
         calls.append((url, command, payload))
-        return {"status": "ok", "request_id": f"req-{len(calls)}"}
+        return {
+            "status": "applied" if command == "dns_firewall_block" else "ok",
+            "request_id": f"req-{len(calls)}",
+            "rule_id": "provider-rule-1",
+            "tenant_id": payload["tenant_id"],
+            "target": payload["target"],
+            "present": True,
+        }
 
     monkeypatch.setattr("app.dns_firewall.providers.dispatch_command", fake_dispatch)
     rule, execution = create_pending_rule(

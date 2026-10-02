@@ -9,12 +9,12 @@ from app.connectors.registry import (
     connector_readiness,
     list_connector_capabilities,
 )
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 
 router = APIRouter(
     prefix="/api/v1/connectors",
     tags=["connectors"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

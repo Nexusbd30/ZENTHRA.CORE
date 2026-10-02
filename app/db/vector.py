@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.settings import settings
+from app.core.tenant_context import current_tenant
+from app.db.session import SessionLocal
+from app.models.runtime_state import VectorEntry
 
 
 @dataclass(frozen=True)
@@ -97,4 +101,58 @@ class LocalVectorStore:
         }
 
 
-vector_store = LocalVectorStore()
+class SqlVectorStore:
+    """Durable hashed-vector search; not an external embedding provider."""
+    def __init__(self, session_factory=None):
+        self.session_factory = session_factory
+
+    def _session(self):
+        db = (self.session_factory or SessionLocal)()
+        db.info["tenant_id"] = current_tenant.get() or settings.DEFAULT_TENANT_ID
+        return db
+
+    def upsert(self, *, collection: str, record_id: str, text: str, metadata=None) -> VectorRecord:
+        record = VectorRecord(record_id, embed_text(text), {**(metadata or {}), "text": text})
+        with self._session() as db:
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+            from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+            insert = sqlite_insert if db.get_bind().dialect.name == "sqlite" else pg_insert
+            statement = insert(VectorEntry).values(
+                tenant_id=db.info["tenant_id"], collection=collection, record_id=record_id,
+                vector_json=json.dumps(record.vector), metadata_json=json.dumps(record.metadata),
+            )
+            statement = statement.on_conflict_do_update(
+                index_elements=["tenant_id", "collection", "record_id"],
+                set_={"vector_json": statement.excluded.vector_json, "metadata_json": statement.excluded.metadata_json},
+            )
+            db.execute(statement)
+            db.commit()
+        return record
+
+    def search(self, *, collection: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        vector = embed_text(query)
+        with self._session() as db:
+            rows = db.query(VectorEntry).filter(VectorEntry.collection == collection).all()
+            ranked = sorted(
+                ({"id": row.record_id, "score": cosine_similarity(vector, json.loads(row.vector_json)),
+                  "metadata": json.loads(row.metadata_json)} for row in rows),
+                key=lambda item: item["score"], reverse=True,
+            )
+        return ranked[:max(1, min(limit, 50))]
+
+    def delete_collection(self, collection: str) -> bool:
+        with self._session() as db:
+            count = db.query(VectorEntry).filter(VectorEntry.collection == collection).delete()
+            db.commit()
+            return bool(count)
+
+    def status(self) -> dict[str, Any]:
+        from sqlalchemy import func
+        with self._session() as db:
+            collections = dict(db.query(VectorEntry.collection, func.count(VectorEntry.id)).group_by(VectorEntry.collection).all())
+        return {"enabled": bool(settings.VECTOR_STORE_ENABLED), "provider": "sql_local",
+                "persistent": True, "embedding": "hashed_tokens", "dimensions": settings.VECTOR_DIMENSIONS,
+                "collections": collections}
+
+
+vector_store = SqlVectorStore()

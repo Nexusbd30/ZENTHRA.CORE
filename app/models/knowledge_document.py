@@ -12,7 +12,7 @@ from app.models.base import Base
 class KnowledgeDocumentModel(Base):
     __tablename__ = "knowledge_documents"
     __table_args__ = (
-        UniqueConstraint("doc_id", "version", name="uq_knowledge_document_version"),
+        UniqueConstraint("tenant_id", "doc_id", "version", name="uq_knowledge_document_version"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

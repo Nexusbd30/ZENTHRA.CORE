@@ -1,5 +1,6 @@
+from app.identity.router import webhook_router as identity_webhook_router
 from app.ingestion.aresx_router import router as aresx_router
 from app.ingestion.router import router as ingestion_router
 from app.process_factory import create_restricted_application
 
-app = create_restricted_application("ingestion", routers=[aresx_router, ingestion_router])
+app = create_restricted_application("ingestion", routers=[aresx_router, ingestion_router, identity_webhook_router])

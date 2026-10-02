@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 
 import pytest
 
@@ -62,22 +62,8 @@ async def test_delete_nonexistent_user(test_client):
 
 
 @pytest.mark.asyncio
-async def test_reset_password_nonexistent_user(test_client):
-    admin_email = f"missing_reset_admin_{uuid.uuid4().hex[:6]}@test.com"
-    password = "password123"
-
-    create = await test_client.post(
-        "/users/",
-        json={"email": admin_email, "password": password, "role": "admin"},
-    )
-    assert create.status_code == 201
-
-    login = await test_client.post(
-        "/auth/login",
-        json={"username": admin_email, "password": password},
-    )
-    assert login.status_code == 200
-    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+async def test_reset_password_nonexistent_user(test_client, auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
     reset = await test_client.post(
         "/users/reset-password",

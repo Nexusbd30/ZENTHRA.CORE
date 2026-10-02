@@ -1,4 +1,4 @@
-﻿# ==========================================================
+# ==========================================================
 # VAELQORIX - Observabilidad Stack + PostgreSQL (v3.9.1)
 # ==========================================================
 # Stack completo: backend, PostgreSQL y observabilidad.
@@ -44,6 +44,9 @@ services:
       - ARES_KILL_SWITCH_KEY=${ARES_KILL_SWITCH_KEY:-ares:kill_switch}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX:-vaelqorix}
+      - VAELQORIX_CONTROL_TOKEN=${VAELQORIX_CONTROL_TOKEN:-}
+      - CONTROL_TOKEN_CAPABILITIES=${CONTROL_TOKEN_CAPABILITIES:-}
+      - CONTROL_TOKEN_TENANT_ID=${CONTROL_TOKEN_TENANT_ID:-default}
       - SECRET_BACKEND=${SECRET_BACKEND:-file}
       - SECRET_FILE_DIR=${SECRET_FILE_DIR:-/run/secrets}
       - VAELQORIX_PUBLIC_REGISTRATION_ENABLED=${VAELQORIX_PUBLIC_REGISTRATION_ENABLED:-true}
@@ -77,10 +80,10 @@ services:
       - KAFKA_AUTO_OFFSET_RESET=${KAFKA_AUTO_OFFSET_RESET:-latest}
       - KAFKA_POLL_TIMEOUT_SEC=${KAFKA_POLL_TIMEOUT_SEC:-1}
       - VECTOR_STORE_ENABLED=${VECTOR_STORE_ENABLED:-true}
-      - VECTOR_STORE_PROVIDER=${VECTOR_STORE_PROVIDER:-local}
+      - VECTOR_STORE_PROVIDER=${VECTOR_STORE_PROVIDER:-sql_local}
       - VECTOR_DIMENSIONS=${VECTOR_DIMENSIONS:-64}
       - VECTOR_COLLECTION_PREFIX=${VECTOR_COLLECTION_PREFIX:-vaelqorix}
-    command: ["sh", "-c", "alembic upgrade heads && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
       interval: 15s

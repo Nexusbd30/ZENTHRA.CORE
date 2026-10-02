@@ -5,9 +5,10 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, select, text
 from sqlalchemy.orm import Session
 
+from app.core.tenant_context import current_tenant
 from app.models.audit_record import AuditRecord
 from app.models.verdict import Verdict
 
@@ -32,6 +33,10 @@ def append_audit_record(
     capability: str = "",
     request_id: str = "",
 ) -> AuditRecord:
+    tenant_id = current_tenant.get() or tenant_id
+    if db.get_bind().dialect.name == "postgresql":
+        lock_key = int.from_bytes(hashlib.sha256(tenant_id.encode()).digest()[:8], "big", signed=True)
+        db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
     previous = db.scalar(select(AuditRecord).order_by(desc(AuditRecord.timestamp)).limit(1))
     hash_prev = previous.hash_self if previous else ""
     previous_chain_hash = previous.chain_hash if previous and previous.chain_hash else hash_prev

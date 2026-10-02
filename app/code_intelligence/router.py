@@ -1,15 +1,15 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
 from app.code_intelligence.analyzer import build_code_architecture_report
 from app.code_intelligence.contracts import CodeAnalysisRequest, CodeArchitectureReport
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 
 router = APIRouter(
     prefix="/api/v1/code-intelligence",
     tags=["code-intelligence"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

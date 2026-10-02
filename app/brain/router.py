@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import UTC, datetime, time as datetime_time
+from datetime import UTC, datetime
+from datetime import time as datetime_time
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -10,9 +11,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.attack_analysis.service import AttackAnalysisService
 from app.ares.evidence import build_ares_ai_evidence_bundle
-from app.core.security import require_admin_or_monitor_token
+from app.attack_analysis.service import AttackAnalysisService
+from app.core.security import require_admin_or_control_token
 from app.db.audit_store import list_audit_records
 from app.db.session import get_db
 from app.ingestion.aresx_router import (
@@ -26,7 +27,7 @@ from app.services.autonomy_service import AutonomyService
 router = APIRouter(
     prefix="/api/v1/brain",
     tags=["redqueen-brain"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

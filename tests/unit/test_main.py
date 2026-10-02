@@ -1,11 +1,12 @@
-﻿import pytest
+import pytest
 
 from app.core.settings import settings
 
 
 def monitor_headers(monkeypatch):
-    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
-    return {"Authorization": "Bearer monitor-test-token"}
+    monkeypatch.setattr(settings, "VAELQORIX_CONTROL_TOKEN", "control-test-token")
+    monkeypatch.setattr(settings, "CONTROL_TOKEN_CAPABILITIES", ",".join(__import__("app.core.enterprise_security", fromlist=["ENTERPRISE_CAPABILITIES"]).ENTERPRISE_CAPABILITIES))
+    return {"Authorization": "Bearer control-test-token"}
 
 
 @pytest.mark.asyncio

@@ -58,7 +58,15 @@ def test_execute_plan_delegates_dns_firewall_block(monkeypatch):
 
     def fake_dispatch(*, url, command, payload):
         calls.append({"url": url, "command": command, "payload": payload})
-        return {"status": "ok", "command": command}
+        return {
+            "status": "applied" if command == "dns_firewall_block" else "ok",
+            "command": command,
+            "request_id": f"request-{len(calls)}",
+            "rule_id": "provider-rule-1",
+            "tenant_id": payload["tenant_id"],
+            "target": payload["target"],
+            "present": True,
+        }
 
     monkeypatch.setattr("app.dns_firewall.providers.dispatch_command", fake_dispatch)
     monkeypatch.setattr("app.actions.network.settings.DNS_FIREWALL_CONTROL_URL", "https://dns-control.local")

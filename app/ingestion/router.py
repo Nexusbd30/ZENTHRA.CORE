@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 from app.ingestion.adapters import ADAPTERS, adapt_event
 from app.ingestion.kafka_consumer import kafka_status
@@ -17,7 +17,7 @@ from app.models.threat_model import ThreatModel
 router = APIRouter(
     prefix="/api/v1/ingestion",
     tags=["ingestion"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

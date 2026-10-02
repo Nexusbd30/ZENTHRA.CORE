@@ -1,9 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 from app.platform.schemas import PlatformMapResponse, PlatformReadinessResponse
 from app.platform.service import build_platform_map, build_platform_readiness
@@ -11,7 +11,7 @@ from app.platform.service import build_platform_map, build_platform_readiness
 router = APIRouter(
     prefix="/api/v1/platform",
     tags=["vaelqorix-platform"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

@@ -43,6 +43,7 @@ REQUIRED_VALUES = (
 REQUIRED_SECRET_NAMES = (
     "SECRET_KEY",
     "VAELQORIX_MONITOR_TOKEN",
+    "VAELQORIX_CONTROL_TOKEN",
     "POSTGRES_PASSWORD",
     "ACTION_SHARED_TOKEN",
 )
@@ -118,6 +119,9 @@ def validate(
         if value and _has_placeholder(value) and not allow_placeholders:
             findings.append(f"{name} still contains a placeholder value")
 
+    if values.get("VAELQORIX_CONTROL_TOKEN") and values.get("VAELQORIX_CONTROL_TOKEN") == values.get("VAELQORIX_MONITOR_TOKEN"):
+        findings.append("VAELQORIX_CONTROL_TOKEN must differ from VAELQORIX_MONITOR_TOKEN")
+
     exact_values = {
         "ENV": "production",
         "SECRET_BACKEND": "file",
@@ -160,8 +164,8 @@ def validate(
 
     if values.get("AI_PROVIDER", "").lower() == "local_stub":
         findings.append("AI_PROVIDER must not be local_stub in preproduction")
-    if values.get("VECTOR_STORE_PROVIDER", "").lower() == "local":
-        findings.append("VECTOR_STORE_PROVIDER must not be local in preproduction")
+    if values.get("VECTOR_STORE_PROVIDER", "").lower() != "sql_local":
+        findings.append("VECTOR_STORE_PROVIDER=sql_local is the only implemented persistent backend")
 
     ready_groups = [
         group

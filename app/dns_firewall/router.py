@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
+from app.core.security import require_enterprise_capability
 from app.core.settings import settings
 from app.db.session import get_db
 from app.dns_firewall.contracts import DnsTargetError
@@ -15,7 +15,7 @@ from app.dns_firewall.service import create_pending_rule, list_rules, preflight_
 router = APIRouter(
     prefix="/api/v1/dns-firewall",
     tags=["dns-firewall"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_enterprise_capability("soc:read"))],
 )
 
 

@@ -3,12 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from app.compliance.controls import compliance_evidence_snapshot
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 
 router = APIRouter(
     prefix="/api/v1/compliance",
     tags=["compliance"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

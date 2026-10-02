@@ -456,7 +456,8 @@ def test_connector_stubs_registry_and_router_paths():
     assert unknown_ready["code"] == "provider_unknown"
     assert connector_execute_plan("unknown", action="block_ip", target="x")["status"] == "failed"
     assert blocked["status"] == "blocked"
-    assert delegated["status"] == "delegated"
+    assert delegated["status"] == "blocked"
+    assert delegated["code"] == "connector_execution_not_implemented"
     assert read_connector_readiness("missing")["ready"] is False
     assert (
         run_connector_preflight(
@@ -1955,7 +1956,7 @@ def test_settings_production_validators_and_loopback_aliases():
         "ARES_KILL_SWITCH_BACKEND": "redis",
         "ACTION_EXECUTION_MODE": "webhook",
         "AI_PROVIDER": "azure_openai",
-        "VECTOR_STORE_PROVIDER": "qdrant",
+        "VECTOR_STORE_PROVIDER": "sql_local",
     }
 
     assert Settings(**base).ENV == "production"
@@ -1970,6 +1971,7 @@ def test_settings_production_validators_and_loopback_aliases():
         {"ACTION_EXECUTION_MODE": "mock"},
         {"AI_PROVIDER": "local_stub"},
         {"VECTOR_STORE_PROVIDER": "local"},
+        {"VECTOR_STORE_PROVIDER": "qdrant"},
     ]
     for override in failure_cases:
         config = {**base, **override}

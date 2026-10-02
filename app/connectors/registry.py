@@ -132,6 +132,8 @@ def list_connector_capabilities() -> list[dict[str, Any]]:
     return [
         {
             "provider": item.provider,
+            "implementation": "planning_only",
+            "execution_supported": False,
             "family": item.family,
             "actions": item.actions,
             "reversible_actions": item.reversible_actions,
@@ -175,7 +177,11 @@ def connector_execute_plan(
     check = preflight(capability, action=action, target=target, change_ticket=change_ticket)
     if not check.get("allowed"):
         return {"status": "blocked", "preflight": check}
-    status = "planned" if dry_run else "delegated"
+    if not dry_run:
+        return {"status": "blocked", "code": "connector_execution_not_implemented",
+                "provider": provider, "execution_supported": False,
+                "detail": "Use a configured ARES provider workflow; this registry only prepares plans."}
+    status = "planned"
     return {
         "status": status,
         "preflight": check,

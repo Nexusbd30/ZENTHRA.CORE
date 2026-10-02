@@ -7,6 +7,17 @@
 # - Compatible con SQLAlchemy 2.x.
 # =============================================================
 
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
-Base = declarative_base()
+from app.core.settings import settings
+from app.core.tenant_context import current_tenant
+
+
+class TenantOwned:
+    tenant_id: Mapped[str] = mapped_column(
+        String(120), nullable=False, index=True,
+        default=lambda: current_tenant.get() or settings.DEFAULT_TENANT_ID,
+    )
+
+Base = declarative_base(cls=TenantOwned)

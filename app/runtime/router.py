@@ -5,13 +5,13 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.runtime.orchestrator import PLAYBOOK_QUEUE
 
 router = APIRouter(
     prefix="/api/v1/runtime",
     tags=["runtime"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 
@@ -24,15 +24,17 @@ class EnqueueRequest(BaseModel):
 def runtime_status():
     return {
         "schema": "vaelqorix.runtime.distributed.v1",
-        "workers": ["playbook-execution"],
+        "workers": [],
+        "consumer_status": "not_configured",
         "queue": PLAYBOOK_QUEUE.stats(),
         "capabilities": [
+            "persistent_storage",
             "idempotency_key",
             "backpressure",
+            "lease_fencing",
+            "bounded_retries",
             "dead_letter_queue",
-            "retry_ready",
-            "scheduler_ready",
-            "streaming_events_ready",
+            "terminal_record_retention",
         ],
     }
 

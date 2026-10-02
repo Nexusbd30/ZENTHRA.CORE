@@ -20,6 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Wrapper legacy → fuente única: app.core.settings.settings
 from app.core.config import settings
+from app.db import tenant_scope as _tenant_scope  # noqa: F401
 
 # =============================================================
 # 🔎 Helpers

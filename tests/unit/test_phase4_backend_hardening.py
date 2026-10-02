@@ -9,7 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from app.code_intelligence import analyzer
 from app.code_intelligence.contracts import CodeAnalysisRequest
 from app.code_intelligence.router import analyze_backend_code, code_intelligence_status
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 from app.process_factory import create_restricted_application
 
@@ -54,11 +54,13 @@ def test_code_intelligence_private_inventory_and_router_contract(monkeypatch):
 
 
 class _ReadyDb:
+    info = {}
     def execute(self, statement):
         return statement
 
 
 class _BrokenDb:
+    info = {}
     def execute(self, statement):
         raise RuntimeError("database unavailable")
 
@@ -80,7 +82,7 @@ async def test_restricted_process_surface_and_readiness():
 
     app = create_restricted_application("ares", routers=[owned_router])
     app.dependency_overrides[get_db] = _db_override(_ReadyDb())
-    app.dependency_overrides[require_admin_or_monitor_token] = lambda: {"role": "internal"}
+    app.dependency_overrides[require_admin_or_control_token] = lambda: {"role": "internal"}
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         health = await client.get("/health")
@@ -115,9 +117,9 @@ def test_restricted_entrypoints_do_not_expose_cross_domain_routes():
     from app.entrypoints.ingestion import app as ingestion_app
     from app.entrypoints.redqueen import app as redqueen_app
 
-    ares_paths = {route.path for route in ares_app.routes}
-    ingestion_paths = {route.path for route in ingestion_app.routes}
-    redqueen_paths = {route.path for route in redqueen_app.routes}
+    ares_paths = set(ares_app.openapi()["paths"])
+    ingestion_paths = set(ingestion_app.openapi()["paths"])
+    redqueen_paths = set(redqueen_app.openapi()["paths"])
 
     assert any(path.startswith("/api/v1/ares") for path in ares_paths)
     assert not any(path.startswith("/api/v1/redqueen") for path in ares_paths)

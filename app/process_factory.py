@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 import time
@@ -13,7 +13,8 @@ from starlette.responses import JSONResponse
 from app.core.errors import register_error_handlers
 from app.core.observability.metrics import http_metrics_middleware
 from app.core.observability.metrics import router as metrics_router
-from app.core.security import require_admin_or_monitor_token
+from app.core.request_scope import request_scope
+from app.core.security import require_admin_or_control_token
 from app.core.settings import settings
 from app.db.session import get_db
 from app.health.router import router as system_health_router
@@ -25,7 +26,7 @@ LOG = logging.getLogger("vaelqorix.process")
 
 
 def _include_router_routes(app: FastAPI, router: APIRouter) -> None:
-    app.router.routes.extend(router.routes)
+    app.include_router(router)
 
 
 def create_restricted_application(
@@ -34,6 +35,7 @@ def create_restricted_application(
     routers: Sequence[APIRouter],
 ) -> FastAPI:
     profile_app = FastAPI(
+        dependencies=[Depends(request_scope)],
         title=f"{settings.PROJECT_NAME} - {profile}",
         version="1.0.0",
         description=f"Restricted VAELQORIX {profile} process API",
@@ -78,7 +80,7 @@ def create_restricted_application(
             return JSONResponse(status_code=503, content={"error": str(exc), "profile": profile})
 
     @profile_app.get("/process/status")
-    def process_status(_=Depends(require_admin_or_monitor_token)):
+    def process_status(_=Depends(require_admin_or_control_token)):
         return {
             "profile": profile,
             "scheduler_owner": False,

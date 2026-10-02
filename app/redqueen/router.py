@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 
@@ -8,7 +8,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.ares.approval import build_approval_payload
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.core.settings import settings
 from app.db.session import get_db
 from app.db.vector import vector_store
@@ -30,7 +30,7 @@ from app.services.autonomy_service import AutonomyService
 router = APIRouter(
     prefix="/api/v1/redqueen",
     tags=["redqueen"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 
@@ -248,7 +248,7 @@ def approve_aresx_verdict(
     verdict_id: str,
     db: Session = Depends(get_db),
     payload: VerdictApprovalRequest | None = None,
-    auth_context=Depends(require_admin_or_monitor_token),
+    auth_context=Depends(require_admin_or_control_token),
 ):
     verdict = db.get(Verdict, verdict_id)
     if not verdict:
@@ -311,7 +311,7 @@ def read_risk_memory(target: str, limit: int = 10, db: Session = Depends(get_db)
 
 @router.get("/entities/{entity_id}/profile")
 def read_entity_profile(entity_id: str, db: Session = Depends(get_db)):
-    profile = db.get(EntityProfile, entity_id)
+    profile = db.query(EntityProfile).filter(EntityProfile.entity_id == entity_id).first()
     if not profile:
         return {"status": "not_found", "entity_id": entity_id}
     return {

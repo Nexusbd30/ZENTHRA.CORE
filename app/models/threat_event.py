@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import uuid
 from datetime import datetime
@@ -12,7 +12,7 @@ from app.models.base import Base
 class ThreatEvent(Base):
     __tablename__ = "threat_events"
     __table_args__ = (
-        UniqueConstraint("source", "event_id", name="uq_threat_events_source_event_id"),
+        UniqueConstraint("tenant_id", "source", "event_id", name="uq_threat_events_source_event_id"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

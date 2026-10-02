@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.audit_store import (
     list_entity_audit_records,
     query_audit_records,
@@ -19,7 +19,7 @@ from app.models.audit_record import AuditRecord
 router = APIRouter(
     prefix="/api/v1/audit",
     tags=["aresx-audit"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

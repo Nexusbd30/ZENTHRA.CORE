@@ -5,13 +5,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.attack_analysis.service import AttackAnalysisService
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 
 router = APIRouter(
     prefix="/api/v1/attack-analysis",
     tags=["attack-analysis"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

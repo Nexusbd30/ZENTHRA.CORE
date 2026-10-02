@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import uuid
 from datetime import datetime
@@ -6,11 +6,14 @@ from datetime import datetime
 from sqlalchemy import BigInteger, Boolean, DateTime, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.settings import settings
+from app.core.tenant_context import current_tenant
 from app.models.base import Base
 
 
 class EntityProfile(Base):
     __tablename__ = "entity_profiles"
+    tenant_id: Mapped[str] = mapped_column(String(120), primary_key=True, index=True, default=lambda: current_tenant.get() or settings.DEFAULT_TENANT_ID)
 
     entity_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
     entity_type: Mapped[str] = mapped_column(String(32), index=True)

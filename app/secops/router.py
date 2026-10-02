@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.enterprise_security import build_enterprise_readiness
 from app.core.observability.metrics import record_soc_lifecycle
-from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
+from app.core.security import require_enterprise_capability
 from app.db.session import get_db
 from app.intelligence.contract_registry import build_enterprise_ai_contract_registry
 from app.intelligence.contracts import KnowledgeDocument
@@ -78,7 +78,7 @@ from app.services.autonomy_service import AutonomyService
 router = APIRouter(
     prefix="/api/v1/secops",
     tags=["secops-devsecops"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_enterprise_capability("devsecops:read"))],
 )
 
 

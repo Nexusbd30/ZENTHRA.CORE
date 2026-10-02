@@ -1,8 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -16,7 +16,7 @@ from app.ares.kill_switch import kill_switch_state
 from app.ares.os_business_shield import build_os_business_shield
 from app.ares.response_fabric import build_response_fabric
 from app.core.audit import audit_autonomy_event
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token, require_enterprise_capability
 from app.db.audit_store import list_audit_records, verify_audit_chain
 from app.db.session import get_db
 from app.models.execution_result import ExecutionResult
@@ -34,7 +34,7 @@ from app.services.autonomy_service import AutonomyService
 router = APIRouter(
     prefix="/api/v1/ares",
     tags=["ares"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 
@@ -386,10 +386,16 @@ def execute_verdict(payload: ExecuteRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/approval-token")
-def create_approval_token(payload: ApprovalRequest):
+def create_approval_token(
+    payload: ApprovalRequest,
+    auth_context=Depends(require_enterprise_capability("ares:approve")),
+):
+    if auth_context.get("role") == "service":
+        raise HTTPException(status_code=403, detail="Human approval requires an authenticated user")
+    actor = auth_context["actor"]
     return build_approval_payload(
         verdict=payload.verdict,
-        approver=payload.approver,
+        approver=actor,
         reason=payload.reason,
     )
 
@@ -517,22 +523,33 @@ def rollback_execution(
     row = db.get(ExecutionResult, execution_id)
     if not row:
         return {"status": "not_found", "execution_id": execution_id}
-    row.status = "rolled_back"
-    row.rollback_payload = json.dumps(
-        {"reason": payload.reason, "actor": payload.actor},
-        sort_keys=True,
-    )
-    row.rl_reward = -0.4
+    from app.ares.executor import ACTION_EXECUTORS, ActionTransaction
+    from app.dns_firewall.service import update_execution_state
+
+    if row.status == "rolled_back":
+        return _execution_payload(row)
+    executor = ACTION_EXECUTORS.get(row.action_type)
+    saved = _json_loads(row.rollback_payload, {})
+    steps = saved.get("steps", [])
+    if executor is None or not steps:
+        raise HTTPException(status_code=409, detail="No executable rollback evidence is available")
+    tx = ActionTransaction(executor)
+    for step in steps:
+        tx.record(step)
+    events = tx.rollback()
+    succeeded = bool(events) and all(event["status"] == "ok" for event in events)
+    row.status = "rolled_back" if succeeded else "rollback_failed"
+    row.rollback_payload = json.dumps({**saved, "rollback_events": events, "reason": payload.reason}, sort_keys=True)
     db.add(row)
     db.commit()
+    for step in steps:
+        if row.action_type == "dns_firewall_block" and step.get("execution_id"):
+            update_execution_state(db, execution_id=step["execution_id"], status=row.status,
+                                   evidence={"rollback_events": events})
+    audit_autonomy_event(db, verdict_id=row.verdict_id, actor="ares", action="execution_rollback",
+                         result={"execution_id": row.id, "status": row.status, "reason": payload.reason,
+                                 "original_result_hash": row.result_hash, "rollback_events": events})
     db.refresh(row)
-    audit_autonomy_event(
-        db,
-        verdict_id=row.verdict_id,
-        actor=payload.actor,
-        action="execution_rolled_back",
-        result={"execution_id": row.id, "reason": payload.reason},
-    )
     return _execution_payload(row)
 
 

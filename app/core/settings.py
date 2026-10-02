@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     VAELQORIX_PUBLIC_REGISTRATION_ENABLED: bool = True
     ENTERPRISE_TENANT_MODE: str = "single_tenant"  # single_tenant | header_scoped | strict
     DEFAULT_TENANT_ID: str = "default"
+    VAELQORIX_CONTROL_TOKEN: str | None = None
+    CONTROL_TOKEN_CAPABILITIES: str = ""
+    CONTROL_TOKEN_TENANT_ID: str = "default"
     ENTERPRISE_RBAC_ENABLED: bool = True
     RATE_LIMIT_BACKEND: str = "in_memory"  # in_memory | redis
     REPLAY_GUARD_BACKEND: str = "in_memory"  # in_memory | redis
@@ -113,7 +116,7 @@ class Settings(BaseSettings):
 
     # Vector memory / semantic context
     VECTOR_STORE_ENABLED: bool = True
-    VECTOR_STORE_PROVIDER: str = "local"  # local | qdrant | milvus
+    VECTOR_STORE_PROVIDER: str = "sql_local"  # sql_local; external vector providers are not implemented
     VECTOR_DIMENSIONS: int = 64
     VECTOR_COLLECTION_PREFIX: str = "vaelqorix"
 
@@ -194,6 +197,8 @@ class Settings(BaseSettings):
                 raise ValueError("SECRET_KEY seguro requerido en produccion")
             if not self.VAELQORIX_MONITOR_TOKEN:
                 raise ValueError("VAELQORIX_MONITOR_TOKEN requerido en produccion")
+            if not self.VAELQORIX_CONTROL_TOKEN or self.VAELQORIX_CONTROL_TOKEN == self.VAELQORIX_MONITOR_TOKEN:
+                raise ValueError("Distinct VAELQORIX_CONTROL_TOKEN required in production")
             if str(self.SECRET_BACKEND or "").strip().lower() == "env":
                 raise ValueError("SECRET_BACKEND=file o gestor externo requerido en produccion")
             if self.VAELQORIX_PUBLIC_REGISTRATION_ENABLED:
@@ -211,8 +216,8 @@ class Settings(BaseSettings):
                 raise ValueError("ACTION_EXECUTION_MODE real requerido en produccion")
             if str(self.AI_PROVIDER or "").strip().lower() == "local_stub":
                 raise ValueError("AI_PROVIDER real requerido en produccion")
-            if str(self.VECTOR_STORE_PROVIDER or "").strip().lower() == "local":
-                raise ValueError("VECTOR_STORE_PROVIDER externo requerido en produccion")
+            if str(self.VECTOR_STORE_PROVIDER or "").strip().lower() != "sql_local":
+                raise ValueError("VECTOR_STORE_PROVIDER=sql_local is the only implemented persistent backend")
         return self
 
 

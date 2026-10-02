@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 from app.ingestion.adapters import ADAPTERS, adapt_event
 from app.ingestion.normalizer import normalize_event
@@ -21,7 +21,7 @@ from app.models.threat_event import ThreatEvent
 router = APIRouter(
     prefix="/api/v1/ingest",
     tags=["aresx-ingest"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 MITRE_RE = re.compile(r"\bT\d{4}(?:\.\d{3})?\b", re.IGNORECASE)

@@ -133,7 +133,7 @@ def test_production_settings_accept_real_runtime_contract(monkeypatch):
         "ARES_KILL_SWITCH_BACKEND": "redis",
         "ACTION_EXECUTION_MODE": "webhook",
         "AI_PROVIDER": "ollama",
-        "VECTOR_STORE_PROVIDER": "qdrant",
+        "VECTOR_STORE_PROVIDER": "sql_local",
     }
     for key, value in production_env.items():
         monkeypatch.setenv(key, value)

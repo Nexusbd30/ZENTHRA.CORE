@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import hashlib
 import json
@@ -12,7 +12,7 @@ from app.core.observability.metrics import record_security_webhook_rejection
 from app.core.rate_limit import check_rate_limit
 from app.core.replay_guard import check_replay
 from app.core.secrets import get_secret
-from app.core.security import require_admin_or_monitor_token, require_enterprise_capability
+from app.core.security import require_enterprise_capability
 from app.core.settings import settings
 from app.db.audit_store import append_audit_record
 from app.db.session import get_db
@@ -47,10 +47,12 @@ from app.identity.service import (
 from app.models.threat_event import ThreatEvent
 from app.services.autonomy_service import AutonomyService
 
+webhook_router = APIRouter(prefix="/api/v1/identity", tags=["identity-webhooks"])
+
 router = APIRouter(
     prefix="/api/v1/identity",
     tags=["identity-defense"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_enterprise_capability("identity:read"))],
 )
 
 
@@ -201,7 +203,7 @@ def _enforce_entra_replay_guard(
         )
 
 
-@router.post("/providers/entra/events", status_code=status.HTTP_202_ACCEPTED)
+@webhook_router.post("/providers/entra/events", status_code=status.HTTP_202_ACCEPTED)
 async def ingest_entra_event(
     request: Request,
     payload: dict[str, Any],

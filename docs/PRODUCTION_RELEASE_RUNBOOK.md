@@ -20,9 +20,11 @@ Required environment variables:
 - `AI_PROVIDER` set to a real provider, not `local_stub`
 - `AI_BASE_URL`
 - `AI_MODEL`
-- `VECTOR_STORE_PROVIDER` set to the selected production backend
 - `PROMETHEUS_BASE`
 - `ALERTMANAGER_BASE`
+
+The current vector implementation is a persistent SQL hashed-token index; set
+`VECTOR_STORE_PROVIDER=sql_local`. Qdrant and Milvus adapters are not implemented.
 
 Required environment secrets:
 

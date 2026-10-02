@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import pytest
 
@@ -32,8 +32,9 @@ def test_tenant_policy_service_persists_provider_assignments(db_session):
 
 @pytest.mark.asyncio
 async def test_tenant_policy_api_updates_and_readiness(test_client, db_session, monkeypatch):
-    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
-    headers = {"Authorization": "Bearer monitor-test-token"}
+    monkeypatch.setattr(settings, "VAELQORIX_CONTROL_TOKEN", "control-test-token")
+    monkeypatch.setattr(settings, "CONTROL_TOKEN_CAPABILITIES", ",".join(__import__("app.core.enterprise_security", fromlist=["ENTERPRISE_CAPABILITIES"]).ENTERPRISE_CAPABILITIES))
+    headers = {"Authorization": "Bearer control-test-token"}
 
     created = await test_client.post(
         "/api/v1/secops/tenant-policies",
@@ -90,9 +91,10 @@ async def test_tenant_policy_api_rejects_missing_or_mismatched_strict_tenant(
     test_client,
     monkeypatch,
 ):
-    monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-test-token")
+    monkeypatch.setattr(settings, "VAELQORIX_CONTROL_TOKEN", "control-test-token")
+    monkeypatch.setattr(settings, "CONTROL_TOKEN_CAPABILITIES", ",".join(__import__("app.core.enterprise_security", fromlist=["ENTERPRISE_CAPABILITIES"]).ENTERPRISE_CAPABILITIES))
     monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "strict")
-    headers = {"Authorization": "Bearer monitor-test-token"}
+    headers = {"Authorization": "Bearer control-test-token"}
 
     missing = await test_client.get("/api/v1/secops/tenant-policies", headers=headers)
     assert missing.status_code == 400

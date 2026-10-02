@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.ctf_lab.service import get_scenario, list_scenarios, replay_scenario
 from app.db.session import get_db
 
 router = APIRouter(
     prefix="/api/v1/ctf-lab",
     tags=["ctf-lab"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

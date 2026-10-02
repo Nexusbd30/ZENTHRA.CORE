@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import hashlib
 import json
@@ -159,7 +159,7 @@ class PersistentKnowledgeRepository:
 
     def __init__(self, db):
         self.db = db
-        KnowledgeDocumentModel.__table__.create(bind=db.get_bind(), checkfirst=True)
+        # Schema is installed by Alembic, never mutated by a request.
 
     def list_documents(self) -> tuple[KnowledgeDocument, ...]:
         rows = (

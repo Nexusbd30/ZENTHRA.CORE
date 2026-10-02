@@ -1,9 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, String, Text
+from sqlalchemy import BigInteger, DateTime, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -11,10 +11,11 @@ from app.models.base import Base
 
 class AuditRecord(Base):
     __tablename__ = "audit_records"
+    __table_args__ = (UniqueConstraint("tenant_id", "sequence_number", name="uq_audit_tenant_sequence"),)
 
     record_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     verdict_id: Mapped[str] = mapped_column(String(36), index=True)
-    sequence_number: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
+    sequence_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
     event_type: Mapped[str] = mapped_column(String(120), default="", index=True)
     hash_prev: Mapped[str] = mapped_column(String(128), default="")
     hash_self: Mapped[str] = mapped_column(String(128), default="")

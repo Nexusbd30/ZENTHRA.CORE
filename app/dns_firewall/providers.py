@@ -25,14 +25,6 @@ class DnsFirewallProvider(Protocol):
 class WebhookDnsFirewallProvider:
     name = "webhook"
 
-    @staticmethod
-    def _fallback_rule_id(request: DnsBlockRequest) -> str:
-        return hashlib.sha256(
-            f"{request.tenant_id}:{request.target.value}:{request.idempotency_key}".encode(
-                "utf-8"
-            )
-        ).hexdigest()[:32]
-
     def _dispatch(self, command: str, request: DnsBlockRequest, **extra: str) -> ProviderResult:
         payload = {
             "tenant_id": request.tenant_id,
@@ -52,30 +44,42 @@ class WebhookDnsFirewallProvider:
         return ProviderResult(
             status=str(result.get("status") or "ok"),
             provider_request_id=str(
-                result.get("request_id") or result.get("id") or f"webhook-{request.idempotency_key[:12]}"
+                result.get("request_id") or ""
             ),
-            provider_rule_id=str(result.get("rule_id") or self._fallback_rule_id(request)),
+            provider_rule_id=str(result.get("rule_id") or ""),
             evidence=result,
         )
 
     def apply_block(self, request: DnsBlockRequest) -> ProviderResult:
-        return self._dispatch("dns_firewall_block", request)
+        result = self._dispatch("dns_firewall_block", request)
+        if not result.provider_rule_id or not result.provider_request_id:
+            raise RuntimeError("DNS controller must return a rule_id and request_id")
+        return result
+
+    @staticmethod
+    def _matches(result: ProviderResult, request: DnsBlockRequest, rule_id: str, present: bool) -> bool:
+        evidence = result.evidence or {}
+        return (bool(rule_id) and evidence.get("rule_id") == rule_id
+                and evidence.get("tenant_id") == request.tenant_id
+                and evidence.get("target") == request.target.value
+                and evidence.get("present") is present)
 
     def remove_block(self, request: DnsBlockRequest, provider_rule_id: str) -> ProviderResult:
-        return self._dispatch(
-            "dns_firewall_rollback", request, provider_rule_id=provider_rule_id
-        )
+        result = self._dispatch("dns_firewall_rollback", request, provider_rule_id=provider_rule_id)
+        if result.status not in {"removed", "not_found", "ok"}:
+            return result
+        check = self._dispatch("dns_firewall_verify", request, provider_rule_id=provider_rule_id)
+        verified = self._matches(check, request, provider_rule_id, False)
+        return ProviderResult(status="removed" if verified else "rollback_verification_failed",
+                              provider_request_id=check.provider_request_id, provider_rule_id=provider_rule_id,
+                              evidence={"rollback": result.evidence, "read_back": check.evidence})
 
     def verify_block(self, request: DnsBlockRequest, provider_rule_id: str) -> ProviderResult:
         result = self._dispatch("dns_firewall_verify", request, provider_rule_id=provider_rule_id)
-        if result.status in {"ok", "applied"}:
-            return ProviderResult(
-                status="verified",
-                provider_request_id=result.provider_request_id,
-                provider_rule_id=result.provider_rule_id or provider_rule_id,
-                evidence={**(result.evidence or {}), "verification_status": "verified"},
-            )
-        return result
+        verified = result.status in {"ok", "applied", "verified"} and self._matches(result, request, provider_rule_id, True)
+        return ProviderResult(status="verified" if verified else "verification_failed",
+                              provider_request_id=result.provider_request_id, provider_rule_id=provider_rule_id,
+                              evidence=result.evidence, error_code="" if verified else "dns_read_back_mismatch")
 
 
 _SANDBOX_RULES: dict[str, dict[str, object]] = {}

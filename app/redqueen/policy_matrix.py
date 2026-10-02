@@ -34,6 +34,14 @@ ACTION_POLICIES: dict[str, ActionPolicy] = {
         disruptive=True,
         always_requires_human=True,
     ),
+    "dns_firewall_block": ActionPolicy(
+        50,
+        100,
+        70,
+        severity=3,
+        disruptive=True,
+        always_requires_human=True,
+    ),
     "system_harden": ActionPolicy(45, 100, 82, severity=2),
     "aggressive_containment": ActionPolicy(
         75,

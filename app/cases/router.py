@@ -6,12 +6,12 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.cases.service import create_case
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 
 router = APIRouter(
     prefix="/api/v1/cases",
     tags=["cases"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

@@ -5,14 +5,14 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.playbooks.registry import list_playbooks, playbook_summary
 from app.playbooks.runtime import preview_playbook
 
 router = APIRouter(
     prefix="/api/v1/playbooks",
     tags=["playbooks"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

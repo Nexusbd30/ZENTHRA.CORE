@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import timedelta
 from types import SimpleNamespace
@@ -68,6 +68,8 @@ def test_security_token_user_and_role_paths(monkeypatch, db_session):
 def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_session):
     monkeypatch.setattr(settings, "SECRET_KEY", "secret-for-test")
     monkeypatch.setattr(settings, "VAELQORIX_MONITOR_TOKEN", "monitor-token")
+    monkeypatch.setattr(settings, "VAELQORIX_CONTROL_TOKEN", "control-token")
+    monkeypatch.setattr(settings, "CONTROL_TOKEN_CAPABILITIES", "soc:execute")
 
     with pytest.raises(HTTPException) as missing_auth:
         security.require_admin_or_monitor_token("", db_session)
@@ -121,11 +123,12 @@ def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_sessio
 
     checker = security.require_enterprise_capability("soc:execute")
     internal_context = checker(
-        auth_context={"auth_type": "monitor_token", "role": "internal"},
-        x_tenant_id="tenant-1",
+        auth_context={"auth_type": "control_token", "role": "service", "tenant_id": "default",
+                      "capabilities": ["soc:execute"]},
+        x_tenant_id="default",
         x_request_id="req-1",
     )
-    assert internal_context["tenant_id"] == "tenant-1"
+    assert internal_context["tenant_id"] == "default"
     assert internal_context["request_id"] == "req-1"
 
     user_context = checker(
@@ -138,11 +141,11 @@ def test_admin_or_monitor_and_enterprise_capability_paths(monkeypatch, db_sessio
     monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "strict")
     with pytest.raises(HTTPException) as strict_missing_tenant:
         checker(
-            auth_context={"auth_type": "monitor_token", "role": "internal"},
+            auth_context={"auth_type": "control_token", "role": "service", "tenant_id": "default", "capabilities": ["soc:execute"]},
             x_tenant_id=None,
             x_request_id="req-strict",
         )
-    assert strict_missing_tenant.value.status_code == 400
+    assert strict_missing_tenant.value.status_code == 403
     monkeypatch.setattr(settings, "ENTERPRISE_TENANT_MODE", "single_tenant")
 
     with pytest.raises(HTTPException) as missing_capability:

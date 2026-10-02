@@ -83,7 +83,28 @@ def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El email ya está registrado",
         )
-    return UserService.create_user(db, user)
+    # Public callers never choose privileges or account activation state.
+    return UserService.create_user(db, user.model_copy(update={"role": "user", "is_active": True}))
+
+
+@router.post("/admin", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+def create_managed_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    if UserService.get_user_by_email(db, user.email):
+        raise HTTPException(status_code=400, detail="El email ya está registrado")
+    target_tenant = (user.tenant_id or current_admin.tenant_id).strip()
+    if target_tenant != current_admin.tenant_id and current_admin.tenant_id != settings.DEFAULT_TENANT_ID:
+        raise HTTPException(status_code=403, detail="Only a platform administrator can provision another tenant")
+    if target_tenant == current_admin.tenant_id:
+        return UserService.create_user(db, user.model_copy(update={"tenant_id": target_tenant}))
+    db.info["platform_provisioning"] = True
+    try:
+        return UserService.create_user(db, user.model_copy(update={"tenant_id": target_tenant}))
+    finally:
+        db.info.pop("platform_provisioning", None)
 
 
 # ==============================================================
@@ -111,7 +132,7 @@ def get_runtime_logs_for_user(
     limit: int = Query(200, ge=1, le=1000),
     severity: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ):
     """
     Devuelve logs reales del backend para el dashboard autenticado.
@@ -119,7 +140,8 @@ def get_runtime_logs_for_user(
     Se protege con JWT de usuario para no depender del monitor token
     en pantallas normales del frontend.
     """
-    _ = current_user
+    if settings.ENTERPRISE_TENANT_MODE != "single_tenant":
+        raise HTTPException(status_code=403, detail="Global runtime logs are unavailable in multi-tenant mode")
     return list_runtime_logs(limit=limit, severity=severity, search=search)
 
 

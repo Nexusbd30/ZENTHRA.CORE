@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.control.capabilities import autonomy_capability_map
 from app.control.maturity import ares_maturity, autonomy_control_maturity, redqueen_maturity
-from app.core.security import require_admin_or_monitor_token
+from app.core.security import require_admin_or_control_token
 from app.db.session import get_db
 
 router = APIRouter(
     prefix="/api/v1/control",
     tags=["control"],
-    dependencies=[Depends(require_admin_or_monitor_token)],
+    dependencies=[Depends(require_admin_or_control_token)],
 )
 
 

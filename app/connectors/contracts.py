@@ -22,7 +22,10 @@ def readiness(capability: ConnectorCapability, configured_secrets: dict[str, str
     return {
         "provider": capability.provider,
         "family": capability.family,
-        "ready": not missing,
+        "ready": False,
+        "configured": not missing,
+        "implementation": "planning_only",
+        "execution_supported": False,
         "missing_secrets": missing,
         "actions": capability.actions,
         "reversible_actions": capability.reversible_actions,

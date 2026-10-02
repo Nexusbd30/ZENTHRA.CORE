@@ -7,6 +7,7 @@ from app.models.knowledge_document import KnowledgeDocumentModel
 from app.models.policy_rule import PolicyRule
 from app.models.response_log import ResponseLog
 from app.models.risk_score import RiskScore
+from app.models.runtime_state import RuntimeJob, VectorEntry
 from app.models.threat_event import ThreatEvent
 from app.models.threat_model import ThreatModel
 from app.models.user import User
@@ -23,6 +24,8 @@ __all__ = [
     "PolicyRule",
     "ResponseLog",
     "RiskScore",
+    "RuntimeJob",
+    "VectorEntry",
     "ThreatEvent",
     "ThreatModel",
     "User",
